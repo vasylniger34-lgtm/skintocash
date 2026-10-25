@@ -16,12 +16,14 @@ export interface Sticker {
   price: number;
 }
 
+export type SkinCategory = 'Knife' | 'Gloves' | 'Rifle' | 'Sniper' | 'Pistol' | 'SMG' | 'Shotgun' | 'Machinegun' | 'Case' | 'Sticker' | 'Agent' | 'Other';
+
 export interface CS2Skin {
   id: string;
   name: string;
   weapon: string;
   skinName: string;
-  category: 'Knife' | 'Gloves' | 'Rifle' | 'Sniper' | 'Pistol' | 'SMG';
+  category: SkinCategory;
   wear: 'FN' | 'MW' | 'FT' | 'WW' | 'BS';
   wearName: string;
   float: number;

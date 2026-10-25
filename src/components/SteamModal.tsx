@@ -116,7 +116,7 @@ export const SteamModal: React.FC<SteamModalProps> = ({ isOpen, onClose, onSucce
               </div>
 
               <input
-                type="url"
+                type="text"
                 value={tradeUrl}
                 onChange={(e) => setTradeUrl(e.target.value)}
                 placeholder="https://steamcommunity.com/tradeoffer/new/?partner=..."

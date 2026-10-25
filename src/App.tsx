@@ -18,7 +18,7 @@ export function App() {
   const [isSteamModalOpen, setIsSteamModalOpen] = useState(false);
   const [isBonusModalOpen, setIsBonusModalOpen] = useState(false);
   const [isBonusApplied, setIsBonusApplied] = useState(false);
-  const [activeTradeUrl, setActiveTradeUrl] = useState<string>('https://steamcommunity.com/tradeoffer/new/?partner=184920412&token=9X4bK2sM');
+  const [activeTradeUrl, setActiveTradeUrl] = useState<string>('demo');
 
   const scrollToSection = (id: string) => {
     const el = document.getElementById(id);
@@ -77,6 +77,7 @@ export function App() {
             tradeUrl={activeTradeUrl}
             isBonusApplied={isBonusApplied}
             onOpenBonusModal={() => setIsBonusModalOpen(true)}
+            onTradeUrlChange={(url) => setActiveTradeUrl(url)}
           />
 
           {/* Why Players Choose Us Bento Grid with Cursor Spotlight */}

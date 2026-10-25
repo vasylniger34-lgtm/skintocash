@@ -266,7 +266,7 @@ export const Hero: React.FC<HeroProps> = ({
               <LinkIcon className="w-4 h-4 text-emerald-400 shrink-0 mr-3" />
               
               <input
-                type="url"
+                type="text"
                 value={tradeUrl}
                 onChange={(e) => setTradeUrl(e.target.value)}
                 placeholder={t('hero.inputPlaceholder')}

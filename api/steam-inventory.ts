@@ -35,23 +35,45 @@ export default async function handler(req: any, res: any) {
 
   const apiKey = process.env.STEAM_API_KEY || process.env.VITE_STEAM_API_KEY || '';
 
+  // 1. Fetch Player Profile info via Steam Web API Key
+  let playerProfile: any = null;
+  if (apiKey) {
+    try {
+      const userUrl = `https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key=${apiKey}&steamids=${targetSteamId}`;
+      const userRes = await fetch(userUrl);
+      if (userRes.ok) {
+        const userData: any = await userRes.json();
+        playerProfile = userData?.response?.players?.[0] || null;
+      }
+    } catch (err) {
+      console.warn('Could not fetch player summary:', err);
+    }
+  }
+
   try {
-    // 1. Fetch CS2 Public Inventory from Steam Community (appid 730, contextid 2)
-    const inventoryUrl = `https://steamcommunity.com/inventory/${targetSteamId}/730/2?l=english&count=100`;
+    // 2. Fetch CS2 Public Inventory from Steam Community (appid 730, contextid 2)
+    const inventoryUrl = `https://steamcommunity.com/inventory/${targetSteamId}/730/2?l=english&count=500`;
 
     const inventoryResponse = await fetch(inventoryUrl, {
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        'Accept': 'application/json',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+        'Accept': 'application/json, text/javascript, */*; q=0.01',
+        'Referer': `https://steamcommunity.com/profiles/${targetSteamId}/inventory`,
       },
     });
 
-    if (inventoryResponse.status === 403) {
+    // 401 or 403 on Steam community inventory = Private / Friends-Only inventory
+    if (inventoryResponse.status === 401 || inventoryResponse.status === 403) {
       return res.status(200).json({
         success: false,
         error: 'private_inventory',
         message: 'This Steam inventory is set to Private. Please set it to Public in Steam Privacy settings.',
         steamId64: targetSteamId,
+        player: playerProfile ? {
+          personaname: playerProfile.personaname,
+          avatar: playerProfile.avatarfull || playerProfile.avatarmedium,
+          profileurl: playerProfile.profileurl,
+        } : null,
       });
     }
 
@@ -61,6 +83,11 @@ export default async function handler(req: any, res: any) {
         error: 'rate_limited',
         message: 'Steam Community API rate-limited temporary request. Fallback activated.',
         steamId64: targetSteamId,
+        player: playerProfile ? {
+          personaname: playerProfile.personaname,
+          avatar: playerProfile.avatarfull || playerProfile.avatarmedium,
+          profileurl: playerProfile.profileurl,
+        } : null,
       });
     }
 
@@ -71,33 +98,29 @@ export default async function handler(req: any, res: any) {
         status: inventoryResponse.status,
         message: `Steam returned status ${inventoryResponse.status}`,
         steamId64: targetSteamId,
+        player: playerProfile ? {
+          personaname: playerProfile.personaname,
+          avatar: playerProfile.avatarfull || playerProfile.avatarmedium,
+          profileurl: playerProfile.profileurl,
+        } : null,
       });
     }
 
-    const data = await inventoryResponse.json();
+    const data: any = await inventoryResponse.json();
 
     if (!data || !data.assets || !data.descriptions) {
       return res.status(200).json({
         success: true,
-        items: [],
-        totalCount: 0,
+        assets: [],
+        descriptions: [],
+        total_inventory_count: 0,
         steamId64: targetSteamId,
+        player: playerProfile ? {
+          personaname: playerProfile.personaname,
+          avatar: playerProfile.avatarfull || playerProfile.avatarmedium,
+          profileurl: playerProfile.profileurl,
+        } : null,
       });
-    }
-
-    // 2. Fetch Player Profile info via Steam Web API if key is present
-    let playerProfile = null;
-    if (apiKey) {
-      try {
-        const userUrl = `https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key=${apiKey}&steamids=${targetSteamId}`;
-        const userRes = await fetch(userUrl);
-        if (userRes.ok) {
-          const userData = await userRes.json();
-          playerProfile = userData?.response?.players?.[0] || null;
-        }
-      } catch (err) {
-        console.warn('Could not fetch player summary:', err);
-      }
     }
 
     return res.status(200).json({
@@ -117,6 +140,11 @@ export default async function handler(req: any, res: any) {
       success: false,
       error: 'server_error',
       message: error.message || 'Internal server error while contacting Steam',
+      player: playerProfile ? {
+        personaname: playerProfile.personaname,
+        avatar: playerProfile.avatarfull || playerProfile.avatarmedium,
+        profileurl: playerProfile.profileurl,
+      } : null,
     });
   }
 }

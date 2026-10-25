@@ -1,4 +1,4 @@
-import type { CS2Skin } from '../types';
+import type { CS2Skin, SkinCategory } from '../types';
 import { MOCK_CS2_INVENTORY } from '../data/skinsData';
 
 export interface SteamTradeUrlInfo {
@@ -10,7 +10,7 @@ export interface SteamTradeUrlInfo {
 
 export interface SteamInventoryResult {
   success: boolean;
-  status: 'success' | 'private' | 'rate_limited' | 'error' | 'demo';
+  status: 'success' | 'private' | 'rate_limited' | 'error' | 'demo' | 'empty';
   items: CS2Skin[];
   totalCount: number;
   message?: string;
@@ -65,24 +65,45 @@ export function parseSteamTradeUrl(input: string): SteamTradeUrlInfo {
 /**
  * Determines weapon category from Steam tags and market hash name
  */
-function determineCategory(marketName: string, _tags?: any[]): 'Knife' | 'Gloves' | 'Rifle' | 'Sniper' | 'Pistol' | 'SMG' {
+function determineCategory(marketName: string, tags?: any[]): SkinCategory {
+  const typeTag = tags?.find((t: any) => t.category === 'Type')?.localized_tag_name || '';
+  const typeLower = typeTag.toLowerCase();
   const lower = marketName.toLowerCase();
-  if (lower.includes('★') && (lower.includes('knife') || lower.includes('karambit') || lower.includes('bayonet') || lower.includes('daggers') || lower.includes('karambit') || lower.includes('butterfly') || lower.includes('talon') || lower.includes('stiletto') || lower.includes('skeleton') || lower.includes('nomad') || lower.includes('survival') || lower.includes('ursus') || lower.includes('paracord') || lower.includes('classic knife') || lower.includes('kukri'))) {
+
+  if (typeLower.includes('knife') || (lower.includes('★') && (lower.includes('knife') || lower.includes('karambit') || lower.includes('bayonet') || lower.includes('daggers') || lower.includes('butterfly') || lower.includes('talon') || lower.includes('stiletto') || lower.includes('skeleton') || lower.includes('nomad') || lower.includes('survival') || lower.includes('ursus') || lower.includes('paracord') || lower.includes('kukri') || lower.includes('bowie') || lower.includes('huntsman') || lower.includes('falchion')))) {
     return 'Knife';
   }
-  if (lower.includes('gloves') || lower.includes('wraps')) {
+  if (typeLower.includes('gloves') || lower.includes('gloves') || lower.includes('wraps')) {
     return 'Gloves';
   }
-  if (lower.includes('awp') || lower.includes('ssg 08') || lower.includes('scar-20') || lower.includes('g3sg1')) {
+  if (typeLower.includes('sniper') || lower.includes('awp') || lower.includes('ssg 08') || lower.includes('scar-20') || lower.includes('g3sg1')) {
     return 'Sniper';
   }
-  if (lower.includes('ak-47') || lower.includes('m4a1-s') || lower.includes('m4a4') || lower.includes('galil') || lower.includes('famas') || lower.includes('aug') || lower.includes('sg 553')) {
+  if (typeLower.includes('rifle') || lower.includes('ak-47') || lower.includes('m4a1-s') || lower.includes('m4a4') || lower.includes('galil') || lower.includes('famas') || lower.includes('aug') || lower.includes('sg 553')) {
     return 'Rifle';
   }
-  if (lower.includes('usp-s') || lower.includes('glock-18') || lower.includes('desert eagle') || lower.includes('p250') || lower.includes('five-seven') || lower.includes('dual berettas') || lower.includes('cz75') || lower.includes('r8') || lower.includes('tec-9') || lower.includes('p2000')) {
+  if (typeLower.includes('pistol') || lower.includes('usp-s') || lower.includes('glock-18') || lower.includes('desert eagle') || lower.includes('p250') || lower.includes('five-seven') || lower.includes('dual berettas') || lower.includes('cz75') || lower.includes('r8') || lower.includes('tec-9') || lower.includes('p2000')) {
     return 'Pistol';
   }
-  return 'SMG';
+  if (typeLower.includes('smg') || lower.includes('mp9') || lower.includes('mac-10') || lower.includes('mp7') || lower.includes('mp5') || lower.includes('ump-45') || lower.includes('p90') || lower.includes('bizon')) {
+    return 'SMG';
+  }
+  if (typeLower.includes('shotgun') || lower.includes('nova') || lower.includes('xm1014') || lower.includes('mag-7') || lower.includes('sawed-off')) {
+    return 'Shotgun';
+  }
+  if (typeLower.includes('machinegun') || lower.includes('negev') || lower.includes('m249')) {
+    return 'Machinegun';
+  }
+  if (typeLower.includes('case') || typeLower.includes('container') || lower.includes('case') || lower.includes('capsule') || lower.includes('package')) {
+    return 'Case';
+  }
+  if (typeLower.includes('sticker') || lower.includes('sticker')) {
+    return 'Sticker';
+  }
+  if (typeLower.includes('agent') || lower.includes('agent') || lower.includes('cmdr') || lower.includes('officer')) {
+    return 'Agent';
+  }
+  return 'Other';
 }
 
 /**
@@ -90,32 +111,46 @@ function determineCategory(marketName: string, _tags?: any[]): 'Knife' | 'Gloves
  */
 function determineRarity(tags: any[]): { rarity: CS2Skin['rarity']; color: string } {
   const rarityTag = tags?.find((t: any) => t.category === 'Rarity');
-  const name = rarityTag ? rarityTag.name.toLowerCase() : '';
+  const name = rarityTag ? (rarityTag.localized_tag_name || rarityTag.name || '').toLowerCase() : '';
 
+  if (name.includes('contraband')) {
+    return { rarity: 'Contraband', color: '#ffd700' };
+  }
   if (name.includes('covert') || name.includes('extraordinary')) {
     return { rarity: 'Covert', color: '#eb4b4b' };
   }
   if (name.includes('classified')) {
     return { rarity: 'Classified', color: '#d32ce6' };
   }
-  if (name.includes('restricted')) {
+  if (name.includes('restricted') || name.includes('remarkable')) {
     return { rarity: 'Restricted', color: '#8847ff' };
   }
-  if (name.includes('mil-spec')) {
+  if (name.includes('mil-spec') || name.includes('high grade')) {
     return { rarity: 'Mil-Spec', color: '#4b69ff' };
   }
-  return { rarity: 'Industrial', color: '#5e98d9' };
+  if (name.includes('industrial')) {
+    return { rarity: 'Industrial', color: '#5e98d9' };
+  }
+  return { rarity: 'Consumer', color: '#b0c3d9' };
 }
 
 /**
- * Determines wear exterior from item name
+ * Determines wear exterior from item name or tags
  */
-function determineWear(marketName: string): { wear: CS2Skin['wear']; wearName: string; float: number } {
+function determineWear(marketName: string, tags?: any[]): { wear: CS2Skin['wear']; wearName: string; float: number } {
+  const extTag = tags?.find((t: any) => t.category === 'Exterior')?.localized_tag_name;
+  if (extTag) {
+    if (extTag.includes('Factory New')) return { wear: 'FN', wearName: 'Factory New', float: 0.015 };
+    if (extTag.includes('Minimal Wear')) return { wear: 'MW', wearName: 'Minimal Wear', float: 0.088 };
+    if (extTag.includes('Field-Tested')) return { wear: 'FT', wearName: 'Field-Tested', float: 0.215 };
+    if (extTag.includes('Well-Worn')) return { wear: 'WW', wearName: 'Well-Worn', float: 0.410 };
+    if (extTag.includes('Battle-Scarred')) return { wear: 'BS', wearName: 'Battle-Scarred', float: 0.640 };
+  }
   if (marketName.includes('(Factory New)')) {
     return { wear: 'FN', wearName: 'Factory New', float: 0.015 };
   }
   if (marketName.includes('(Minimal Wear)')) {
-    return { wear: 'MW', wearName: 'Minimal Wear', float: 0.092 };
+    return { wear: 'MW', wearName: 'Minimal Wear', float: 0.088 };
   }
   if (marketName.includes('(Field-Tested)')) {
     return { wear: 'FT', wearName: 'Field-Tested', float: 0.215 };
@@ -148,12 +183,21 @@ function estimateItemPrice(marketName: string, category: string, rarity: string,
   else if (lower.includes('printstream')) basePrice = lower.includes('m4a1') ? 890 : 260;
   else if (lower.includes('asiimov')) basePrice = lower.includes('awp') ? 220 : 130;
   else if (lower.includes('vulcan')) basePrice = 640;
+  else if (lower.includes('case hardened')) basePrice = 450;
+  else if (lower.includes('crane flight')) basePrice = 85;
+  else if (lower.includes('black nile')) basePrice = 14.5;
+  else if (lower.includes('crakow')) basePrice = 48.0;
+  else if (lower.includes('jawbreaker')) basePrice = 32.0;
   else if (category === 'Knife') basePrice = 420;
   else if (category === 'Gloves') basePrice = 360;
+  else if (category === 'Case') basePrice = lower.includes('weapon case') ? 95 : 2.8;
+  else if (category === 'Sticker') basePrice = lower.includes('glitter') || lower.includes('holo') ? 16.5 : 3.8;
+  else if (category === 'Agent') basePrice = 28.0;
   else if (rarity === 'Covert') basePrice = 85;
   else if (rarity === 'Classified') basePrice = 38;
   else if (rarity === 'Restricted') basePrice = 12.5;
-  else basePrice = 4.8;
+  else if (rarity === 'Mil-Spec') basePrice = 4.8;
+  else basePrice = 1.6;
 
   if (isStatTrak) basePrice *= 1.35;
 
@@ -190,12 +234,14 @@ export function mapSteamItemsToCS2Skins(assets: any[], descriptions: any[]): CS2
 
     if (!desc || !desc.market_hash_name) return;
 
-    // Filter to CS2 weapon skins (ignore graffiti, cases, medals unless valuable)
+    // Filter out untradable items if specified
+    if (desc.tradable === 0) return;
+
     const marketName = desc.market_hash_name || desc.name;
     const isStatTrak = marketName.includes('StatTrak™');
     const category = determineCategory(marketName, desc.tags);
     const { rarity, color } = determineRarity(desc.tags);
-    const { wear, wearName, float } = determineWear(marketName);
+    const { wear, wearName, float } = determineWear(marketName, desc.tags);
     const { price, steamPrice, buffPrice } = estimateItemPrice(marketName, category, rarity, isStatTrak);
 
     // Extract weapon name and skin title
@@ -204,7 +250,7 @@ export function mapSteamItemsToCS2Skins(assets: any[], descriptions: any[]): CS2
     const skinNameWithWear = nameParts[1] || marketName;
     const skinName = skinNameWithWear.split(' (')[0];
 
-    // Build icon image
+    // Build official Akamai CDN icon image
     const iconUrl = desc.icon_url_large || desc.icon_url;
     const imageUrl = iconUrl 
       ? `https://community.akamai.steamstatic.com/economy/image/${iconUrl}/512fx384f`
@@ -253,7 +299,7 @@ export async function fetchSteamInventory(input: string): Promise<SteamInventory
   }
 
   // If user requested demo explicitly
-  if (input.trim().toLowerCase() === 'demo' || !steamId64) {
+  if (input.trim().toLowerCase() === 'demo') {
     return {
       success: true,
       status: 'demo',
@@ -268,65 +314,79 @@ export async function fetchSteamInventory(input: string): Promise<SteamInventory
   }
 
   try {
-    const url = `/api/steam-inventory?steamId64=${steamId64}&partner=${partnerId || ''}`;
+    const url = `/api/steam-inventory?steamId64=${steamId64 || ''}&partner=${partnerId || ''}`;
     const response = await fetch(url);
 
     if (!response.ok) {
-      // Fallback gracefully to demo
       return {
-        success: true,
-        status: 'demo',
-        items: MOCK_CS2_INVENTORY,
-        totalCount: MOCK_CS2_INVENTORY.length,
-        message: 'Could not connect to Steam servers. Loaded verified CS2 demo inventory.',
+        success: false,
+        status: 'error',
+        items: [],
+        totalCount: 0,
+        message: 'Could not connect to Steam servers. Please try again.',
         steamId64,
       };
     }
 
     const data = await response.json();
 
-    if (data.error === 'private_inventory') {
+    // Check for private inventory
+    if (data.error === 'private_inventory' || data.status === 401 || data.status === 403) {
       return {
         success: false,
         status: 'private',
         items: [],
         totalCount: 0,
         message: 'This Steam Inventory is set to Private. Please open your Steam Profile -> Privacy Settings -> Set Inventory to Public.',
+        player: data.player || null,
         steamId64,
       };
     }
 
-    if (data.success && data.assets && data.descriptions && data.assets.length > 0) {
+    // Check for rate limited
+    if (data.error === 'rate_limited') {
+      return {
+        success: false,
+        status: 'rate_limited',
+        items: [],
+        totalCount: 0,
+        message: 'Steam rate limit reached. Please wait 30 seconds and try again.',
+        player: data.player || null,
+        steamId64,
+      };
+    }
+
+    if (data.success && data.assets && data.descriptions) {
       const skins = mapSteamItemsToCS2Skins(data.assets, data.descriptions);
       return {
         success: true,
-        status: 'success',
-        items: skins.length > 0 ? skins : MOCK_CS2_INVENTORY,
+        status: skins.length > 0 ? 'success' : 'empty',
+        items: skins,
         totalCount: skins.length,
         player: data.player,
         steamId64,
+        message: skins.length > 0 
+          ? `Successfully synchronized ${skins.length} CS2 items` 
+          : 'Your CS2 inventory has no tradable skins.',
       };
     }
 
-    // Default fallback with real CS2 demo inventory
     return {
-      success: true,
-      status: 'demo',
-      items: MOCK_CS2_INVENTORY,
-      totalCount: MOCK_CS2_INVENTORY.length,
-      player: data.player || {
-        personaname: 'Steam User',
-        avatar: 'https://avatars.steamstatic.com/b5bd56c1aa99e440b0b12e1a6ae410290fec5b12_full.jpg',
-      },
+      success: false,
+      status: 'error',
+      items: [],
+      totalCount: 0,
+      message: data.message || 'Unable to load Steam inventory.',
+      player: data.player || null,
       steamId64,
     };
-  } catch {
+  } catch (err: any) {
     return {
-      success: true,
-      status: 'demo',
-      items: MOCK_CS2_INVENTORY,
-      totalCount: MOCK_CS2_INVENTORY.length,
-      message: 'Network issue contacting Steam API. Loaded verified inventory items.',
+      success: false,
+      status: 'error',
+      items: [],
+      totalCount: 0,
+      message: err?.message || 'Network issue contacting Steam API.',
       steamId64,
     };
   }
