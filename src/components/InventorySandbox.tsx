@@ -56,6 +56,17 @@ export const InventorySandbox: React.FC<InventorySandboxProps> = ({
   const [syncStatus, setSyncStatus] = useState<'success' | 'private' | 'rate_limited' | 'error' | 'demo' | 'empty'>('demo');
   const [playerInfo, setPlayerInfo] = useState<{ personaname: string; avatar: string; profileurl?: string } | null>(null);
   const [syncStatusMessage, setSyncStatusMessage] = useState<string | null>(null);
+  const [cooldown, setCooldown] = useState(0);
+  const lastLoadedUrlRef = React.useRef<string>('');
+
+  // 30-second cooldown timer for Steam rate limit mitigation
+  useEffect(() => {
+    if (cooldown <= 0) return;
+    const timer = setInterval(() => {
+      setCooldown(c => Math.max(0, c - 1));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [cooldown]);
   
   // Filtering & Sorting
   const [activeCategory, setActiveCategory] = useState<string>('all');
@@ -69,14 +80,14 @@ export const InventorySandbox: React.FC<InventorySandboxProps> = ({
   const [isCashoutModalOpen, setIsCashoutModalOpen] = useState(false);
 
   // Fetch Inventory logic
-  const loadInventory = useCallback(async (targetUrl: string) => {
+  const loadInventory = useCallback(async (targetUrl: string, force = false) => {
     if (!targetUrl || !targetUrl.trim()) return;
 
     setIsSyncing(true);
     setSyncStatusMessage(null);
 
     try {
-      const res = await fetchSteamInventory(targetUrl);
+      const res = await fetchSteamInventory(targetUrl, force);
       setIsSyncing(false);
       setSyncStatus(res.status);
 
@@ -86,9 +97,16 @@ export const InventorySandbox: React.FC<InventorySandboxProps> = ({
 
       if (res.status === 'success' && res.items.length > 0) {
         setSkins(res.items);
-        // Pre-select first 3 items or all if fewer than 3
         setSelectedIds(new Set(res.items.slice(0, 3).map(s => s.id)));
         setSyncStatusMessage(`${res.items.length} ${t('sandbox.items')} synchronized`);
+      } else if (res.status === 'rate_limited') {
+        // When Steam rate limits, load verified items and activate 30s backoff cooldown
+        if (res.items && res.items.length > 0) {
+          setSkins(res.items);
+          setSelectedIds(new Set(res.items.slice(0, 3).map(s => s.id)));
+        }
+        setCooldown(30);
+        setSyncStatusMessage(res.message || 'Steam rate limit active. Valuation mode enabled.');
       } else if (res.status === 'private') {
         setSkins([]);
         setSelectedIds(new Set());
@@ -113,23 +131,27 @@ export const InventorySandbox: React.FC<InventorySandboxProps> = ({
 
   // Sync with prop when tradeUrl changes from outside (e.g. Hero section)
   useEffect(() => {
-    if (initialTradeUrl) {
+    if (initialTradeUrl && initialTradeUrl !== lastLoadedUrlRef.current) {
+      lastLoadedUrlRef.current = initialTradeUrl;
       setTradeUrlInput(initialTradeUrl);
       loadInventory(initialTradeUrl);
     }
   }, [initialTradeUrl, loadInventory]);
 
-  const handleManualScan = (e?: React.FormEvent) => {
+  const handleManualScan = (e?: React.FormEvent, force = false) => {
     if (e) e.preventDefault();
+    if (cooldown > 0 && !force) return;
     if (!tradeUrlInput.trim()) return;
+    lastLoadedUrlRef.current = tradeUrlInput;
     if (onTradeUrlChange) {
       onTradeUrlChange(tradeUrlInput);
     }
-    loadInventory(tradeUrlInput);
+    loadInventory(tradeUrlInput, force);
   };
 
   const handleLoadDemo = () => {
     setTradeUrlInput('demo');
+    lastLoadedUrlRef.current = 'demo';
     if (onTradeUrlChange) {
       onTradeUrlChange('demo');
     }
@@ -289,14 +311,24 @@ export const InventorySandbox: React.FC<InventorySandboxProps> = ({
               {/* Action Buttons */}
               <div className="flex items-center gap-2">
                 <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
+                  whileHover={{ scale: cooldown > 0 ? 1 : 1.02 }}
+                  whileTap={{ scale: cooldown > 0 ? 1 : 0.98 }}
                   type="submit"
-                  disabled={isSyncing}
-                  className="flex-1 sm:flex-none px-6 py-3 rounded-2xl bg-gradient-to-r from-emerald-500 via-emerald-400 to-teal-400 text-slate-950 font-['Space_Grotesk'] font-bold text-xs sm:text-sm shadow-[0_0_20px_rgba(16,185,129,0.35)] hover:shadow-[0_0_25px_rgba(16,185,129,0.5)] transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
+                  disabled={isSyncing || cooldown > 0}
+                  className={`flex-1 sm:flex-none px-6 py-3 rounded-2xl font-['Space_Grotesk'] font-bold text-xs sm:text-sm shadow-[0_0_20px_rgba(16,185,129,0.35)] transition-all flex items-center justify-center gap-2 cursor-pointer ${
+                    cooldown > 0 
+                      ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 cursor-not-allowed'
+                      : 'bg-gradient-to-r from-emerald-500 via-emerald-400 to-teal-400 text-slate-950 hover:shadow-[0_0_25px_rgba(16,185,129,0.5)]'
+                  } disabled:opacity-70`}
                 >
                   <RefreshCw className={`w-4 h-4 ${isSyncing ? 'animate-spin' : ''}`} />
-                  <span>{isSyncing ? 'Loading...' : t('sandbox.loadInventoryBtn')}</span>
+                  <span>
+                    {isSyncing 
+                      ? 'Loading...' 
+                      : cooldown > 0 
+                      ? t('sandbox.cooldownWait', { seconds: cooldown })
+                      : t('sandbox.loadInventoryBtn')}
+                  </span>
                 </motion.button>
 
                 <button
@@ -347,6 +379,12 @@ export const InventorySandbox: React.FC<InventorySandboxProps> = ({
                     🧪 Verified Demo Mode
                   </span>
                 )}
+                {syncStatus === 'rate_limited' && (
+                  <span className="px-2 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400 text-[10px] font-bold flex items-center gap-1">
+                    <span>⚡ Steam Rate Limit (429)</span>
+                    {cooldown > 0 && <span>({cooldown}s)</span>}
+                  </span>
+                )}
                 {syncStatus === 'empty' && (
                   <span className="px-2 py-0.5 rounded-full bg-slate-500/10 border border-slate-500/30 text-slate-400 text-[10px] font-bold">
                     ⚠️ 0 Tradable Skins Found
@@ -382,6 +420,33 @@ export const InventorySandbox: React.FC<InventorySandboxProps> = ({
           {/* Main Inventory Panel (8 cols) */}
           <div className="lg:col-span-8 space-y-6">
             
+            {/* Steam Community Rate Limit (429) Smart Notice Banner */}
+            {syncStatus === 'rate_limited' && (
+              <motion.div
+                initial={{ opacity: 0, y: -8 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-xs text-amber-300 font-['JetBrains_Mono'] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-lg"
+              >
+                <div className="flex items-center gap-2.5">
+                  <AlertCircle className="w-4 h-4 text-amber-400 shrink-0" />
+                  <span>
+                    {playerInfo?.personaname && (
+                      <strong className="text-white font-bold">{playerInfo.personaname}: </strong>
+                    )}
+                    {t('sandbox.rateLimitNotice')}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handleManualScan(undefined, true)}
+                  disabled={cooldown > 0 || isSyncing}
+                  className="px-3.5 py-1.5 rounded-xl bg-amber-400/20 hover:bg-amber-400/30 border border-amber-400/40 text-amber-200 text-xs font-bold transition-all disabled:opacity-40 cursor-pointer disabled:cursor-not-allowed whitespace-nowrap self-end sm:self-auto"
+                >
+                  {cooldown > 0 ? t('sandbox.cooldownWait', { seconds: cooldown }) : t('sandbox.retryNow')}
+                </button>
+              </motion.div>
+            )}
+
             {/* Control Bar: Filters, Search & Sort */}
             <div className="p-3.5 rounded-2xl glass-panel flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
               

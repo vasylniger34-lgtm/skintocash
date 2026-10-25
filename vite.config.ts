@@ -2,6 +2,11 @@ import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 
+// In-memory server cache & singleflight queue to prevent duplicate Steam API hits
+const serverInventoryCache = new Map<string, { timestamp: number; payload: any }>();
+const serverPendingRequests = new Map<string, Promise<any>>();
+const CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutes
+
 // Custom Vite dev middleware for Steam Inventory API
 function steamDevProxyPlugin(apiKey: string) {
   return {
@@ -30,91 +35,122 @@ function steamDevProxyPlugin(apiKey: string) {
             return;
           }
 
-          const inventoryUrl = `https://steamcommunity.com/inventory/${targetSteamId}/730/2?l=english&count=500`;
+          // 1. Check in-memory cache
+          const cached = serverInventoryCache.get(targetSteamId);
+          if (cached && (Date.now() - cached.timestamp < CACHE_TTL_MS)) {
+            res.statusCode = 200;
+            res.setHeader('Content-Type', 'application/json');
+            res.end(JSON.stringify(cached.payload));
+            return;
+          }
 
-          // 1. Fetch player profile info via Steam Web API Key
-          let playerProfile: any = null;
-          if (apiKey) {
-            try {
-              const userUrl = `https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key=${apiKey}&steamids=${targetSteamId}`;
-              const userRes = await fetch(userUrl);
-              if (userRes.ok) {
-                const userData: any = await userRes.json();
-                playerProfile = userData?.response?.players?.[0] || null;
+          // 2. Singleflight: If a request for this steamId is already in-flight, await it
+          let fetchPromise = serverPendingRequests.get(targetSteamId);
+          if (!fetchPromise) {
+            fetchPromise = (async () => {
+              // Fetch player profile info via Steam Web API Key
+              let playerProfile: any = null;
+              if (apiKey) {
+                try {
+                  const userUrl = `https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key=${apiKey}&steamids=${targetSteamId}`;
+                  const userRes = await fetch(userUrl);
+                  if (userRes.ok) {
+                    const userData: any = await userRes.json();
+                    playerProfile = userData?.response?.players?.[0] || null;
+                  }
+                } catch {
+                  // Ignore player summary errors
+                }
               }
-            } catch {
-              // Ignore player summary errors
-            }
+
+              const parsedPlayer = playerProfile ? {
+                personaname: playerProfile.personaname,
+                avatar: playerProfile.avatarfull || playerProfile.avatarmedium || playerProfile.avatar,
+                profileurl: playerProfile.profileurl,
+              } : null;
+
+              // Fetch CS2 Public Inventory with realistic browser headers & reasonable count
+              const inventoryUrl = `https://steamcommunity.com/inventory/${targetSteamId}/730/2?l=english&count=100`;
+              const invRes = await fetch(inventoryUrl, {
+                headers: {
+                  'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+                  'Accept': 'application/json, text/javascript, */*; q=0.01',
+                  'Accept-Language': 'en-US,en;q=0.9',
+                  'Referer': `https://steamcommunity.com/profiles/${targetSteamId}/inventory`,
+                  'Sec-Fetch-Dest': 'empty',
+                  'Sec-Fetch-Mode': 'cors',
+                  'Sec-Fetch-Site': 'same-origin',
+                },
+              });
+
+              // 401 or 403 on Steam community inventory = Private / Friends-Only inventory
+              if (invRes.status === 401 || invRes.status === 403) {
+                return {
+                  success: false,
+                  error: 'private_inventory',
+                  status: invRes.status,
+                  message: 'This Steam inventory is set to Private. Please make it Public in Steam Privacy settings.',
+                  steamId64: targetSteamId,
+                  player: parsedPlayer,
+                };
+              }
+
+              if (invRes.status === 429) {
+                // If we have stale cache, serve it
+                if (cached) {
+                  return {
+                    ...cached.payload,
+                    isStale: true,
+                  };
+                }
+                return {
+                  success: false,
+                  error: 'rate_limited',
+                  status: 429,
+                  message: 'Steam rate limit active. Valuation mode enabled.',
+                  steamId64: targetSteamId,
+                  player: parsedPlayer,
+                };
+              }
+
+              if (!invRes.ok) {
+                return {
+                  success: false,
+                  error: 'steam_error',
+                  status: invRes.status,
+                  steamId64: targetSteamId,
+                  player: parsedPlayer,
+                };
+              }
+
+              const data: any = await invRes.json();
+              const resultPayload = {
+                success: true,
+                assets: data.assets || [],
+                descriptions: data.descriptions || [],
+                total_inventory_count: data.total_inventory_count || data.assets?.length || 0,
+                player: parsedPlayer,
+                steamId64: targetSteamId,
+              };
+
+              // Cache successful response
+              serverInventoryCache.set(targetSteamId, {
+                timestamp: Date.now(),
+                payload: resultPayload,
+              });
+
+              return resultPayload;
+            })();
+
+            serverPendingRequests.set(targetSteamId, fetchPromise);
           }
 
-          const parsedPlayer = playerProfile ? {
-            personaname: playerProfile.personaname,
-            avatar: playerProfile.avatarfull || playerProfile.avatarmedium || playerProfile.avatar,
-            profileurl: playerProfile.profileurl,
-          } : null;
-
-          // 2. Fetch CS2 Public Inventory from Steam Community
-          const invRes = await fetch(inventoryUrl, {
-            headers: {
-              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
-              'Accept': 'application/json, text/javascript, */*; q=0.01',
-              'Referer': `https://steamcommunity.com/profiles/${targetSteamId}/inventory`,
-            },
-          });
-
-          // 401 or 403 on Steam community inventory = Private / Friends-Only inventory
-          if (invRes.status === 401 || invRes.status === 403) {
-            res.statusCode = 200;
-            res.setHeader('Content-Type', 'application/json');
-            res.end(JSON.stringify({
-              success: false,
-              error: 'private_inventory',
-              status: invRes.status,
-              message: 'This Steam inventory is set to Private. Please make it Public in Steam Privacy settings.',
-              steamId64: targetSteamId,
-              player: parsedPlayer,
-            }));
-            return;
-          }
-
-          if (invRes.status === 429) {
-            res.statusCode = 200;
-            res.setHeader('Content-Type', 'application/json');
-            res.end(JSON.stringify({
-              success: false,
-              error: 'rate_limited',
-              message: 'Steam rate-limited public request. Fallback activated.',
-              steamId64: targetSteamId,
-              player: parsedPlayer,
-            }));
-            return;
-          }
-
-          if (!invRes.ok) {
-            res.statusCode = 200;
-            res.setHeader('Content-Type', 'application/json');
-            res.end(JSON.stringify({
-              success: false,
-              error: 'steam_error',
-              status: invRes.status,
-              steamId64: targetSteamId,
-              player: parsedPlayer,
-            }));
-            return;
-          }
-
-          const data: any = await invRes.json();
+          const result = await fetchPromise;
+          serverPendingRequests.delete(targetSteamId);
 
           res.statusCode = 200;
           res.setHeader('Content-Type', 'application/json');
-          res.end(JSON.stringify({
-            success: true,
-            assets: data.assets || [],
-            descriptions: data.descriptions || [],
-            total_inventory_count: data.total_inventory_count || data.assets?.length || 0,
-            player: parsedPlayer,
-            steamId64: targetSteamId,
-          }));
+          res.end(JSON.stringify(result));
         } catch (err: any) {
           res.statusCode = 500;
           res.setHeader('Content-Type', 'application/json');

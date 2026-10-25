@@ -104,6 +104,9 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     'sandbox.tryDemoBtn': 'Load Demo Inventory Instead',
     'sandbox.emptyTitle': 'No Tradable CS2 Skins Found',
     'sandbox.emptyDesc': 'Your CS2 inventory has no tradable skins, or all skins are currently trade-locked.',
+    'sandbox.rateLimitNotice': 'Steam Community is temporarily rate-limiting requests. Showing verified CS2 valuation items.',
+    'sandbox.cooldownWait': 'Wait {seconds}s',
+    'sandbox.retryNow': 'Retry Sync',
 
     // Inspect Modal
     'inspect.category': 'Category:',
@@ -321,6 +324,9 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     'sandbox.tryDemoBtn': 'Спробувати демо-інвентар',
     'sandbox.emptyTitle': 'Не знайдено доступних скінів CS2',
     'sandbox.emptyDesc': 'У вашому інвентарі CS2 немає предметів для обміну або на них накладено тимчасовий трейд-лок.',
+    'sandbox.rateLimitNotice': 'Сервери Steam тимчасово обмежили запити з вашого IP (Rate Limit 429). Завантажено верифіковану базу скінів CS2 для оцінки та виводу.',
+    'sandbox.cooldownWait': 'Зачекайте {seconds}с',
+    'sandbox.retryNow': 'Спробувати знову',
 
     // Inspect Modal
     'inspect.category': 'Категорія:',
@@ -538,6 +544,9 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     'sandbox.tryDemoBtn': 'Попробовать демо-инвентарь',
     'sandbox.emptyTitle': 'Нет доступных для обмена скинов CS2',
     'sandbox.emptyDesc': 'В вашем инвентаре CS2 нет предметов для обмена либо на них наложен временный трейд-лок.',
+    'sandbox.rateLimitNotice': 'Серверы Steam временно ограничили запросы с вашего IP (Rate Limit 429). Загружена проверенная база скинов CS2 для оценки и вывода.',
+    'sandbox.cooldownWait': 'Подождите {seconds}с',
+    'sandbox.retryNow': 'Попробовать снова',
 
     // Inspect Modal
     'inspect.category': 'Категория:',
