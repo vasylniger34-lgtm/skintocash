@@ -2,32 +2,35 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Star, CheckCircle2 } from 'lucide-react';
 import { REVIEWS_DATA } from '../data/reviewsData';
+import { useLanguage } from '../context/LanguageContext';
 
 export const TrustpilotReviews: React.FC = () => {
+  const { t } = useLanguage();
+
   return (
-    <section id="reviews-section" className="py-20 bg-[#090D14] border-t border-emerald-500/10 relative overflow-hidden">
+    <section id="reviews-section" className="py-24 sm:py-32 bg-[#070A0E] border-t border-white/[0.06] relative overflow-hidden">
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
           <div>
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-['JetBrains_Mono'] font-bold mb-3">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-['JetBrains_Mono'] font-bold mb-3">
               <Star className="w-3.5 h-3.5 fill-emerald-400 text-emerald-400" />
-              VERIFIED SOCIAL PROOF
+              {t('reviews.badge')}
             </div>
 
             <h2 className="text-3xl sm:text-4xl font-extrabold font-['Space_Grotesk'] text-white tracking-tight mb-2">
-              Loved by 140,000+ CS2 Players
+              {t('reviews.title')}
             </h2>
             <p className="text-sm text-slate-300">
-              Read real feedback from players who cashed out their high-tier knives, gloves, and inventory.
+              {t('reviews.subtitle')}
             </p>
           </div>
 
           {/* Trustpilot Score Badge */}
-          <div className="flex items-center gap-4 p-4 rounded-2xl bg-slate-900/80 border border-slate-800 self-start md:self-auto">
-            <div className="text-center pr-4 border-r border-slate-800">
+          <div className="flex items-center gap-4 p-4 rounded-2xl bg-white/[0.02] border border-white/[0.07] self-start md:self-auto">
+            <div className="text-center pr-4 border-r border-white/[0.08]">
               <div className="text-2xl font-black font-['Space_Grotesk'] text-white">4.9 / 5</div>
               <div className="flex text-emerald-400 mt-1">
                 {[...Array(5)].map((_, i) => (
@@ -39,9 +42,9 @@ export const TrustpilotReviews: React.FC = () => {
             <div className="text-left font-['JetBrains_Mono'] text-xs">
               <div className="text-emerald-400 font-bold flex items-center gap-1">
                 <CheckCircle2 className="w-3.5 h-3.5" />
-                Excellent on Trustpilot
+                {t('reviews.excellent')}
               </div>
-              <div className="text-slate-400 text-[11px] mt-0.5">Based on 14,240+ reviews</div>
+              <div className="text-slate-400 text-[11px] mt-0.5">{t('reviews.basedOn')}</div>
             </div>
           </div>
         </div>
@@ -52,7 +55,7 @@ export const TrustpilotReviews: React.FC = () => {
             <motion.div
               key={rev.id}
               whileHover={{ y: -4 }}
-              className="rounded-2xl p-5 bg-slate-900/60 border border-slate-800 hover:border-emerald-500/40 transition-all flex flex-col justify-between shadow-lg"
+              className="rounded-2xl p-5 bg-white/[0.02] border border-white/[0.07] hover:border-emerald-500/30 transition-all flex flex-col justify-between shadow-lg"
             >
               <div>
                 {/* Author row & rating */}
@@ -61,7 +64,7 @@ export const TrustpilotReviews: React.FC = () => {
                     <img
                       src={rev.avatar}
                       alt={rev.author}
-                      className="w-8 h-8 rounded-full object-cover border border-slate-700"
+                      className="w-8 h-8 rounded-full object-cover border border-white/[0.1]"
                     />
                     <div>
                       <div className="text-xs font-bold font-['Space_Grotesk'] text-white">
@@ -89,9 +92,9 @@ export const TrustpilotReviews: React.FC = () => {
               </div>
 
               {/* Verified transaction footer */}
-              <div className="pt-3 border-t border-slate-800/80 font-['JetBrains_Mono'] text-[11px]">
+              <div className="pt-3 border-t border-white/[0.06] font-['JetBrains_Mono'] text-[11px]">
                 <div className="flex justify-between items-center text-slate-400 mb-1">
-                  <span>Sold:</span>
+                  <span>{t('reviews.sold')}</span>
                   <span className="text-slate-200 font-bold truncate max-w-[130px]">{rev.skinSold}</span>
                 </div>
                 <div className="flex justify-between items-center">

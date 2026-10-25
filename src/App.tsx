@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { CurrencyProvider } from './context/CurrencyContext';
+import { LanguageProvider } from './context/LanguageContext';
 import { Navbar } from './components/Navbar';
 import { Hero } from './components/Hero';
 import { PaymentMarquee } from './components/PaymentMarquee';
@@ -27,54 +28,56 @@ export function App() {
   };
 
   return (
-    <CurrencyProvider>
-      <div className="min-h-screen bg-[#070A0E] text-[#E5E7EB] font-sans antialiased overflow-x-hidden selection:bg-emerald-500/30 selection:text-emerald-300">
-        
-        {/* Sticky Glassmorphic Navbar */}
-        <Navbar
-          onOpenSteamModal={() => setIsSteamModalOpen(true)}
-          onScrollToSection={scrollToSection}
-        />
+    <LanguageProvider>
+      <CurrencyProvider>
+        <div className="min-h-screen bg-[#070A0E] text-[#E5E7EB] font-sans antialiased overflow-x-hidden selection:bg-emerald-500/30 selection:text-emerald-300">
+          
+          {/* Sticky Glassmorphic Navbar */}
+          <Navbar
+            onOpenSteamModal={() => setIsSteamModalOpen(true)}
+            onScrollToSection={scrollToSection}
+          />
 
-        {/* Hero Section */}
-        <Hero
-          onScanInventory={handleScanInventory}
-          onOpenSteamModal={() => setIsSteamModalOpen(true)}
-        />
+          {/* Hero Section */}
+          <Hero
+            onScanInventory={handleScanInventory}
+            onOpenSteamModal={() => setIsSteamModalOpen(true)}
+          />
 
-        {/* Infinite Dual-Direction Payment Methods Marquee */}
-        <PaymentMarquee />
+          {/* Infinite Dual-Direction Payment Methods Marquee */}
+          <PaymentMarquee />
 
-        {/* Live Real-Time Payouts Feed */}
-        <LivePayoutsFeed />
+          {/* Live Real-Time Payouts Feed */}
+          <LivePayoutsFeed />
 
-        {/* Core Interactive Inventory Valuation & Cashout Sandbox */}
-        <InventorySandbox />
+          {/* Core Interactive Inventory Valuation & Cashout Sandbox */}
+          <InventorySandbox />
 
-        {/* Why Players Choose Us Bento Grid with Cursor Spotlight */}
-        <WhyChooseUs />
+          {/* Why Players Choose Us Bento Grid with Cursor Spotlight */}
+          <WhyChooseUs />
 
-        {/* Interactive 3-Step "How It Works" Timeline */}
-        <HowItWorks onScrollToSandbox={() => scrollToSection('inventory-sandbox')} />
+          {/* Interactive 3-Step "How It Works" Timeline */}
+          <HowItWorks onScrollToSandbox={() => scrollToSection('inventory-sandbox')} />
 
-        {/* Trustpilot Social Proof & Reviews */}
-        <TrustpilotReviews />
+          {/* Trustpilot Social Proof & Reviews */}
+          <TrustpilotReviews />
 
-        {/* Modern Expandable FAQ Accordion */}
-        <FAQSection />
+          {/* Modern Expandable FAQ Accordion */}
+          <FAQSection />
 
-        {/* High-Trust Fintech Footer */}
-        <Footer onScrollToSection={scrollToSection} />
+          {/* High-Trust Fintech Footer */}
+          <Footer onScrollToSection={scrollToSection} />
 
-        {/* Steam Trade URL / Sign In Dialog */}
-        <SteamModal
-          isOpen={isSteamModalOpen}
-          onClose={() => setIsSteamModalOpen(false)}
-          onSuccess={handleScanInventory}
-        />
+          {/* Steam Trade URL / Sign In Dialog */}
+          <SteamModal
+            isOpen={isSteamModalOpen}
+            onClose={() => setIsSteamModalOpen(false)}
+            onSuccess={handleScanInventory}
+          />
 
-      </div>
-    </CurrencyProvider>
+        </div>
+      </CurrencyProvider>
+    </LanguageProvider>
   );
 }
 

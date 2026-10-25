@@ -3,6 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, Sparkles, Check, Tag } from 'lucide-react';
 import type { CS2Skin } from '../types';
 import { useCurrency } from '../context/CurrencyContext';
+import { useLanguage } from '../context/LanguageContext';
+import { SkinImage } from './SkinImage';
 
 interface SkinInspectModalProps {
   skin: CS2Skin | null;
@@ -18,6 +20,7 @@ export const SkinInspectModal: React.FC<SkinInspectModalProps> = ({
   isSelected,
 }) => {
   const { formatPrice } = useCurrency();
+  const { t } = useLanguage();
 
   if (!skin) return null;
 
@@ -39,7 +42,7 @@ export const SkinInspectModal: React.FC<SkinInspectModalProps> = ({
           initial={{ opacity: 0, scale: 0.95, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 20 }}
-          className="relative w-full max-w-2xl rounded-3xl bg-[#0B1017] border border-emerald-500/30 p-6 sm:p-8 shadow-[0_25px_60px_rgba(0,0,0,0.95),0_0_40px_rgba(16,185,129,0.2)] z-10 overflow-hidden"
+          className="relative w-full max-w-2xl rounded-3xl bg-[#0B1017] border border-white/[0.08] p-6 sm:p-8 shadow-[0_25px_60px_rgba(0,0,0,0.95),0_0_40px_rgba(16,185,129,0.12)] z-10 overflow-hidden"
         >
           {/* Subtle top rarity bar */}
           <div 
@@ -50,7 +53,7 @@ export const SkinInspectModal: React.FC<SkinInspectModalProps> = ({
           {/* Close button */}
           <button
             onClick={onClose}
-            className="absolute top-5 right-5 p-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 hover:text-white hover:border-slate-700 transition-colors cursor-pointer"
+            className="absolute top-5 right-5 p-2 rounded-xl bg-white/[0.03] border border-white/[0.08] text-slate-400 hover:text-white hover:border-emerald-500/30 transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
@@ -81,7 +84,7 @@ export const SkinInspectModal: React.FC<SkinInspectModalProps> = ({
               </span>
             )}
 
-            <span className="px-2.5 py-1 rounded-md text-[11px] font-['JetBrains_Mono'] text-slate-400 bg-slate-900 border border-slate-800">
+            <span className="px-2.5 py-1 rounded-md text-[11px] font-['JetBrains_Mono'] text-slate-400 bg-white/[0.03] border border-white/[0.08]">
               Pattern #{skin.patternIndex || 415}
             </span>
           </div>
@@ -90,33 +93,32 @@ export const SkinInspectModal: React.FC<SkinInspectModalProps> = ({
             {skin.name}
           </h2>
           <p className="text-xs text-slate-400 font-['JetBrains_Mono'] mb-6">
-            Category: <span className="text-slate-300">{skin.category}</span> • Paint Index: {skin.patternIndex}
+            {t('inspect.category')} <span className="text-slate-300">{skin.category}</span> • {t('inspect.paintIndex')} {skin.patternIndex}
           </p>
 
           {/* Centerpiece Weapon Render with Glow */}
-          <div className="relative h-56 sm:h-64 rounded-2xl bg-gradient-to-b from-slate-900/60 to-slate-950/80 border border-slate-800/80 flex items-center justify-center p-4 mb-6 overflow-hidden">
+          <div className="relative h-56 sm:h-64 rounded-2xl bg-gradient-to-b from-white/[0.03] to-transparent border border-white/[0.08] flex items-center justify-center p-4 mb-6 overflow-hidden">
             <div 
-              className="absolute w-64 h-40 blur-3xl rounded-full opacity-30"
+              className="absolute w-64 h-40 blur-3xl rounded-full opacity-25"
               style={{ backgroundColor: skin.rarityColor }}
             />
-            <motion.img
-              initial={{ scale: 0.9, rotate: -2 }}
-              animate={{ scale: 1, rotate: 0 }}
+            <SkinImage
               src={skin.image}
+              fallbackSrc={skin.fallbackImage}
               alt={skin.name}
               className="max-h-48 sm:max-h-56 w-auto object-contain filter drop-shadow-[0_15px_30px_rgba(0,0,0,0.9)] relative z-10"
             />
           </div>
 
           {/* Wear & Float Spectrum Breakdown */}
-          <div className="bg-slate-900/60 rounded-xl p-4 border border-slate-800 mb-6">
+          <div className="bg-white/[0.02] rounded-xl p-4 border border-white/[0.07] mb-6">
             <div className="flex items-center justify-between text-xs font-['JetBrains_Mono'] mb-2">
-              <span className="text-slate-400">Exterior Wear:</span>
+              <span className="text-slate-400">{t('inspect.exteriorWear')}</span>
               <span className="text-white font-bold">{skin.wearName} ({skin.wear})</span>
             </div>
 
             <div className="flex items-center justify-between text-xs font-['JetBrains_Mono'] mb-1">
-              <span className="text-slate-400">Exact Float Value:</span>
+              <span className="text-slate-400">{t('inspect.exactFloat')}</span>
               <span className="text-emerald-400 font-bold">{skin.float.toFixed(6)}</span>
             </div>
 
@@ -143,13 +145,13 @@ export const SkinInspectModal: React.FC<SkinInspectModalProps> = ({
             <div className="mb-6">
               <div className="text-xs font-['Space_Grotesk'] uppercase tracking-wider text-slate-400 mb-2 font-bold flex items-center gap-1.5">
                 <Tag className="w-3.5 h-3.5 text-cyan-400" />
-                Applied Tournament Stickers ({skin.stickers.length})
+                {t('inspect.appliedStickers')} ({skin.stickers.length})
               </div>
               <div className="flex flex-wrap gap-2">
                 {skin.stickers.map((st, i) => (
                   <div 
                     key={i}
-                    className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-900/90 border border-slate-800 text-xs font-['JetBrains_Mono']"
+                    className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/[0.02] border border-white/[0.07] text-xs font-['JetBrains_Mono']"
                   >
                     <img src={st.image} alt={st.name} className="w-6 h-6 object-contain" />
                     <div>
@@ -164,24 +166,24 @@ export const SkinInspectModal: React.FC<SkinInspectModalProps> = ({
 
           {/* Pricing Comparison Grid */}
           <div className="grid grid-cols-3 gap-3 mb-6 font-['JetBrains_Mono']">
-            <div className="p-3 rounded-xl bg-slate-900/80 border border-slate-800 text-center">
-              <span className="text-[10px] text-slate-400 block uppercase">Steam Market</span>
+            <div className="p-3 rounded-xl bg-white/[0.02] border border-white/[0.07] text-center">
+              <span className="text-[10px] text-slate-400 block uppercase">{t('inspect.steamMarket')}</span>
               <span className="text-sm font-semibold text-slate-300 line-through">
                 {formatPrice(skin.steamPrice)}
               </span>
-              <span className="text-[10px] text-red-400 block mt-0.5">-15% Valve Fee</span>
+              <span className="text-[10px] text-red-400 block mt-0.5">{t('inspect.valveFee')}</span>
             </div>
 
-            <div className="p-3 rounded-xl bg-slate-900/80 border border-slate-800 text-center">
-              <span className="text-[10px] text-slate-400 block uppercase">Buff163 Base</span>
+            <div className="p-3 rounded-xl bg-white/[0.02] border border-white/[0.07] text-center">
+              <span className="text-[10px] text-slate-400 block uppercase">{t('inspect.buffBase')}</span>
               <span className="text-sm font-semibold text-slate-300">
                 {formatPrice(skin.buffPrice)}
               </span>
-              <span className="text-[10px] text-slate-500 block mt-0.5">Reference P2P</span>
+              <span className="text-[10px] text-slate-500 block mt-0.5">{t('inspect.refP2p')}</span>
             </div>
 
-            <div className="p-3 rounded-xl bg-emerald-500/15 border border-emerald-500/40 text-center shadow-[0_0_15px_rgba(16,185,129,0.15)]">
-              <span className="text-[10px] text-emerald-400 block uppercase font-bold">SkinToCash Direct</span>
+            <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-center shadow-[0_0_15px_rgba(16,185,129,0.1)]">
+              <span className="text-[10px] text-emerald-400 block uppercase font-bold">{t('inspect.directCash')}</span>
               <span className="text-base font-extrabold text-emerald-400">
                 {formatPrice(skin.price)}
               </span>
@@ -190,9 +192,9 @@ export const SkinInspectModal: React.FC<SkinInspectModalProps> = ({
           </div>
 
           {/* Bottom Actions */}
-          <div className="flex items-center justify-between gap-4 pt-4 border-t border-slate-800">
+          <div className="flex items-center justify-between gap-4 pt-4 border-t border-white/[0.08]">
             <div>
-              <div className="text-[10px] font-['JetBrains_Mono'] text-slate-400">Total Valuation</div>
+              <div className="text-[10px] font-['JetBrains_Mono'] text-slate-400">{t('sandbox.totalValuation')}</div>
               <div className="text-xl font-bold font-['JetBrains_Mono'] text-white">
                 {formatPrice(skin.price)}
               </div>
@@ -201,9 +203,9 @@ export const SkinInspectModal: React.FC<SkinInspectModalProps> = ({
             <div className="flex items-center gap-3">
               <button
                 onClick={onClose}
-                className="px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 text-xs font-semibold transition-colors cursor-pointer"
+                className="px-4 py-2.5 rounded-xl bg-white/[0.03] hover:bg-white/[0.08] text-slate-300 text-xs font-semibold transition-colors cursor-pointer border border-white/[0.07]"
               >
-                Close
+                {t('inspect.close')}
               </button>
 
               <button
@@ -217,12 +219,12 @@ export const SkinInspectModal: React.FC<SkinInspectModalProps> = ({
                 {isSelected ? (
                   <>
                     <X className="w-4 h-4" />
-                    Deselect from Cashout
+                    {t('inspect.removeFromCart')}
                   </>
                 ) : (
                   <>
                     <Check className="w-4 h-4" />
-                    Add to Cashout Cart
+                    {t('inspect.addToCart')}
                   </>
                 )}
               </button>

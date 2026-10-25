@@ -4,9 +4,12 @@ import { Flame, Clock, Zap } from 'lucide-react';
 import { INITIAL_LIVE_PAYOUTS } from '../data/payoutsData';
 import type { LivePayout } from '../types';
 import { useCurrency } from '../context/CurrencyContext';
+import { useLanguage } from '../context/LanguageContext';
+import { SkinImage } from './SkinImage';
 
 export const LivePayoutsFeed: React.FC = () => {
   const { formatPrice } = useCurrency();
+  const { t } = useLanguage();
   const [payouts, setPayouts] = useState<LivePayout[]>(INITIAL_LIVE_PAYOUTS);
 
   // Dynamic simulation of incoming trades
@@ -33,13 +36,14 @@ export const LivePayoutsFeed: React.FC = () => {
         rarityColor: '#e4ae39',
       },
       {
-        skinName: 'Gungnir',
-        weapon: 'AWP',
+        skinName: 'Printstream',
+        weapon: 'M4A1-S',
         wear: 'FN' as const,
-        float: 0.0298,
-        amount: 8900.00,
-        method: 'Bitcoin',
-        image: 'https://community.akamai.steamstatic.com/economy/image/i0CoZ81Ui0m-9KwlBY1L_18myuGuq1wfhWSaZgMttyVfPaERSR0Wqmu7LAocGIGz3UqlXOLrxM-vMGmW8VNxu5Dx60noTyLwiYbf-jFk7uW-V6N4LvedB3WvzedxuPUnHnjnzUl0sWrdztitI3rDZgJzAsZ1QOFY4UPqldDgMO_l41HXit9AmTK-0H227dAsvQ',
+        float: 0.0152,
+        amount: 495.00,
+        method: 'Revolut Pay',
+        image: 'https://community.akamai.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpou-6kejhz2v_Nfz5H_uO1gb-Gw_alIITBhGJf_NZlmOzA-LP4jVC9vh5yY2GhI4fAdlA9aF3V-FfsxO_s1JTu7Z3BySZhuCgitC3D30vgN8_v6f0/512fx384f',
+        fallbackImage: 'https://community.akamai.steamstatic.com/economy/image/i0CoZ81Ui0m-9KwlBY1L_18myuGuq1wfhWSaZgMttyVfPaERSR0Wqmu7LAocGIGz3UqlXOLrxM-vMGmW8VNxu5Dx60noTyL8ypexwjFS4_ega6F_H_OGMWrEwL9lj_F7Rienhgk1tjyIpYPwJiPTcAAoCpsiEO5ZsUbpm9C2Zuni4VHW3o5EzSX62HxP7Sg96-hWVqYi_6TJz1aW0nxrkGs',
         rarityColor: '#eb4b4b',
       },
       {
@@ -48,8 +52,9 @@ export const LivePayoutsFeed: React.FC = () => {
         wear: 'FN' as const,
         float: 0.0084,
         amount: 3450.00,
-        method: 'Revolut Pay',
-        image: 'https://community.akamai.steamstatic.com/economy/image/i0CoZ81Ui0m-9KwlBY1L_18myuGuq1wfhWSaZgMttyVfPaERSR0Wqmu7LAocGIGz3UqlXOLrxM-vMGmW8VNxu5Dx60noTyL6kJ_m-B1Q7uCvZaZkNM-SA1iVzOtkse1tcCSyhx8rtjSfn4vGLSLANkI-X8MjTLFYskTsw9bnZOuwsgSIj4sTniz-2i5A7yY6tbwGV6Nx-qGEjxaBb-MuPavopw',
+        method: 'USDT TRC20',
+        image: 'https://community.akamai.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpovbSsLQJf2PLacDBA5ciJlY20k_jkI7fUhFRd4cJ5nqeYrN2m2wK1_Us5Z2r1d46dd1M8Y13YqFi9wO_p0J67vM6bzSA26Sg8pSGKJ7_F_vA/512fx384f',
+        fallbackImage: 'https://community.akamai.steamstatic.com/economy/image/i0CoZ81Ui0m-9KwlBY1L_18myuGuq1wfhWSaZgMttyVfPaERSR0Wqmu7LAocGIGz3UqlXOLrxM-vMGmW8VNxu5Dx60noTyL6kJ_m-B1Q7uCvZaZkNM-SA1iVzOtkse1tcCSyhx8rtjSfn4vGLSLANkI-X8MjTLFYskTsw9bnZOuwsgSIj4sTniz-2i5A7yY6tbwGV6Nx-qGEjxaBb-MuPavopw',
         rarityColor: '#eb4b4b',
       },
     ];
@@ -68,6 +73,7 @@ export const LivePayoutsFeed: React.FC = () => {
         methodIcon: 'usdt',
         timeAgo: 'Just now',
         image: randomSkin.image,
+        fallbackImage: (randomSkin as any).fallbackImage,
         rarityColor: randomSkin.rarityColor,
         txHash: `0x${Math.random().toString(16).substring(2, 6)}...${Math.random().toString(16).substring(2, 6)}`,
       };
@@ -79,7 +85,7 @@ export const LivePayoutsFeed: React.FC = () => {
   }, []);
 
   return (
-    <section id="live-payouts" className="py-12 bg-[#070A0E] relative overflow-hidden">
+    <section id="live-payouts" className="py-20 sm:py-24 bg-[#070A0E] relative overflow-hidden">
       
       {/* Background Accent */}
       <div className="absolute top-1/2 left-1/3 -translate-y-1/2 w-96 h-96 bg-emerald-500/5 blur-[120px] rounded-full pointer-events-none" />
@@ -95,32 +101,32 @@ export const LivePayoutsFeed: React.FC = () => {
 
             <div>
               <h2 className="text-xl sm:text-2xl font-bold font-['Space_Grotesk'] text-white flex items-center gap-2">
-                Live Instant Payouts Feed
-                <span className="text-xs font-['JetBrains_Mono'] bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full border border-emerald-500/30 font-semibold">
-                  REAL-TIME ON-CHAIN & FIAT
+                {t('feed.title')}
+                <span className="text-[10px] font-['JetBrains_Mono'] bg-emerald-500/15 text-emerald-400 px-2 py-0.5 rounded-full border border-emerald-500/30 font-semibold">
+                  {t('feed.badge')}
                 </span>
               </h2>
               <p className="text-xs text-slate-400 font-normal">
-                Transparent live stream of verified trades settled to user wallets and cards in the past 10 minutes.
+                {t('feed.subtitle')}
               </p>
             </div>
           </div>
 
           <div className="flex items-center gap-4 text-xs font-['JetBrains_Mono'] text-slate-400 self-start sm:self-auto">
-            <div className="flex items-center gap-1.5 bg-slate-900/80 px-3 py-1.5 rounded-lg border border-slate-800">
+            <div className="flex items-center gap-1.5 bg-slate-900/60 px-3 py-1.5 rounded-lg border border-white/[0.06]">
               <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
-              <span>24h Paid: <strong className="text-emerald-400 font-bold">$412,890.00</strong></span>
+              <span>{t('feed.paid24h')} <strong className="text-emerald-400 font-bold">$412,890.00</strong></span>
             </div>
-            <div className="hidden md:flex items-center gap-1.5 bg-slate-900/80 px-3 py-1.5 rounded-lg border border-slate-800">
+            <div className="hidden md:flex items-center gap-1.5 bg-slate-900/60 px-3 py-1.5 rounded-lg border border-white/[0.06]">
               <Clock className="w-3.5 h-3.5 text-cyan-400" />
-              <span>Median Payout Speed: <strong className="text-cyan-400 font-bold">41 sec</strong></span>
+              <span>{t('feed.medianSpeed')} <strong className="text-cyan-400 font-bold">41s</strong></span>
             </div>
           </div>
 
         </div>
       </div>
 
-      {/* Horizontal Carousel of Payout Cards with Framer Motion Layout animations */}
+      {/* Horizontal Carousel of Payout Cards */}
       <div className="relative w-full overflow-x-auto no-scrollbar pb-4 pt-1 px-4 sm:px-6 lg:px-8">
         <div className="flex gap-4 w-max">
           <AnimatePresence initial={false}>
@@ -131,41 +137,41 @@ export const LivePayoutsFeed: React.FC = () => {
                 initial={{ opacity: 0, scale: 0.8, x: -60 }}
                 animate={{ opacity: 1, scale: 1, x: 0 }}
                 exit={{ opacity: 0, scale: 0.8 }}
-                transition={{ duration: 0.45, ease: 'easeOut' }}
-                whileHover={{ y: -4, borderColor: 'rgba(16, 185, 129, 0.6)' }}
-                className="group relative w-72 rounded-2xl bg-slate-900/70 border border-slate-800/80 backdrop-blur-md p-4 transition-all duration-200 shadow-lg hover:shadow-[0_10px_25px_rgba(16,185,129,0.15)] flex flex-col justify-between"
+                transition={{ duration: 0.4, ease: 'easeOut' }}
+                whileHover={{ y: -3, borderColor: 'rgba(16, 185, 129, 0.4)' }}
+                className="group relative w-72 rounded-2xl bg-slate-900/60 border border-white/[0.06] backdrop-blur-md p-4 transition-all duration-200 shadow-lg hover:shadow-[0_10px_25px_rgba(16,185,129,0.12)] flex flex-col justify-between"
               >
                 {/* Rarity Top Glow Bar */}
                 <div 
-                  className="absolute top-0 left-4 right-4 h-0.5 rounded-t-full opacity-70 group-hover:opacity-100 transition-opacity"
+                  className="absolute top-0 left-4 right-4 h-0.5 rounded-t-full opacity-60 group-hover:opacity-100 transition-opacity"
                   style={{ backgroundColor: item.rarityColor }}
                 />
 
                 {/* Card Top: Method & Timestamp */}
                 <div className="flex items-center justify-between text-[11px] mb-2 font-['JetBrains_Mono']">
-                  <span className="px-2 py-0.5 rounded bg-slate-800/90 text-slate-300 border border-slate-700/50 flex items-center gap-1">
+                  <span className="px-2 py-0.5 rounded bg-slate-800/80 text-slate-300 border border-white/[0.06] flex items-center gap-1">
                     <Zap className="w-3 h-3 text-emerald-400" />
                     {item.method}
                   </span>
                   <span className="text-slate-400 flex items-center gap-1">
                     <Clock className="w-3 h-3 text-slate-500" />
-                    {item.timeAgo}
+                    {item.timeAgo === 'Just now' ? t('feed.justNow') : item.timeAgo}
                   </span>
                 </div>
 
-                {/* Weapon Preview Area */}
+                {/* Weapon Preview Area with SkinImage */}
                 <div className="relative h-24 my-1 flex items-center justify-center">
                   <div className="absolute inset-0 bg-gradient-to-b from-transparent via-emerald-500/5 to-transparent rounded-xl" />
-                  <img
+                  <SkinImage
                     src={item.image}
+                    fallback={item.fallbackImage}
                     alt={`${item.weapon} | ${item.skinName}`}
-                    className="max-h-20 w-auto object-contain filter drop-shadow-[0_8px_16px_rgba(0,0,0,0.7)] group-hover:scale-105 transition-transform duration-300"
-                    loading="lazy"
+                    className="max-h-20 w-auto object-contain filter drop-shadow-[0_8px_16px_rgba(0,0,0,0.7)] group-hover:scale-105 transition-transform duration-200"
                   />
                 </div>
 
                 {/* Card Bottom: Weapon Name, Float & Green Payout Amount */}
-                <div className="pt-2 border-t border-slate-800/60 flex items-end justify-between">
+                <div className="pt-2 border-t border-white/[0.06] flex items-end justify-between">
                   <div className="text-left overflow-hidden pr-2">
                     <div className="text-[10px] uppercase font-['JetBrains_Mono'] text-slate-400 truncate">
                       {item.weapon}
@@ -176,7 +182,7 @@ export const LivePayoutsFeed: React.FC = () => {
                     
                     {/* Float badge */}
                     <div className="flex items-center gap-1.5 mt-1 font-['JetBrains_Mono'] text-[10px]">
-                      <span className="px-1.5 py-0.2 rounded bg-slate-800 text-slate-300 border border-slate-700 font-bold">
+                      <span className="px-1.5 py-0.2 rounded bg-slate-800 text-slate-300 border border-white/[0.06] font-bold">
                         {item.wear}
                       </span>
                       <span className="text-slate-500">
@@ -187,7 +193,7 @@ export const LivePayoutsFeed: React.FC = () => {
 
                   <div className="text-right shrink-0">
                     <span className="text-[10px] font-['JetBrains_Mono'] uppercase text-slate-500 block">
-                      Paid
+                      {t('feed.paid')}
                     </span>
                     <span className="text-sm sm:text-base font-extrabold font-['JetBrains_Mono'] text-emerald-400 drop-shadow-[0_0_8px_rgba(16,185,129,0.3)]">
                       +{formatPrice(item.amount)}

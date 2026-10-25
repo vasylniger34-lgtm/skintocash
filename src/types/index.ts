@@ -33,6 +33,7 @@ export interface CS2Skin {
   steamPrice: number;
   buffPrice: number;
   image: string;
+  fallbackImage?: string;
   isStatTrak?: boolean;
   phase?: string;
   patternIndex?: number;
@@ -52,6 +53,7 @@ export interface LivePayout {
   methodIcon: string;
   timeAgo: string;
   image: string;
+  fallbackImage?: string;
   rarityColor: string;
   txHash?: string;
 }

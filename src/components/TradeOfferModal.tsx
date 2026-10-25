@@ -15,6 +15,8 @@ import {
 import confetti from 'canvas-confetti';
 import type { CS2Skin, PaymentOption } from '../types';
 import { useCurrency } from '../context/CurrencyContext';
+import { useLanguage } from '../context/LanguageContext';
+import { SkinImage } from './SkinImage';
 
 interface TradeOfferModalProps {
   isOpen: boolean;
@@ -34,6 +36,7 @@ export const TradeOfferModal: React.FC<TradeOfferModalProps> = ({
   destinationAddress,
 }) => {
   const { formatPrice } = useCurrency();
+  const { t } = useLanguage();
   const [step, setStep] = useState<'sent' | 'confirming' | 'completed'>('sent');
   const [tokenCopied, setTokenCopied] = useState(false);
   const [countdown, setCountdown] = useState(300); // 5 min trade offer expiration
@@ -105,27 +108,27 @@ export const TradeOfferModal: React.FC<TradeOfferModalProps> = ({
           initial={{ opacity: 0, scale: 0.95, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 20 }}
-          className="relative w-full max-w-xl rounded-3xl bg-[#0B1017] border border-emerald-500/30 p-6 sm:p-8 shadow-[0_25px_60px_rgba(0,0,0,0.95),0_0_50px_rgba(16,185,129,0.25)] z-10 overflow-hidden"
+          className="relative w-full max-w-xl rounded-3xl bg-[#0B1017] border border-white/[0.08] p-6 sm:p-8 shadow-[0_25px_60px_rgba(0,0,0,0.95),0_0_50px_rgba(16,185,129,0.15)] z-10 overflow-hidden"
         >
           {/* Header Bar */}
-          <div className="flex items-center justify-between pb-4 border-b border-slate-800">
+          <div className="flex items-center justify-between pb-4 border-b border-white/[0.08]">
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center border border-emerald-500/40">
+              <div className="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center border border-emerald-500/30">
                 <Zap className="w-4 h-4 fill-emerald-400" />
               </div>
               <div>
                 <h3 className="text-lg font-bold font-['Space_Grotesk'] text-white">
-                  {step === 'completed' ? 'Instant Payout Dispatched!' : 'Trade Offer Sent to Steam'}
+                  {step === 'completed' ? t('trade.payoutDispatched') : t('trade.offerSent')}
                 </h3>
                 <span className="text-[11px] font-['JetBrains_Mono'] text-slate-400">
-                  Trade Offer ID: #{tradeOfferId}
+                  {t('trade.tradeOfferId')} #{tradeOfferId}
                 </span>
               </div>
             </div>
 
             <button
               onClick={handleModalClose}
-              className="p-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 hover:text-white transition-colors cursor-pointer"
+              className="p-2 rounded-xl bg-white/[0.03] border border-white/[0.08] text-slate-400 hover:text-white transition-colors cursor-pointer"
             >
               <X className="w-4 h-4" />
             </button>
@@ -136,15 +139,15 @@ export const TradeOfferModal: React.FC<TradeOfferModalProps> = ({
             <div className="py-4 space-y-4">
               
               {/* Anti-Scam Security Token Banner */}
-              <div className="p-4 rounded-2xl bg-emerald-950/40 border border-emerald-500/40 shadow-inner">
+              <div className="p-4 rounded-2xl bg-emerald-950/20 border border-emerald-500/30 shadow-inner">
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-300 font-['Space_Grotesk'] uppercase tracking-wider">
                       <ShieldCheck className="w-4 h-4 text-emerald-400" />
-                      Anti-API Scam Handshake Token
+                      {t('trade.antiScamToken')}
                     </div>
                     <p className="text-xs text-slate-300 mt-1">
-                      Check your Steam Guard Mobile Authenticator. Only accept if the security code matches:
+                      {t('trade.checkGuard')}
                     </p>
                   </div>
                   
@@ -159,20 +162,20 @@ export const TradeOfferModal: React.FC<TradeOfferModalProps> = ({
               </div>
 
               {/* Bot Details */}
-              <div className="flex items-center justify-between p-3.5 rounded-xl bg-slate-900/80 border border-slate-800 text-xs font-['JetBrains_Mono']">
+              <div className="flex items-center justify-between p-3.5 rounded-xl bg-white/[0.02] border border-white/[0.07] text-xs font-['JetBrains_Mono']">
                 <div className="flex items-center gap-2.5">
-                  <div className="w-7 h-7 rounded-lg bg-slate-800 flex items-center justify-center font-bold text-emerald-400 border border-slate-700">
+                  <div className="w-7 h-7 rounded-lg bg-white/[0.05] flex items-center justify-center font-bold text-emerald-400 border border-white/[0.08]">
                     🤖
                   </div>
                   <div>
                     <div className="text-white font-semibold">SkinToCash Bot #08</div>
-                    <div className="text-slate-400 text-[10px]">Steam Level 128 • Registered 2016</div>
+                    <div className="text-slate-400 text-[10px]">Steam Level 128 • Member since 2016</div>
                   </div>
                 </div>
 
                 <div className="text-right">
-                  <div className="text-slate-400 text-[10px]">Offer expires in:</div>
-                  <div className="text-amber-400 font-bold flex items-center gap-1">
+                  <div className="text-slate-400 text-[10px]">{t('trade.expiresIn')}</div>
+                  <div className="text-amber-400 font-bold flex items-center gap-1 justify-end">
                     <Clock className="w-3 h-3" />
                     {minutes}:{seconds < 10 ? `0${seconds}` : seconds}
                   </div>
@@ -182,15 +185,20 @@ export const TradeOfferModal: React.FC<TradeOfferModalProps> = ({
               {/* Selected Skins Preview */}
               <div>
                 <div className="text-[11px] font-['Space_Grotesk'] uppercase tracking-wider text-slate-400 mb-2 font-semibold">
-                  Items In This Transaction ({selectedSkins.length})
+                  {t('trade.itemsInTx')} ({selectedSkins.length})
                 </div>
                 <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
                   {selectedSkins.map((s) => (
                     <div
                       key={s.id}
-                      className="shrink-0 w-24 p-2 rounded-xl bg-slate-900 border border-slate-800 text-center"
+                      className="shrink-0 w-24 p-2 rounded-xl bg-white/[0.02] border border-white/[0.07] text-center"
                     >
-                      <img src={s.image} alt={s.name} className="h-10 mx-auto object-contain my-1" />
+                      <SkinImage 
+                        src={s.image} 
+                        fallbackSrc={s.fallbackImage} 
+                        alt={s.name} 
+                        className="h-10 mx-auto object-contain my-1" 
+                      />
                       <div className="text-[10px] font-bold text-slate-200 truncate font-['Space_Grotesk']">{s.skinName}</div>
                       <div className="text-[9px] text-emerald-400 font-['JetBrains_Mono'] font-bold">
                         {formatPrice(s.price)}
@@ -201,15 +209,15 @@ export const TradeOfferModal: React.FC<TradeOfferModalProps> = ({
               </div>
 
               {/* Payout Destination Info */}
-              <div className="p-3.5 rounded-xl bg-slate-900/60 border border-slate-800 flex items-center justify-between text-xs">
+              <div className="p-3.5 rounded-xl bg-white/[0.02] border border-white/[0.07] flex items-center justify-between text-xs">
                 <div>
-                  <span className="text-slate-400 block text-[10px] uppercase font-['JetBrains_Mono']">Payout Target ({paymentMethod.name})</span>
+                  <span className="text-slate-400 block text-[10px] uppercase font-['JetBrains_Mono']">{t('trade.payoutTarget')} ({paymentMethod.name})</span>
                   <span className="text-white font-['JetBrains_Mono'] font-medium truncate max-w-[260px] inline-block">
                     {destinationAddress || 'Wallet / Card linked'}
                   </span>
                 </div>
                 <div className="text-right">
-                  <span className="text-slate-400 block text-[10px] uppercase font-['JetBrains_Mono']">Total Payout</span>
+                  <span className="text-slate-400 block text-[10px] uppercase font-['JetBrains_Mono']">{t('trade.totalPayout')}</span>
                   <span className="text-base font-extrabold text-emerald-400 font-['JetBrains_Mono']">
                     {formatPrice(totalPayout)}
                   </span>
@@ -221,22 +229,22 @@ export const TradeOfferModal: React.FC<TradeOfferModalProps> = ({
                 <button
                   disabled={step === 'confirming'}
                   onClick={handleSimulateConfirm}
-                  className="w-full py-3.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 text-slate-950 font-['Space_Grotesk'] font-bold text-sm tracking-wide shadow-[0_0_25px_rgba(16,185,129,0.4)] flex items-center justify-center gap-2 cursor-pointer transition-all"
+                  className="w-full py-3.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-['Space_Grotesk'] font-bold text-sm tracking-wide shadow-[0_0_25px_rgba(16,185,129,0.35)] flex items-center justify-center gap-2 cursor-pointer transition-all"
                 >
                   {step === 'confirming' ? (
                     <>
                       <RefreshCw className="w-4 h-4 animate-spin text-slate-950" />
-                      <span>Verifying Mobile Steam Guard Trade...</span>
+                      <span>{t('trade.verifying')}</span>
                     </>
                   ) : (
                     <>
-                      <span>Simulate Steam Guard Trade Acceptance</span>
+                      <span>{t('trade.simulateConfirm')}</span>
                       <ArrowRight className="w-4 h-4" />
                     </>
                   )}
                 </button>
                 <p className="text-[11px] text-center text-slate-500 mt-2">
-                  In live mode, opening Steam Mobile App will show the trade offer with token <strong className="text-emerald-400 font-['JetBrains_Mono']">{securityToken}</strong>.
+                  {t('trade.liveModeHint')} <strong className="text-emerald-400 font-['JetBrains_Mono']">{securityToken}</strong>.
                 </p>
               </div>
 
@@ -244,27 +252,27 @@ export const TradeOfferModal: React.FC<TradeOfferModalProps> = ({
           ) : (
             /* Completed Screen */
             <div className="py-6 text-center space-y-4">
-              <div className="w-16 h-16 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center mx-auto border border-emerald-500/40 shadow-[0_0_30px_rgba(16,185,129,0.4)]">
+              <div className="w-16 h-16 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center mx-auto border border-emerald-500/30 shadow-[0_0_30px_rgba(16,185,129,0.3)]">
                 <CheckCircle2 className="w-8 h-8" />
               </div>
 
               <div>
                 <h3 className="text-2xl font-bold font-['Space_Grotesk'] text-white">
-                  Payment Successfully Sent!
+                  {t('trade.successTitle')}
                 </h3>
                 <p className="text-xs text-slate-300 max-w-sm mx-auto mt-1">
-                  Your funds have been dispatched via <strong className="text-emerald-400">{paymentMethod.name}</strong>.
+                  {t('trade.successDesc')} <strong className="text-emerald-400">{paymentMethod.name}</strong>.
                 </p>
               </div>
 
               {/* Receipt details */}
-              <div className="bg-slate-900/90 rounded-2xl p-4 border border-emerald-500/20 text-left space-y-2.5 font-['JetBrains_Mono'] text-xs">
-                <div className="flex justify-between pb-2 border-b border-slate-800">
-                  <span className="text-slate-400">Total Net Dispatched:</span>
+              <div className="bg-white/[0.02] rounded-2xl p-4 border border-white/[0.07] text-left space-y-2.5 font-['JetBrains_Mono'] text-xs">
+                <div className="flex justify-between pb-2 border-b border-white/[0.06]">
+                  <span className="text-slate-400">{t('trade.netDispatched')}</span>
                   <span className="text-emerald-400 font-bold text-sm">{formatPrice(totalPayout)}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-400">Transaction ID:</span>
+                  <span className="text-slate-400">{t('trade.txId')}</span>
                   <span className="text-slate-200">TX-8924018241940</span>
                 </div>
                 <div className="flex justify-between">
@@ -274,7 +282,7 @@ export const TradeOfferModal: React.FC<TradeOfferModalProps> = ({
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-400">Execution Speed:</span>
+                  <span className="text-slate-400">{t('trade.speed')}</span>
                   <span className="text-emerald-400 font-bold">34 seconds</span>
                 </div>
               </div>
@@ -282,16 +290,16 @@ export const TradeOfferModal: React.FC<TradeOfferModalProps> = ({
               <div className="pt-2 flex gap-3">
                 <button
                   onClick={handleModalClose}
-                  className="flex-1 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-semibold font-['Space_Grotesk'] transition-colors cursor-pointer"
+                  className="flex-1 py-3 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-white text-xs font-semibold font-['Space_Grotesk'] transition-colors cursor-pointer border border-white/[0.08]"
                 >
-                  Sell More Skins
+                  {t('trade.sellMore')}
                 </button>
                 <a
                   href="#reviews-section"
                   onClick={handleModalClose}
                   className="flex-1 py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-bold font-['Space_Grotesk'] shadow-md transition-colors flex items-center justify-center gap-1"
                 >
-                  Leave a Review
+                  {t('trade.leaveReview')}
                 </a>
               </div>
             </div>
