@@ -1,11 +1,11 @@
 import React from 'react';
 import { 
-  Zap, 
   ShieldCheck, 
   Lock, 
   Server, 
   ArrowUp 
 } from 'lucide-react';
+import { LogoIcon } from './LogoIcon';
 import { useLanguage } from '../context/LanguageContext';
 
 interface FooterProps {
@@ -57,8 +57,8 @@ export const Footer: React.FC<FooterProps> = ({ onScrollToSection }) => {
           {/* Brand info (2 cols) */}
           <div className="lg:col-span-2 space-y-4">
             <div className="flex items-center gap-3">
-              <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-emerald-500/10 border border-emerald-400/30 text-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.2)]">
-                <Zap className="w-5 h-5 fill-emerald-400" />
+              <div className="flex items-center justify-center filter drop-shadow-[0_0_12px_rgba(16,185,129,0.3)]">
+                <LogoIcon size={34} />
               </div>
               <div className="font-['Space_Grotesk'] tracking-tight font-extrabold text-xl text-white">
                 SkinTo<span className="text-emerald-400 drop-shadow-[0_0_12px_rgba(16,185,129,0.4)]">Cash</span>

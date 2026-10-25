@@ -12,9 +12,13 @@ import { TrustpilotReviews } from './components/TrustpilotReviews';
 import { FAQSection } from './components/FAQSection';
 import { Footer } from './components/Footer';
 import { SteamModal } from './components/SteamModal';
+import { BonusPromoModal } from './components/BonusPromoModal';
 
 export function App() {
   const [isSteamModalOpen, setIsSteamModalOpen] = useState(false);
+  const [isBonusModalOpen, setIsBonusModalOpen] = useState(false);
+  const [isBonusApplied, setIsBonusApplied] = useState(false);
+  const [activeTradeUrl, setActiveTradeUrl] = useState<string>('https://steamcommunity.com/tradeoffer/new/?partner=184920412&token=9X4bK2sM');
 
   const scrollToSection = (id: string) => {
     const el = document.getElementById(id);
@@ -23,8 +27,23 @@ export function App() {
     }
   };
 
-  const handleScanInventory = (_tradeUrl: string) => {
+  const handleScanInventory = (tradeUrl: string) => {
+    if (tradeUrl) {
+      setActiveTradeUrl(tradeUrl);
+    }
+    // If newcomer bonus has not yet been applied, show the bonus modal
+    if (!isBonusApplied) {
+      setIsBonusModalOpen(true);
+    }
     scrollToSection('inventory-sandbox');
+  };
+
+  const handleOpenSellFlow = () => {
+    if (!isBonusApplied) {
+      setIsBonusModalOpen(true);
+    } else {
+      setIsSteamModalOpen(true);
+    }
   };
 
   return (
@@ -32,16 +51,19 @@ export function App() {
       <CurrencyProvider>
         <div className="min-h-screen bg-[#070A0E] text-[#E5E7EB] font-sans antialiased overflow-x-hidden selection:bg-emerald-500/30 selection:text-emerald-300">
           
-          {/* Sticky Glassmorphic Navbar */}
+          {/* Sticky Glassmorphic Navbar with Custom SVG Emblem */}
           <Navbar
-            onOpenSteamModal={() => setIsSteamModalOpen(true)}
+            onOpenSteamModal={handleOpenSellFlow}
             onScrollToSection={scrollToSection}
           />
 
-          {/* Hero Section */}
+          {/* Hero Section with 3D Tilting Rotating Showcase Card */}
           <Hero
             onScanInventory={handleScanInventory}
-            onOpenSteamModal={() => setIsSteamModalOpen(true)}
+            onOpenSteamModal={handleOpenSellFlow}
+            onTriggerSellModal={() => {
+              if (!isBonusApplied) setIsBonusModalOpen(true);
+            }}
           />
 
           {/* Infinite Dual-Direction Payment Methods Marquee */}
@@ -50,8 +72,12 @@ export function App() {
           {/* Live Real-Time Payouts Feed */}
           <LivePayoutsFeed />
 
-          {/* Core Interactive Inventory Valuation & Cashout Sandbox */}
-          <InventorySandbox />
+          {/* Core Interactive Inventory Valuation & Cashout Sandbox with Real Steam Sync */}
+          <InventorySandbox 
+            tradeUrl={activeTradeUrl}
+            isBonusApplied={isBonusApplied}
+            onOpenBonusModal={() => setIsBonusModalOpen(true)}
+          />
 
           {/* Why Players Choose Us Bento Grid with Cursor Spotlight */}
           <WhyChooseUs />
@@ -73,6 +99,16 @@ export function App() {
             isOpen={isSteamModalOpen}
             onClose={() => setIsSteamModalOpen(false)}
             onSuccess={handleScanInventory}
+          />
+
+          {/* Newcomer +8% Bonus Promo Modal (Faithful to User Screenshot) */}
+          <BonusPromoModal
+            isOpen={isBonusModalOpen}
+            onClose={() => setIsBonusModalOpen(false)}
+            onApplyBonus={() => {
+              setIsBonusApplied(true);
+              scrollToSection('inventory-sandbox');
+            }}
           />
 
         </div>

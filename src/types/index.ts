@@ -8,7 +8,7 @@ export interface CurrencyConfig {
   suffix: string;
 }
 
-export type RarityType = 'Contraband' | 'Covert' | 'Extraordinary' | 'Classified' | 'Restricted' | 'Mil-Spec';
+export type RarityType = 'Contraband' | 'Covert' | 'Extraordinary' | 'Classified' | 'Restricted' | 'Mil-Spec' | 'Industrial' | 'Consumer';
 
 export interface Sticker {
   name: string;

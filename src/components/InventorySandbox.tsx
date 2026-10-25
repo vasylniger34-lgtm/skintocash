@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Zap, 
@@ -10,7 +10,9 @@ import {
   ShieldCheck, 
   ArrowRight,
   CheckSquare,
-  Square
+  Square,
+  RefreshCw,
+  Gift
 } from 'lucide-react';
 import { MOCK_CS2_INVENTORY } from '../data/skinsData';
 import { FIAT_PAYMENT_METHODS, CRYPTO_PAYMENT_METHODS } from '../data/paymentMethods';
@@ -20,14 +22,30 @@ import { useLanguage } from '../context/LanguageContext';
 import { SkinInspectModal } from './SkinInspectModal';
 import { TradeOfferModal } from './TradeOfferModal';
 import { SkinImage } from './SkinImage';
+import { fetchSteamInventory } from '../services/steamService';
 
-export const InventorySandbox: React.FC = () => {
+interface InventorySandboxProps {
+  tradeUrl?: string;
+  isBonusApplied?: boolean;
+  onOpenBonusModal?: () => void;
+}
+
+export const InventorySandbox: React.FC<InventorySandboxProps> = ({
+  tradeUrl,
+  isBonusApplied = false,
+  onOpenBonusModal,
+}) => {
   const { formatPrice } = useCurrency();
   const { t } = useLanguage();
-  const [skins] = useState<CS2Skin[]>(MOCK_CS2_INVENTORY);
+  const [skins, setSkins] = useState<CS2Skin[]>(MOCK_CS2_INVENTORY);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(
     new Set(['skin-karambit-gamma-emerald', 'skin-m4a1-printstream', 'skin-butterfly-fade'])
   );
+
+  // Steam API Sync Status & Player Info
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [playerInfo, setPlayerInfo] = useState<{ personaname: string; avatar: string } | null>(null);
+  const [syncStatusMessage, setSyncStatusMessage] = useState<string | null>(null);
   
   // Filtering & Sorting
   const [activeCategory, setActiveCategory] = useState<string>('all');
@@ -39,6 +57,45 @@ export const InventorySandbox: React.FC = () => {
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<PaymentOption>(CRYPTO_PAYMENT_METHODS[0]); // USDT TRC20 default
   const [destinationInput, setDestinationInput] = useState('0x71C...b92F4 (TRC-20)');
   const [isCashoutModalOpen, setIsCashoutModalOpen] = useState(false);
+
+  // Effect: When tradeUrl changes, fetch real inventory via Steam Service
+  useEffect(() => {
+    if (!tradeUrl) return;
+
+    let isMounted = true;
+    setIsSyncing(true);
+
+    fetchSteamInventory(tradeUrl)
+      .then((res) => {
+        if (!isMounted) return;
+        setIsSyncing(false);
+
+        if (res.items && res.items.length > 0) {
+          setSkins(res.items);
+          // Auto-select first 3 items
+          setSelectedIds(new Set(res.items.slice(0, 3).map(s => s.id)));
+        }
+
+        if (res.player) {
+          setPlayerInfo(res.player);
+        }
+
+        if (res.status === 'private') {
+          setSyncStatusMessage('Steam profile is set to Private. Showing verified CS2 demo inventory.');
+        } else if (res.status === 'success') {
+          setSyncStatusMessage(`Live CS2 inventory synchronized (${res.totalCount} items evaluated).`);
+        } else {
+          setSyncStatusMessage(null);
+        }
+      })
+      .catch(() => {
+        if (isMounted) setIsSyncing(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [tradeUrl]);
 
   // Toggle skin selection
   const toggleSelect = (id: string) => {
@@ -97,13 +154,31 @@ export const InventorySandbox: React.FC = () => {
     return skins.filter(s => selectedIds.has(s.id));
   }, [skins, selectedIds]);
 
-  const totalCashoutValue = useMemo(() => {
+  const baseGrossValue = useMemo(() => {
     return selectedSkinsList.reduce((acc, curr) => acc + curr.price, 0);
   }, [selectedSkinsList]);
+
+  const bonusAmount = useMemo(() => {
+    return isBonusApplied ? baseGrossValue * 0.08 : 0;
+  }, [baseGrossValue, isBonusApplied]);
+
+  const totalCashoutValue = useMemo(() => {
+    return baseGrossValue + bonusAmount;
+  }, [baseGrossValue, bonusAmount]);
 
   const allAvailablePaymentMethods = useMemo(() => {
     return [...CRYPTO_PAYMENT_METHODS.slice(0, 4), ...FIAT_PAYMENT_METHODS.slice(0, 4)];
   }, []);
+
+  const handleTriggerCashout = () => {
+    if (selectedSkinsList.length === 0) return;
+
+    if (!isBonusApplied && onOpenBonusModal) {
+      onOpenBonusModal();
+    } else {
+      setIsCashoutModalOpen(true);
+    }
+  };
 
   return (
     <section id="inventory-sandbox" className="py-24 sm:py-32 bg-[#070A0E] relative overflow-hidden">
@@ -128,6 +203,54 @@ export const InventorySandbox: React.FC = () => {
           <p className="text-sm sm:text-base text-slate-300">
             {t('sandbox.subtitle')}
           </p>
+
+          {/* Player Steam Sync Status Bar */}
+          {(playerInfo || isSyncing || syncStatusMessage) && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mt-6 inline-flex flex-wrap items-center justify-center gap-3 px-4 py-2 rounded-2xl bg-white/[0.03] border border-white/[0.08] backdrop-blur-md text-xs font-['JetBrains_Mono'] text-slate-300"
+            >
+              {isSyncing ? (
+                <>
+                  <RefreshCw className="w-4 h-4 text-emerald-400 animate-spin" />
+                  <span>Syncing CS2 Inventory with Steam Web API...</span>
+                </>
+              ) : (
+                <>
+                  {playerInfo?.avatar && (
+                    <img 
+                      src={playerInfo.avatar} 
+                      alt={playerInfo.personaname} 
+                      className="w-5 h-5 rounded-full object-cover border border-emerald-400/40"
+                    />
+                  )}
+                  {playerInfo && (
+                    <span className="font-bold text-white">
+                      {playerInfo.personaname}
+                    </span>
+                  )}
+                  {syncStatusMessage && (
+                    <span className="text-emerald-400">
+                      • {syncStatusMessage}
+                    </span>
+                  )}
+                </>
+              )}
+            </motion.div>
+          )}
+
+          {/* Newcomer Bonus Alert Banner */}
+          {isBonusApplied && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-amber-500/15 border border-amber-500/40 text-amber-300 text-xs font-['JetBrains_Mono'] font-bold shadow-[0_0_15px_rgba(245,158,11,0.25)]"
+            >
+              <Gift className="w-4 h-4 text-amber-400" />
+              <span>🔥 +8% НОВИЧОК БОНУС АКТИВИРОВАН К СУММЕ ВЫПЛАТЫ</span>
+            </motion.div>
+          )}
         </div>
 
         {/* Sandbox Content Layout: Grid (8 cols) + Sticky Sidebar (4 cols) */}
@@ -154,7 +277,7 @@ export const InventorySandbox: React.FC = () => {
                     className={`px-3 py-1.5 rounded-xl text-xs font-['Space_Grotesk'] font-semibold transition-all cursor-pointer ${
                       activeCategory === cat.id
                         ? 'bg-emerald-500 text-slate-950 shadow-[0_0_15px_rgba(16,185,129,0.35)]'
-                        : 'bg-slate-900/60 text-slate-300 hover:text-white hover:bg-slate-800'
+                        : 'bg-white/[0.03] text-slate-300 hover:text-white hover:bg-white/[0.08] border border-white/[0.06]'
                     }`}
                   >
                     {cat.label}
@@ -162,189 +285,141 @@ export const InventorySandbox: React.FC = () => {
                 ))}
               </div>
 
-              {/* Search & Sort Controls */}
+              {/* Search Bar & Sort Dropdown */}
               <div className="flex items-center gap-2">
+                
+                {/* Search Input */}
                 <div className="relative flex-1 sm:w-44">
-                  <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                   <input
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder={t('sandbox.searchPlaceholder')}
-                    className="w-full pl-8 pr-3 py-1.5 rounded-xl bg-slate-900/80 border border-white/10 text-white text-xs font-['JetBrains_Mono'] focus:outline-none focus:border-emerald-400"
+                    className="w-full pl-8 pr-3 py-1.5 rounded-xl bg-white/[0.03] border border-white/[0.08] text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-400 font-['JetBrains_Mono']"
                   />
                 </div>
 
+                {/* Sort selector */}
                 <div className="relative">
                   <select
                     value={sortBy}
                     onChange={(e: any) => setSortBy(e.target.value)}
-                    className="appearance-none pl-3 pr-7 py-1.5 rounded-xl bg-slate-900/80 border border-white/10 text-white text-xs font-['JetBrains_Mono'] focus:outline-none focus:border-emerald-400 cursor-pointer"
+                    className="appearance-none pl-7 pr-7 py-1.5 rounded-xl bg-white/[0.03] border border-white/[0.08] text-xs text-slate-300 font-['Space_Grotesk'] font-medium focus:outline-none focus:border-emerald-400 cursor-pointer"
                   >
-                    <option value="price-desc">{t('sandbox.sortPriceDesc')}</option>
-                    <option value="price-asc">{t('sandbox.sortPriceAsc')}</option>
-                    <option value="float-asc">{t('sandbox.sortFloatAsc')}</option>
+                    <option value="price-desc" className="bg-[#0B1017]">{t('sandbox.sortPriceDesc')}</option>
+                    <option value="price-asc" className="bg-[#0B1017]">{t('sandbox.sortPriceAsc')}</option>
+                    <option value="float-asc" className="bg-[#0B1017]">{t('sandbox.sortFloatAsc')}</option>
                   </select>
-                  <ArrowUpDown className="w-3 h-3 text-slate-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  <ArrowUpDown className="w-3.5 h-3.5 text-slate-400 absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none" />
                 </div>
+
               </div>
 
             </div>
 
-            {/* Quick Multi-Select Action Bar */}
+            {/* Quick Action Bar (Select All / Item Count) */}
             <div className="flex items-center justify-between text-xs px-2 text-slate-400 font-['JetBrains_Mono']">
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={handleSelectAll}
-                  className="flex items-center gap-1.5 text-emerald-400 hover:text-emerald-300 font-medium transition-colors cursor-pointer"
-                >
-                  {selectedIds.size === filteredSkins.length ? (
-                    <>
-                      <CheckSquare className="w-4 h-4 text-emerald-400" />
-                      <span>{t('sandbox.deselectAll')}</span>
-                    </>
-                  ) : (
-                    <>
-                      <Square className="w-4 h-4 text-slate-400" />
-                      <span>{t('sandbox.selectAll')} ({filteredSkins.length})</span>
-                    </>
-                  )}
-                </button>
-                <span>•</span>
-                <span>
-                  {t('sandbox.selectedOf', { count: selectedIds.size, total: filteredSkins.length })}
-                </span>
-              </div>
+              <button
+                onClick={handleSelectAll}
+                className="flex items-center gap-1.5 text-slate-300 hover:text-emerald-400 transition-colors cursor-pointer"
+              >
+                {selectedIds.size === filteredSkins.length ? (
+                  <>
+                    <CheckSquare className="w-4 h-4 text-emerald-400" />
+                    <span>{t('sandbox.deselectAll')}</span>
+                  </>
+                ) : (
+                  <>
+                    <Square className="w-4 h-4" />
+                    <span>{t('sandbox.selectAll')}</span>
+                  </>
+                )}
+              </button>
 
-              <span className="hidden sm:inline text-slate-500">
-                {t('sandbox.clickHint')}
-              </span>
+              <div>
+                <span>{t('sandbox.selectedOf', { count: selectedIds.size, total: skins.length })}</span>
+                <span className="hidden sm:inline text-slate-600 ml-2">• {t('sandbox.clickHint')}</span>
+              </div>
             </div>
 
-            {/* CS2 Inventory Skins Grid */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3.5">
+            {/* CS2 Inventory Item Cards Grid */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-4">
               <AnimatePresence>
                 {filteredSkins.map((skin) => {
                   const isSelected = selectedIds.has(skin.id);
 
                   return (
                     <motion.div
-                      key={skin.id}
                       layout
-                      initial={{ opacity: 0, scale: 0.9 }}
+                      initial={{ opacity: 0, scale: 0.95 }}
                       animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0, scale: 0.9 }}
-                      whileHover={{ y: -3 }}
+                      exit={{ opacity: 0, scale: 0.95 }}
+                      whileHover={{ y: -4 }}
+                      key={skin.id}
                       onClick={() => toggleSelect(skin.id)}
-                      className={`group relative rounded-2xl p-3.5 flex flex-col justify-between cursor-pointer transition-all duration-200 select-none ${
+                      className={`relative rounded-2xl p-3.5 flex flex-col justify-between cursor-pointer transition-all duration-200 border select-none ${
                         isSelected
-                          ? 'bg-slate-900/90 border-2 border-emerald-400 shadow-[0_0_20px_rgba(16,185,129,0.3)]'
-                          : 'bg-slate-900/50 border border-white/[0.06] hover:border-emerald-500/40 hover:bg-slate-900/70'
+                          ? 'bg-[#0E1622] border-emerald-400 shadow-[0_0_20px_rgba(16,185,129,0.22)]'
+                          : 'bg-white/[0.02] border-white/[0.07] hover:border-emerald-500/30 hover:bg-white/[0.04]'
                       }`}
                     >
-                      {/* Top Rarity Border Line */}
-                      <div
-                        className="absolute top-0 left-3 right-3 h-0.5 rounded-t-full"
-                        style={{
-                          backgroundColor: skin.rarityColor,
-                          boxShadow: isSelected ? `0 0 10px ${skin.rarityColor}` : 'none',
-                        }}
-                      />
-
-                      {/* Card Header: Badges & Checkbox */}
-                      <div className="flex items-start justify-between gap-1 mb-2 pt-1">
-                        <div className="flex flex-wrap items-center gap-1">
-                          <span className="px-1.5 py-0.2 rounded text-[9px] font-['JetBrains_Mono'] font-bold bg-slate-800 text-slate-300 border border-white/[0.06]">
-                            {skin.wear}
-                          </span>
-
-                          {skin.isStatTrak && (
-                            <span className="px-1.5 py-0.2 rounded text-[9px] font-['JetBrains_Mono'] font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30">
-                              ST™
-                            </span>
-                          )}
-
-                          {skin.phase && (
-                            <span className="px-1.5 py-0.2 rounded text-[9px] font-['JetBrains_Mono'] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-                              {skin.phase}
-                            </span>
-                          )}
-                        </div>
-
-                        {/* Selection Checkbox */}
+                      {/* Top status bar: Checkbox + Float badge */}
+                      <div className="flex items-center justify-between mb-2">
                         <div
-                          className={`w-5 h-5 rounded-md flex items-center justify-center transition-all ${
+                          className={`w-5 h-5 rounded-md flex items-center justify-center transition-colors border ${
                             isSelected
-                              ? 'bg-emerald-500 text-slate-950 shadow-[0_0_10px_rgba(16,185,129,0.5)]'
-                              : 'border border-white/10 bg-slate-800/60 group-hover:border-slate-500'
+                              ? 'bg-emerald-500 border-emerald-400 text-slate-950'
+                              : 'bg-white/[0.04] border-white/[0.1] text-transparent'
                           }`}
                         >
-                          {isSelected && <Check className="w-3.5 h-3.5 stroke-[3]" />}
+                          <Check className="w-3.5 h-3.5 stroke-[3]" />
                         </div>
+
+                        <span className="text-[10px] font-['JetBrains_Mono'] px-1.5 py-0.5 rounded bg-white/[0.04] border border-white/[0.08] text-slate-300">
+                          {skin.wear} {skin.float.toFixed(3)}
+                        </span>
                       </div>
 
-                      {/* Weapon Image Preview with SkinImage */}
-                      <div className="relative h-28 my-2 flex items-center justify-center">
-                        <div
-                          className="absolute inset-2 blur-xl rounded-full opacity-20 pointer-events-none"
+                      {/* Weapon Image Preview with ambient glow */}
+                      <div className="relative h-28 my-1 flex items-center justify-center overflow-hidden">
+                        <div 
+                          className="absolute w-20 h-20 rounded-full blur-2xl opacity-20 pointer-events-none"
                           style={{ backgroundColor: skin.rarityColor }}
                         />
                         <SkinImage
                           src={skin.image}
                           fallback={skin.fallbackImage}
                           alt={skin.name}
-                          className="max-h-24 w-auto object-contain filter drop-shadow-[0_8px_16px_rgba(0,0,0,0.8)] group-hover:scale-105 transition-transform duration-200"
+                          className="max-h-24 max-w-full object-contain filter drop-shadow-[0_8px_16px_rgba(0,0,0,0.8)] transition-transform duration-300 group-hover:scale-105"
                         />
-
-                        {/* Quick Inspect Button */}
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setInspectingSkin(skin);
-                          }}
-                          className="absolute bottom-1 right-1 p-1.5 rounded-lg bg-slate-900/90 border border-white/10 text-slate-400 hover:text-white hover:border-emerald-400 transition-all opacity-0 group-hover:opacity-100 shadow-md cursor-pointer"
-                          title={t('sandbox.inspect')}
-                        >
-                          <Eye className="w-3.5 h-3.5" />
-                        </button>
                       </div>
 
-                      {/* Stickers Row (if present) */}
-                      {skin.stickers && skin.stickers.length > 0 && (
-                        <div className="flex items-center gap-1 mb-2 px-1">
-                          {skin.stickers.map((stk, idx) => (
-                            <img
-                              key={idx}
-                              src={stk.image}
-                              alt={stk.name}
-                              title={stk.name}
-                              className="w-4 h-4 object-contain filter drop-shadow-sm"
-                            />
-                          ))}
-                        </div>
-                      )}
-
-                      {/* Card Footer: Names, Float & Price */}
+                      {/* Details & Price Breakdown */}
                       <div className="pt-2 border-t border-white/[0.06]">
-                        <div className="text-[10px] uppercase font-['JetBrains_Mono'] text-slate-400 truncate">
+                        <div className="text-[10px] text-slate-400 font-['Space_Grotesk'] truncate">
                           {skin.weapon}
                         </div>
                         <div className="text-xs font-bold font-['Space_Grotesk'] text-white truncate">
                           {skin.skinName}
                         </div>
 
-                        <div className="flex items-center justify-between mt-2 pt-1">
-                          <span className="text-[10px] font-['JetBrains_Mono'] text-slate-500">
-                            {skin.float.toFixed(4)}
-                          </span>
-
-                          <span
-                            className={`text-xs sm:text-sm font-extrabold font-['JetBrains_Mono'] ${
-                              isSelected ? 'text-emerald-400' : 'text-slate-200'
-                            }`}
-                          >
+                        <div className="flex items-center justify-between mt-2">
+                          <span className="text-xs font-extrabold font-['JetBrains_Mono'] text-emerald-400">
                             {formatPrice(skin.price)}
                           </span>
+
+                          {/* Inspect button */}
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setInspectingSkin(skin);
+                            }}
+                            className="p-1 rounded-md hover:bg-white/[0.08] text-slate-400 hover:text-white transition-colors cursor-pointer"
+                            title={t('sandbox.inspect')}
+                          >
+                            <Eye className="w-3.5 h-3.5" />
+                          </button>
                         </div>
                       </div>
 
@@ -359,7 +434,7 @@ export const InventorySandbox: React.FC = () => {
           {/* Sticky Interactive Payout Calculation Panel (4 cols) */}
           <div className="lg:col-span-4 lg:sticky lg:top-24 space-y-4">
             
-            <div className="rounded-3xl glass-panel p-6 shadow-[0_20px_50px_rgba(0,0,0,0.85)]">
+            <div className="rounded-3xl glass-panel p-6 shadow-[0_20px_50px_rgba(0,0,0,0.85)] border border-white/[0.08]">
               
               {/* Header */}
               <div className="flex items-center justify-between pb-4 border-b border-white/[0.06]">
@@ -378,7 +453,7 @@ export const InventorySandbox: React.FC = () => {
               </div>
 
               {/* Dynamic Animated Value Counter */}
-              <div className="py-5 text-center bg-slate-900/60 rounded-2xl my-4 border border-white/[0.06]">
+              <div className="py-5 text-center bg-white/[0.02] rounded-2xl my-4 border border-white/[0.06]">
                 <span className="text-[11px] font-['Space_Grotesk'] uppercase tracking-wider text-slate-400 block mb-1">
                   {t('sandbox.totalValuation')} ({selectedSkinsList.length} {t('sandbox.items')})
                 </span>
@@ -386,6 +461,12 @@ export const InventorySandbox: React.FC = () => {
                 <div className="text-3xl sm:text-4xl font-extrabold font-['JetBrains_Mono'] text-emerald-400 tracking-tight drop-shadow-[0_0_15px_rgba(16,185,129,0.35)]">
                   {formatPrice(totalCashoutValue)}
                 </div>
+
+                {isBonusApplied && (
+                  <div className="mt-1 text-xs font-['JetBrains_Mono'] font-bold text-amber-400">
+                    Includes +8% Bonus: +{formatPrice(bonusAmount)}
+                  </div>
+                )}
 
                 <div className="mt-2 text-xs text-slate-400 font-['JetBrains_Mono'] flex items-center justify-center gap-2">
                   <span>{t('sandbox.steamEquiv')}</span>
@@ -409,10 +490,10 @@ export const InventorySandbox: React.FC = () => {
                       className={`p-2.5 rounded-xl text-left border transition-all text-xs flex items-center gap-2 cursor-pointer ${
                         selectedPaymentMethod.id === method.id
                           ? 'bg-emerald-500/15 border-emerald-400 text-white shadow-[0_0_12px_rgba(16,185,129,0.2)]'
-                          : 'bg-slate-900/60 border-white/[0.06] text-slate-300 hover:border-white/20'
+                          : 'bg-white/[0.02] border-white/[0.06] text-slate-300 hover:border-white/20'
                       }`}
                     >
-                      <div className="w-5 h-5 rounded-md bg-slate-800 flex items-center justify-center text-[10px] font-bold text-emerald-400 shrink-0">
+                      <div className="w-5 h-5 rounded-md bg-white/[0.05] flex items-center justify-center text-[10px] font-bold text-emerald-400 shrink-0">
                         {method.category === 'crypto' ? '₮' : '💳'}
                       </div>
                       <div className="overflow-hidden">
@@ -439,7 +520,7 @@ export const InventorySandbox: React.FC = () => {
                         ? 'Enter TRC-20 / ERC-20 / Solana Address'
                         : 'Enter 16-digit Card number or IBAN'
                     }
-                    className="w-full px-3 py-2.5 rounded-xl bg-slate-900 border border-white/10 text-white font-['JetBrains_Mono'] text-xs focus:outline-none focus:border-emerald-400"
+                    className="w-full px-3 py-2.5 rounded-xl bg-white/[0.03] border border-white/10 text-white font-['JetBrains_Mono'] text-xs focus:outline-none focus:border-emerald-400"
                   />
                   <div className="absolute right-2.5 top-1/2 -translate-y-1/2">
                     <ShieldCheck className="w-4 h-4 text-emerald-400" />
@@ -451,8 +532,14 @@ export const InventorySandbox: React.FC = () => {
               <div className="space-y-2 py-3 border-y border-white/[0.06] text-xs font-['JetBrains_Mono']">
                 <div className="flex justify-between text-slate-400">
                   <span>{t('sandbox.grossVal')}</span>
-                  <span className="text-slate-200">{formatPrice(totalCashoutValue)}</span>
+                  <span className="text-slate-200">{formatPrice(baseGrossValue)}</span>
                 </div>
+                {isBonusApplied && (
+                  <div className="flex justify-between text-amber-400 font-bold">
+                    <span>+8% Новичок Bonus:</span>
+                    <span>+{formatPrice(bonusAmount)}</span>
+                  </div>
+                )}
                 <div className="flex justify-between text-slate-400">
                   <span>{t('sandbox.platformComm')}</span>
                   <span className="text-emerald-400 font-bold">0.00% ($0.00)</span>
@@ -473,7 +560,7 @@ export const InventorySandbox: React.FC = () => {
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   disabled={selectedSkinsList.length === 0}
-                  onClick={() => setIsCashoutModalOpen(true)}
+                  onClick={handleTriggerCashout}
                   className={`w-full py-4 rounded-xl font-['Space_Grotesk'] font-bold text-sm tracking-wide shadow-lg flex items-center justify-center gap-2 cursor-pointer transition-all ${
                     selectedSkinsList.length > 0
                       ? 'bg-gradient-to-r from-emerald-500 via-emerald-400 to-teal-400 text-slate-950 shadow-[0_0_30px_rgba(16,185,129,0.45)] hover:shadow-[0_0_40px_rgba(16,185,129,0.65)] animate-shimmer'

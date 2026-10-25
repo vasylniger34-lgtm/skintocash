@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  Zap, 
+  Zap,
   Menu, 
   X, 
   ChevronDown, 
@@ -9,6 +9,7 @@ import {
   Flame, 
   Globe 
 } from 'lucide-react';
+import { LogoIcon } from './LogoIcon';
 import { useCurrency } from '../context/CurrencyContext';
 import { useLanguage, LANGUAGES } from '../context/LanguageContext';
 import type { Currency } from '../types';
@@ -58,8 +59,8 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenSteamModal, onScrollToSect
             className="flex items-center gap-2.5 cursor-pointer select-none group" 
             onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
           >
-            <div className="relative flex items-center justify-center w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-500/20 to-teal-500/10 border border-emerald-500/30 shadow-[0_0_15px_rgba(16,185,129,0.25)] transition-transform group-hover:scale-105">
-              <Zap className="w-4 h-4 text-emerald-400 fill-emerald-400" />
+            <div className="relative flex items-center justify-center transition-transform group-hover:scale-105 filter drop-shadow-[0_0_12px_rgba(16,185,129,0.35)]">
+              <LogoIcon size={34} />
             </div>
 
             <div className="font-['Space_Grotesk'] font-bold text-xl tracking-tight text-white flex items-center">

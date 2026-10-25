@@ -1,10 +1,13 @@
-import React, { useState } from 'react';
-import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
+import React, { useState, useEffect, useRef } from 'react';
+import { motion, AnimatePresence, useMotionValue, useSpring, useTransform } from 'framer-motion';
 import { 
   ArrowRight, 
   Star, 
   Link as LinkIcon, 
-  RefreshCw
+  RefreshCw,
+  ChevronLeft,
+  ChevronRight,
+  Sparkles
 } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 import { SkinImage } from './SkinImage';
@@ -12,29 +15,156 @@ import { SkinImage } from './SkinImage';
 interface HeroProps {
   onScanInventory: (tradeUrl: string) => void;
   onOpenSteamModal: () => void;
+  onTriggerSellModal?: () => void;
 }
 
-export const Hero: React.FC<HeroProps> = ({ onScanInventory, onOpenSteamModal }) => {
+interface ShowcaseSkin {
+  name: string;
+  weapon: string;
+  skinName: string;
+  float: string;
+  wear: string;
+  phase: string;
+  payout: string;
+  paymentRail: string;
+  speed: string;
+  glowColor: string;
+  accentBorder: string;
+  image: string;
+  fallback: string;
+}
+
+const SHOWCASE_SKINS: ShowcaseSkin[] = [
+  {
+    name: '★ Karambit | Gamma Doppler',
+    weapon: 'Karambit',
+    skinName: 'Gamma Doppler',
+    float: '0.0084 FN',
+    wear: 'Factory New',
+    phase: 'Emerald Phase',
+    payout: '$3,450.00',
+    paymentRail: 'USDT (TRC-20)',
+    speed: '42s',
+    glowColor: 'rgba(16, 185, 129, 0.45)',
+    accentBorder: 'rgba(16, 185, 129, 0.4)',
+    image: 'https://community.akamai.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpovbSsLQJf2PLacDBA5ciJlY20k_jkI7fUhFRd4cJ5nqeYrN2m2wK1_Us5Z2r1d46dd1M8Y13YqFi9wO_p0J67vM6bzSA26Sg8pSGKJ7_F_vA/512fx384f',
+    fallback: 'https://community.akamai.steamstatic.com/economy/image/i0CoZ81Ui0m-9KwlBY1L_18myuGuq1wfhWSaZgMttyVfPaERSR0Wqmu7LAocGIGz3UqlXOLrxM-vMGmW8VNxu5Dx60noTyL6kJ_m-B1Q7uCvZaZkNM-SA1iVzOtkse1tcCSyhx8rtjSfn4vGLSLANkI-X8MjTLFYskTsw9bnZOuwsgSIj4sTniz-2i5A7yY6tbwGV6Nx-qGEjxaBb-MuPavopw',
+  },
+  {
+    name: 'AWP | Dragon Lore',
+    weapon: 'AWP',
+    skinName: 'Dragon Lore',
+    float: '0.0142 FN',
+    wear: 'Factory New',
+    phase: 'Cobblestone Grail',
+    payout: '$9,820.00',
+    paymentRail: 'Bitcoin (BTC)',
+    speed: '58s',
+    glowColor: 'rgba(245, 158, 11, 0.45)',
+    accentBorder: 'rgba(245, 158, 11, 0.4)',
+    image: 'https://community.akamai.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpot621FAR17P7NdTRH-t26q4SZlvD7PYTQgXtu5Mx2gv2P9o6migzl_kI5Z2HzJ4eTdQE4N1zR_1K9wO_v1pC_vM7Mn3Rk7nZ2-z-DyIFJb74/512fx384f',
+    fallback: 'https://community.akamai.steamstatic.com/economy/image/i0CoZ81Ui0m-9KwlBY1L_18myuGuq1wfhWSaZgMttyVfPaERSR0Wqmu7LAocGJai0ki7VeTHjM-sJnCW8Vli_YTxuAm2FVL0n5X16SBf6O_4b_0-I6DDDGjHk7d9teFrSHn0wh4vtDyKnN6qIz33ZwhwDYJ-FLdfswbskIu3h1K78f_Gcw',
+  },
+  {
+    name: '★ Butterfly Knife | Fade',
+    weapon: 'Butterfly Knife',
+    skinName: 'Fade',
+    float: '0.0071 FN',
+    wear: 'Factory New',
+    phase: '100% Full Fade',
+    payout: '$4,190.00',
+    paymentRail: 'Visa Direct',
+    speed: '34s',
+    glowColor: 'rgba(236, 72, 153, 0.45)',
+    accentBorder: 'rgba(236, 72, 153, 0.4)',
+    image: 'https://community.akamai.steamstatic.com/economy/image/i0CoZ81Ui0m-9KwlBY1L_18myuGuq1wfhWSaZgMttyVfPaERSR0Wqmu7LAocGIGz3UqlXOLrxM-vMGmW8VNxu5Dx60noTyL6kJ_m-B1Q7uCvZaZkNM-SA1iVzOtkse1tcCSyhx8rtjSfn4vGLSLANkI-X8MjTLFYskTsw9bnZOuwsgSIj4sTniz-2i5A7yY6tbwGV6Nx-qGEjxaBb-MuPavopw',
+    fallback: 'https://community.akamai.steamstatic.com/economy/image/i0CoZ81Ui0m-9KwlBY1L_18myuGuq1wfhWSaZgMttyVfPaERSR0Wqmu7LAocGIGz3UqlXOLrxM-vMGmW8VNxu5Dx60noTyL6kJ_m-B1Q7uCvZaZkNM-SA1iVzOtkse1tcCSyhx8rtjSfn4vGLSLANkI-X8MjTLFYskTsw9bnZOuwsgSIj4sTniz-2i5A7yY6tbwGV6Nx-qGEjxaBb-MuPavopw',
+  },
+  {
+    name: 'M4A1-S | Printstream',
+    weapon: 'M4A1-S',
+    skinName: 'Printstream',
+    float: '0.0049 FN',
+    wear: 'Factory New',
+    phase: 'Pearlescent Tier-1',
+    payout: '$890.00',
+    paymentRail: 'Apple Pay',
+    speed: '29s',
+    glowColor: 'rgba(6, 182, 212, 0.45)',
+    accentBorder: 'rgba(6, 182, 212, 0.4)',
+    image: 'https://community.akamai.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpou-6kejhz2v_Nfz5H_uO1gb-Gw_alIITBhGJf_NZlmOzA-LP4jVC9vh5yY2GhI4fAdlA9aF3V-FfsxO_s1JTu7Z3BySZhuCgitC3D30vgN8_v6f0/512fx384f',
+    fallback: 'https://community.akamai.steamstatic.com/economy/image/i0CoZ81Ui0m-9KwlBY1L_18myuGuq1wfhWSaZgMttyVfPaERSR0Wqmu7LAocGIGz3UqlXOLrxM-vMGmW8VNxu5Dx60noTyL6kJ_m-B1Q7uCvZaZkNM-SA1iVzOtkse1tcCSyhx8rtjSfn4vGLSLANkI-X8MjTLFYskTsw9bnZOuwsgSIj4sTniz-2i5A7yY6tbwGV6Nx-qGEjxaBb-MuPavopw',
+  },
+  {
+    name: '★ Sport Gloves | Pandora\'s Box',
+    weapon: 'Sport Gloves',
+    skinName: 'Pandora\'s Box',
+    float: '0.0821 MW',
+    wear: 'Minimal Wear',
+    phase: 'Ultra Rare Indigo',
+    payout: '$5,420.00',
+    paymentRail: 'USDT (TRC-20)',
+    speed: '45s',
+    glowColor: 'rgba(139, 92, 246, 0.45)',
+    accentBorder: 'rgba(139, 92, 246, 0.4)',
+    image: 'https://community.akamai.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpovbSsLQJfwObaZzRU7dCJlo-cnvLLMrfummpD78A_3LGZo9vxiQ218xVuNWz3I9SWdwM8ZVrU81W8wO_p1pG5tJ_Am3Rr6Sg8pSGK5_5857A/512fx384f',
+    fallback: 'https://community.akamai.steamstatic.com/economy/image/i0CoZ81Ui0m-9KwlBY1L_18myuGuq1wfhWSaZgMttyVfPaERSR0Wqmu7LAocGIGz3UqlXOLrxM-vMGmW8VNxu5Dx60noTyL6kJ_m-B1Q7uCvZaZkNM-SA1iVzOtkse1tcCSyhx8rtjSfn4vGLSLANkI-X8MjTLFYskTsw9bnZOuwsgSIj4sTniz-2i5A7yY6tbwGV6Nx-qGEjxaBb-MuPavopw',
+  },
+];
+
+export const Hero: React.FC<HeroProps> = ({ 
+  onScanInventory, 
+  onOpenSteamModal,
+  onTriggerSellModal 
+}) => {
   const { t } = useLanguage();
   const [tradeUrl, setTradeUrl] = useState('');
   const [isScanning, setIsScanning] = useState(false);
 
-  // 3D Mouse Parallax effect for the right showcase
+  // Showcase Active Skin Index & Timer
+  const [activeSkinIndex, setActiveSkinIndex] = useState(0);
+  const activeSkin = SHOWCASE_SKINS[activeSkinIndex];
+
+  // Auto-rotation every 12 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setActiveSkinIndex((prev) => (prev + 1) % SHOWCASE_SKINS.length);
+    }, 12000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const handleNextSkin = () => {
+    setActiveSkinIndex((prev) => (prev + 1) % SHOWCASE_SKINS.length);
+  };
+
+  const handlePrevSkin = () => {
+    setActiveSkinIndex((prev) => (prev - 1 + SHOWCASE_SKINS.length) % SHOWCASE_SKINS.length);
+  };
+
+  // 3D Mouse Parallax & Tilt Effect for the Showcase Card
+  const cardRef = useRef<HTMLDivElement>(null);
   const x = useMotionValue(0);
   const y = useMotionValue(0);
+  const [mouseCoord, setMouseCoord] = useState({ x: 0, y: 0 });
 
-  const mouseX = useSpring(x, { stiffness: 100, damping: 20 });
-  const mouseY = useSpring(y, { stiffness: 100, damping: 20 });
+  const mouseX = useSpring(x, { stiffness: 120, damping: 18 });
+  const mouseY = useSpring(y, { stiffness: 120, damping: 18 });
 
-  const rotateX = useTransform(mouseY, [-250, 250], [6, -6]);
-  const rotateY = useTransform(mouseX, [-250, 250], [-6, 6]);
+  // 3D Rotation Angles
+  const rotateX = useTransform(mouseY, [-200, 200], [10, -10]);
+  const rotateY = useTransform(mouseX, [-200, 200], [-10, 10]);
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    const rect = e.currentTarget.getBoundingClientRect();
+    if (!cardRef.current) return;
+    const rect = cardRef.current.getBoundingClientRect();
     const centerX = rect.left + rect.width / 2;
     const centerY = rect.top + rect.height / 2;
     x.set(e.clientX - centerX);
     y.set(e.clientY - centerY);
+    setMouseCoord({
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top,
+    });
   };
 
   const handleMouseLeave = () => {
@@ -48,11 +178,14 @@ export const Hero: React.FC<HeroProps> = ({ onScanInventory, onOpenSteamModal })
 
   const handleScanSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (onTriggerSellModal) {
+      onTriggerSellModal();
+    }
     setIsScanning(true);
     setTimeout(() => {
       setIsScanning(false);
       onScanInventory(tradeUrl || 'demo');
-    }, 1200);
+    }, 1000);
   };
 
   return (
@@ -193,85 +326,150 @@ export const Hero: React.FC<HeroProps> = ({ onScanInventory, onOpenSteamModal })
 
           </div>
 
-          {/* Right Column: Frameless Floating Composition with Real Weapon Render */}
-          <div 
-            className="lg:col-span-5 relative flex items-center justify-center perspective-[1000px] min-h-[420px]"
-            onMouseMove={handleMouseMove}
-            onMouseLeave={handleMouseLeave}
-          >
+          {/* Right Column: 3D Tilting Glass Card with Smooth Rotating Weapons */}
+          <div className="lg:col-span-5 relative flex items-center justify-center perspective-[1200px] min-h-[440px]">
+            
             <motion.div
+              ref={cardRef}
+              onMouseMove={handleMouseMove}
+              onMouseLeave={handleMouseLeave}
               style={{
                 rotateX,
                 rotateY,
                 transformStyle: 'preserve-3d',
               }}
-              className="relative w-full max-w-[440px] h-[380px] flex items-center justify-center"
+              className="relative w-full max-w-[440px] rounded-3xl bg-[#0B1017]/90 border border-white/[0.08] p-6 sm:p-7 backdrop-blur-2xl shadow-[0_25px_60px_rgba(0,0,0,0.9),0_0_50px_rgba(16,185,129,0.12)] transition-colors duration-500 overflow-hidden group cursor-pointer"
+              onClick={handleNextSkin}
             >
-              {/* Atmospheric Ambient Emerald Radial Glow */}
-              <div className="absolute w-72 h-72 bg-emerald-500/20 blur-3xl rounded-full pointer-events-none" />
-              <div className="absolute w-96 h-96 bg-cyan-500/10 blur-[100px] rounded-full pointer-events-none" />
+              {/* Dynamic Cursor Spotlight Sheen */}
+              <div
+                className="pointer-events-none absolute -inset-px transition-opacity duration-300 opacity-60 group-hover:opacity-100"
+                style={{
+                  background: `radial-gradient(400px circle at ${mouseCoord.x}px ${mouseCoord.y}px, rgba(255, 255, 255, 0.06), transparent 70%)`,
+                }}
+              />
 
-              {/* Real Weapon Render Floating Freely (No Heavy Card Box!) */}
+              {/* Dynamic Background Glow matching current weapon accent */}
               <motion.div
-                animate={{
-                  y: [-10, 10, -10],
-                  rotate: [-1.5, 1.5, -1.5],
+                key={`glow-${activeSkin.name}`}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 0.35 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.6 }}
+                className="absolute inset-0 blur-3xl pointer-events-none -z-10"
+                style={{
+                  background: `radial-gradient(circle at 50% 50%, ${activeSkin.glowColor}, transparent 70%)`,
                 }}
-                transition={{
-                  duration: 5,
-                  repeat: Infinity,
-                  ease: 'easeInOut',
-                }}
-                className="relative z-20 w-80 sm:w-96 h-60 flex items-center justify-center cursor-pointer"
-                onClick={onOpenSteamModal}
-              >
-                <SkinImage
-                  src="https://community.akamai.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpovbSsLQJf2PLacDBA5ciJlY20k_jkI7fUhFRd4cJ5nqeYrN2m2wK1_Us5Z2r1d46dd1M8Y13YqFi9wO_p0J67vM6bzSA26Sg8pSGKJ7_F_vA/512fx384f"
-                  fallback="https://community.akamai.steamstatic.com/economy/image/i0CoZ81Ui0m-9KwlBY1L_18myuGuq1wfhWSaZgMttyVfPaERSR0Wqmu7LAocGIGz3UqlXOLrxM-vMGmW8VNxu5Dx60noTyL6kJ_m-B1Q7uCvZaZkNM-SA1iVzOtkse1tcCSyhx8rtjSfn4vGLSLANkI-X8MjTLFYskTsw9bnZOuwsgSIj4sTniz-2i5A7yY6tbwGV6Nx-qGEjxaBb-MuPavopw"
-                  alt="Karambit Gamma Doppler Emerald"
-                  className="w-full h-full object-contain filter drop-shadow-[0_15px_30px_rgba(16,185,129,0.45)] drop-shadow-[0_0_50px_rgba(6,182,212,0.25)] transition-transform duration-300 hover:scale-105"
-                />
-              </motion.div>
+              />
 
-              {/* ONLY 2 Minimalist Floating Glass Pills (Per User Directive) */}
-              
-              {/* Pill 1 (Top-Left): Item Title & Float */}
-              <motion.div
-                animate={{
-                  y: [5, -5, 5],
-                }}
-                transition={{
-                  duration: 4.2,
-                  repeat: Infinity,
-                  ease: 'easeInOut',
-                }}
-                className="absolute top-6 -left-2 z-30 px-3.5 py-2 rounded-xl bg-slate-900/80 border border-white/10 backdrop-blur-md shadow-[0_10px_25px_rgba(0,0,0,0.6)] flex items-center gap-2"
-              >
-                <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
-                <span className="font-['JetBrains_Mono'] text-xs font-bold text-white tracking-tight">
-                  {t('hero.cardPillTop')}
-                </span>
-              </motion.div>
+              {/* Top Controls Row: Wear pill + Manual Nav Arrows */}
+              <div className="flex items-center justify-between mb-4 relative z-20">
+                <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/[0.04] border border-white/[0.08] backdrop-blur-md">
+                  <span 
+                    className="w-2 h-2 rounded-full animate-pulse" 
+                    style={{ backgroundColor: activeSkin.accentBorder }}
+                  />
+                  <span className="font-['JetBrains_Mono'] text-[11px] font-bold text-white tracking-tight">
+                    {activeSkin.weapon} • {activeSkin.float}
+                  </span>
+                </div>
 
-              {/* Pill 2 (Bottom-Right): Payout & Speed */}
-              <motion.div
-                animate={{
-                  y: [-5, 5, -5],
-                }}
-                transition={{
-                  duration: 4.8,
-                  repeat: Infinity,
-                  ease: 'easeInOut',
-                  delay: 0.6,
-                }}
-                className="absolute bottom-6 -right-2 z-30 px-3.5 py-2 rounded-xl bg-slate-900/80 border border-white/10 backdrop-blur-md shadow-[0_10px_25px_rgba(0,0,0,0.6)] flex items-center gap-2"
+                {/* Arrow switches */}
+                <div 
+                  className="flex items-center gap-1"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <button
+                    onClick={handlePrevSkin}
+                    className="p-1.5 rounded-lg bg-white/[0.03] hover:bg-white/[0.08] border border-white/[0.07] text-slate-400 hover:text-white transition-colors cursor-pointer"
+                    title="Previous Skin"
+                  >
+                    <ChevronLeft className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    onClick={handleNextSkin}
+                    className="p-1.5 rounded-lg bg-white/[0.03] hover:bg-white/[0.08] border border-white/[0.07] text-slate-400 hover:text-white transition-colors cursor-pointer"
+                    title="Next Skin"
+                  >
+                    <ChevronRight className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Weapon Display Area with AnimatePresence for smooth transitions */}
+              <div className="relative h-60 sm:h-64 flex items-center justify-center my-1 overflow-hidden">
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={activeSkin.name}
+                    initial={{ opacity: 0, scale: 0.82, rotate: -3, y: 15 }}
+                    animate={{ opacity: 1, scale: 1, rotate: 0, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.88, rotate: 3, y: -15 }}
+                    transition={{
+                      duration: 0.45,
+                      ease: [0.16, 1, 0.3, 1],
+                    }}
+                    className="w-full h-full flex items-center justify-center relative"
+                  >
+                    {/* Weapon Image with glowing filter */}
+                    <SkinImage
+                      src={activeSkin.image}
+                      fallback={activeSkin.fallback}
+                      alt={activeSkin.name}
+                      className="max-h-52 sm:max-h-56 w-auto object-contain filter drop-shadow-[0_15px_30px_rgba(0,0,0,0.85)] select-none pointer-events-none transition-transform duration-300 hover:scale-105"
+                    />
+                  </motion.div>
+                </AnimatePresence>
+              </div>
+
+              {/* Bottom Card Metrics Banner */}
+              <div className="pt-3 border-t border-white/[0.06] flex items-center justify-between relative z-20">
+                <div>
+                  <div className="text-[10px] font-['Space_Grotesk'] uppercase tracking-wider text-slate-400 flex items-center gap-1">
+                    <Sparkles className="w-3 h-3 text-amber-400" />
+                    <span>{activeSkin.phase}</span>
+                  </div>
+                  <div className="text-lg font-bold font-['Space_Grotesk'] text-white truncate max-w-[190px]">
+                    {activeSkin.skinName}
+                  </div>
+                </div>
+
+                <div 
+                  className="text-right cursor-pointer group/payout"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onOpenSteamModal();
+                  }}
+                  title="Click to Sell This Item"
+                >
+                  <div className="text-[10px] font-['JetBrains_Mono'] text-slate-400 group-hover/payout:text-emerald-300 transition-colors">
+                    Instant Payout ({activeSkin.speed}) →
+                  </div>
+                  <div className="text-xl font-extrabold font-['JetBrains_Mono'] text-emerald-400 drop-shadow-[0_0_12px_rgba(16,185,129,0.4)]">
+                    {activeSkin.payout}
+                  </div>
+                </div>
+              </div>
+
+              {/* Pagination Dots Indicator */}
+              <div 
+                className="flex items-center justify-center gap-1.5 mt-4 pt-2"
+                onClick={(e) => e.stopPropagation()}
               >
-                <span className="font-['JetBrains_Mono'] text-xs font-bold text-emerald-400 tracking-tight">
-                  {t('hero.cardPillBottom')}
-                </span>
-              </motion.div>
+                {SHOWCASE_SKINS.map((_, i) => (
+                  <button
+                    key={i}
+                    onClick={() => setActiveSkinIndex(i)}
+                    className={`h-1.5 rounded-full transition-all duration-300 cursor-pointer ${
+                      activeSkinIndex === i 
+                        ? 'w-6 bg-emerald-400 shadow-[0_0_8px_rgba(16,185,129,0.6)]' 
+                        : 'w-1.5 bg-white/20 hover:bg-white/40'
+                    }`}
+                  />
+                ))}
+              </div>
 
             </motion.div>
+
           </div>
 
         </div>
