@@ -14,14 +14,25 @@ import { FAQSection } from './components/FAQSection';
 import { Footer } from './components/Footer';
 import { SteamModal } from './components/SteamModal';
 import { BonusPromoModal } from './components/BonusPromoModal';
-import { UserCabinetModal } from './components/UserCabinetModal';
+import { CabinetPage } from './pages/CabinetPage';
 
 function MainContent() {
-  const { user } = useAuth();
+  const { user, closeCabinet } = useAuth();
+  const [currentPath, setCurrentPath] = useState<string>(() => {
+    return typeof window !== 'undefined' ? window.location.pathname : '/';
+  });
   const [isSteamModalOpen, setIsSteamModalOpen] = useState(false);
   const [isBonusModalOpen, setIsBonusModalOpen] = useState(false);
   const [isBonusApplied, setIsBonusApplied] = useState(false);
   const [activeTradeUrl, setActiveTradeUrl] = useState<string>('demo');
+
+  useEffect(() => {
+    const handlePopState = () => {
+      setCurrentPath(window.location.pathname || '/');
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
 
   // When user logs in with Steam, automatically load their real inventory
   useEffect(() => {
@@ -34,6 +45,15 @@ function MainContent() {
   }, [user, activeTradeUrl]);
 
   const scrollToSection = (id: string) => {
+    if (currentPath !== '/') {
+      window.history.pushState({}, '', '/');
+      setCurrentPath('/');
+      setTimeout(() => {
+        const el = document.getElementById(id);
+        if (el) el.scrollIntoView({ behavior: 'smooth' });
+      }, 100);
+      return;
+    }
     const el = document.getElementById(id);
     if (el) {
       el.scrollIntoView({ behavior: 'smooth' });
@@ -44,19 +64,40 @@ function MainContent() {
     if (tradeUrl) {
       setActiveTradeUrl(tradeUrl);
     }
-    scrollToSection('inventory-sandbox');
+    if (currentPath !== '/') {
+      window.history.pushState({}, '', '/');
+      setCurrentPath('/');
+      setTimeout(() => {
+        const el = document.getElementById('inventory-sandbox');
+        if (el) el.scrollIntoView({ behavior: 'smooth' });
+      }, 100);
+    } else {
+      scrollToSection('inventory-sandbox');
+    }
   };
 
   const handleOpenSellFlow = () => {
     setIsSteamModalOpen(true);
   };
 
+  // If on /cabinet or /profile path: render standalone dedicated Cabinet page!
+  if (currentPath === '/cabinet' || currentPath === '/profile') {
+    return (
+      <CabinetPage
+        onNavigateHome={() => closeCabinet()}
+        onLoadInventoryAndGoHome={(target) => {
+          handleScanInventory(target);
+          closeCabinet();
+        }}
+      />
+    );
+  }
+
   return (
     <div className="min-h-screen bg-[#070A0E] text-[#E5E7EB] font-sans antialiased overflow-x-hidden selection:bg-emerald-500/30 selection:text-emerald-300">
       
       {/* Sticky Glassmorphic Navbar with Custom SVG Emblem */}
       <Navbar
-        onOpenSteamModal={handleOpenSellFlow}
         onScrollToSection={scrollToSection}
       />
 
@@ -105,9 +146,6 @@ function MainContent() {
         onSuccess={handleScanInventory}
       />
 
-      {/* User Personal Cabinet Modal */}
-      <UserCabinetModal onLoadInventoryToSandbox={handleScanInventory} />
-
       {/* Newcomer +8% Bonus Promo Modal (Faithful to User Screenshot) */}
       <BonusPromoModal
         isOpen={isBonusModalOpen}
@@ -135,4 +173,3 @@ export function App() {
 }
 
 export default App;
-

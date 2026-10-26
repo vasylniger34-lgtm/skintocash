@@ -116,10 +116,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           parsedUser = JSON.parse(decoded);
           localStorage.setItem(STORAGE_USER_KEY, JSON.stringify(parsedUser));
           
-          // Clean the hash from the browser bar seamlessly
-          window.history.replaceState(null, '', window.location.pathname + window.location.search);
-          
-          // Automatically open Cabinet to greet user
+          // Clean the hash and navigate directly to the /cabinet page
+          window.history.replaceState(null, '', '/cabinet');
+          window.dispatchEvent(new PopStateEvent('popstate'));
           setIsCabinetOpen(true);
         }
       }
@@ -133,8 +132,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           localStorage.setItem(STORAGE_USER_KEY, JSON.stringify(parsedUser));
           params.delete('auth_user');
           params.delete('steam_auth');
-          const newSearch = params.toString() ? `?${params.toString()}` : '';
-          window.history.replaceState(null, '', window.location.pathname + newSearch);
+          window.history.replaceState(null, '', '/cabinet');
+          window.dispatchEvent(new PopStateEvent('popstate'));
           setIsCabinetOpen(true);
         }
       }
@@ -245,8 +244,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setTransactions((prev) => [newTx, ...prev]);
   }, []);
 
-  const openCabinet = useCallback(() => setIsCabinetOpen(true), []);
-  const closeCabinet = useCallback(() => setIsCabinetOpen(false), []);
+  const openCabinet = useCallback(() => {
+    setIsCabinetOpen(true);
+    if (window.location.pathname !== '/cabinet') {
+      window.history.pushState({}, '', '/cabinet');
+      window.dispatchEvent(new PopStateEvent('popstate'));
+    }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, []);
+
+  const closeCabinet = useCallback(() => {
+    setIsCabinetOpen(false);
+    if (window.location.pathname !== '/') {
+      window.history.pushState({}, '', '/');
+      window.dispatchEvent(new PopStateEvent('popstate'));
+    }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, []);
 
   return (
     <AuthContext.Provider
