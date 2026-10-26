@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   X, 
@@ -7,24 +7,25 @@ import {
   ShieldCheck, 
   Copy, 
   ExternalLink, 
-  ArrowRight, 
   Zap, 
   Check, 
-  RefreshCw 
+  RefreshCw
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import type { CS2Skin, PaymentOption } from '../types';
 import { useCurrency } from '../context/CurrencyContext';
 import { useLanguage } from '../context/LanguageContext';
 import { SkinImage } from './SkinImage';
+import { OFFICIAL_STEAM_BOT, createDepositTradeSession, type DepositTradeSession } from '../data/steamBot';
 
 interface TradeOfferModalProps {
   isOpen: boolean;
   onClose: () => void;
   selectedSkins: CS2Skin[];
   totalPayout: number;
-  paymentMethod: PaymentOption;
-  destinationAddress: string;
+  paymentMethod?: PaymentOption;
+  destinationAddress?: string;
+  onTradeCompleted?: (session: DepositTradeSession) => void;
 }
 
 export const TradeOfferModal: React.FC<TradeOfferModalProps> = ({
@@ -34,21 +35,34 @@ export const TradeOfferModal: React.FC<TradeOfferModalProps> = ({
   totalPayout,
   paymentMethod,
   destinationAddress,
+  onTradeCompleted,
 }) => {
   const { formatPrice } = useCurrency();
   const { t } = useLanguage();
+
   const [step, setStep] = useState<'sent' | 'confirming' | 'completed'>('sent');
-  const [tokenCopied, setTokenCopied] = useState(false);
+  const [copiedField, setCopiedField] = useState<string | null>(null);
   const [countdown, setCountdown] = useState(300); // 5 min trade offer expiration
-  const securityToken = 'SKC-9824';
-  const tradeOfferId = '8492041289';
+
+  // Generate unique trade session for the current selection
+  const session = useMemo(() => {
+    return createDepositTradeSession(
+      selectedSkins,
+      totalPayout,
+      destinationAddress,
+      paymentMethod?.name || 'Виплата на баланс'
+    );
+  }, [selectedSkins, totalPayout, destinationAddress, paymentMethod]);
 
   useEffect(() => {
     if (isOpen) {
-      // Trigger festive celebration
+      setStep('sent');
+      setCountdown(300);
+
+      // Trigger initial celebration
       confetti({
-        particleCount: 80,
-        spread: 70,
+        particleCount: 70,
+        spread: 60,
         origin: { y: 0.6 },
         colors: ['#10B981', '#06B6D4', '#34D399', '#ffffff'],
       });
@@ -63,12 +77,21 @@ export const TradeOfferModal: React.FC<TradeOfferModalProps> = ({
 
   if (!isOpen) return null;
 
+  const handleCopy = (text: string, fieldId: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedField(fieldId);
+    setTimeout(() => setCopiedField(null), 2000);
+  };
+
   const handleSimulateConfirm = () => {
     setStep('confirming');
     setTimeout(() => {
       setStep('completed');
+      if (onTradeCompleted) {
+        onTradeCompleted(session);
+      }
       confetti({
-        particleCount: 120,
+        particleCount: 140,
         spread: 90,
         origin: { y: 0.5 },
         colors: ['#10B981', '#2DD4BF', '#FBBF24'],
@@ -79,12 +102,6 @@ export const TradeOfferModal: React.FC<TradeOfferModalProps> = ({
   const handleModalClose = () => {
     setStep('sent');
     onClose();
-  };
-
-  const copyToken = () => {
-    navigator.clipboard.writeText(securityToken);
-    setTokenCopied(true);
-    setTimeout(() => setTokenCopied(false), 2000);
   };
 
   const minutes = Math.floor(countdown / 60);
@@ -108,7 +125,7 @@ export const TradeOfferModal: React.FC<TradeOfferModalProps> = ({
           initial={{ opacity: 0, scale: 0.95, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 20 }}
-          className="relative w-full max-w-xl rounded-3xl bg-[#0B1017] border border-white/[0.08] p-6 sm:p-8 shadow-[0_25px_60px_rgba(0,0,0,0.95),0_0_50px_rgba(16,185,129,0.15)] z-10 overflow-hidden"
+          className="relative w-full max-w-xl max-h-[92vh] overflow-y-auto rounded-3xl bg-[#0B1017] border border-white/[0.08] p-6 sm:p-8 shadow-[0_25px_60px_rgba(0,0,0,0.95),0_0_50px_rgba(16,185,129,0.15)] z-10"
         >
           {/* Header Bar */}
           <div className="flex items-center justify-between pb-4 border-b border-white/[0.08]">
@@ -118,10 +135,10 @@ export const TradeOfferModal: React.FC<TradeOfferModalProps> = ({
               </div>
               <div>
                 <h3 className="text-lg font-bold font-['Space_Grotesk'] text-white">
-                  {step === 'completed' ? t('trade.payoutDispatched') : t('trade.offerSent')}
+                  {step === 'completed' ? 'Депозит успішно підтверджено!' : 'Офіційний Steam Трейд сформовано'}
                 </h3>
-                <span className="text-[11px] font-['JetBrains_Mono'] text-slate-400">
-                  {t('trade.tradeOfferId')} #{tradeOfferId}
+                <span className="text-[11px] font-['JetBrains_Mono'] text-emerald-400 font-semibold">
+                  Транзакція: {session.txId}
                 </span>
               </div>
             </div>
@@ -139,67 +156,97 @@ export const TradeOfferModal: React.FC<TradeOfferModalProps> = ({
             <div className="py-4 space-y-4">
               
               {/* Anti-Scam Security Token Banner */}
-              <div className="p-4 rounded-2xl bg-emerald-950/20 border border-emerald-500/30 shadow-inner">
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-300 font-['Space_Grotesk'] uppercase tracking-wider">
-                      <ShieldCheck className="w-4 h-4 text-emerald-400" />
-                      {t('trade.antiScamToken')}
-                    </div>
-                    <p className="text-xs text-slate-300 mt-1">
-                      {t('trade.checkGuard')}
-                    </p>
+              <div className="p-4 rounded-2xl bg-gradient-to-r from-emerald-950/40 to-teal-950/30 border border-emerald-500/40 shadow-inner space-y-2">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-300 font-['Space_Grotesk'] uppercase tracking-wider">
+                    <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
+                    <span>Секретний перевірочний код:</span>
                   </div>
                   
                   <button
-                    onClick={copyToken}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 font-['JetBrains_Mono'] font-bold text-sm hover:bg-emerald-500/30 transition-all shrink-0 cursor-pointer"
+                    onClick={() => handleCopy(session.securityCode, 'code')}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 font-['JetBrains_Mono'] font-extrabold text-base hover:bg-emerald-500/30 transition-all shrink-0 cursor-pointer"
                   >
-                    <span>{securityToken}</span>
-                    {tokenCopied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                    <span>🔐 {session.securityCode}</span>
+                    {copiedField === 'code' ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
                   </button>
                 </div>
+
+                <p className="text-[11px] text-slate-300 leading-relaxed">
+                  Звірте цей 4-значний код у повідомленні трейду в Steam. Якщо в отриманому обміні код <strong>відрізняється</strong> — відхиліть обмін, це може бути фішинг або підміна!
+                </p>
               </div>
 
-              {/* Bot Details */}
-              <div className="flex items-center justify-between p-3.5 rounded-xl bg-white/[0.02] border border-white/[0.07] text-xs font-['JetBrains_Mono']">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-7 h-7 rounded-lg bg-white/[0.05] flex items-center justify-center font-bold text-emerald-400 border border-white/[0.08]">
-                    🤖
+              {/* Bot Identity Card (Real Steam Bot: TheFLC) */}
+              <div className="p-4 rounded-2xl bg-white/[0.02] border border-white/[0.08] space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="relative shrink-0">
+                      <img
+                        src={OFFICIAL_STEAM_BOT.avatar}
+                        alt={OFFICIAL_STEAM_BOT.personaName}
+                        className="w-10 h-10 rounded-xl border border-emerald-500/40 object-cover"
+                      />
+                      <span className="absolute -bottom-1 -right-1 w-3 h-3 rounded-full bg-emerald-400 border-2 border-slate-950" />
+                    </div>
+
+                    <div>
+                      <div className="text-xs font-bold text-white font-['Space_Grotesk'] flex items-center gap-1.5">
+                        <span>Офіційний бот: {OFFICIAL_STEAM_BOT.personaName}</span>
+                        <span className="px-1.5 py-0.2 rounded bg-emerald-500/20 text-[9px] font-['JetBrains_Mono'] text-emerald-300 border border-emerald-500/30">
+                          VERIFIED BOT
+                        </span>
+                      </div>
+                      <div className="text-[10px] font-['JetBrains_Mono'] text-slate-400 mt-0.5">
+                        SteamID: {OFFICIAL_STEAM_BOT.steamId64} • Рівень {OFFICIAL_STEAM_BOT.level}
+                      </div>
+                    </div>
                   </div>
-                  <div>
-                    <div className="text-white font-semibold">SkinToCash Bot #08</div>
-                    <div className="text-slate-400 text-[10px]">Steam Level 128 • Member since 2016</div>
+
+                  <div className="text-right shrink-0">
+                    <div className="text-slate-400 text-[10px]">{t('trade.expiresIn')}</div>
+                    <div className="text-amber-400 font-bold flex items-center gap-1 justify-end font-['JetBrains_Mono'] text-xs">
+                      <Clock className="w-3 h-3" />
+                      <span>{minutes}:{seconds < 10 ? `0${seconds}` : seconds}</span>
+                    </div>
                   </div>
                 </div>
 
-                <div className="text-right">
-                  <div className="text-slate-400 text-[10px]">{t('trade.expiresIn')}</div>
-                  <div className="text-amber-400 font-bold flex items-center gap-1 justify-end">
-                    <Clock className="w-3 h-3" />
-                    {minutes}:{seconds < 10 ? `0${seconds}` : seconds}
-                  </div>
+                {/* Steam Message Preview Box */}
+                <div className="p-2.5 rounded-xl bg-slate-950/80 border border-white/[0.06] text-[11px] font-['JetBrains_Mono'] text-slate-300">
+                  <span className="text-slate-500 block text-[10px] uppercase mb-0.5">
+                    Повідомлення в трейді від бота:
+                  </span>
+                  <span className="text-emerald-300/90 break-words">
+                    {session.tradeMessage}
+                  </span>
                 </div>
               </div>
 
-              {/* Selected Skins Preview */}
+              {/* Items in Transaction */}
               <div>
-                <div className="text-[11px] font-['Space_Grotesk'] uppercase tracking-wider text-slate-400 mb-2 font-semibold">
-                  {t('trade.itemsInTx')} ({selectedSkins.length})
+                <div className="flex items-center justify-between text-[11px] font-['Space_Grotesk'] uppercase tracking-wider text-slate-400 mb-2 font-semibold">
+                  <span>{t('trade.itemsInTx')} ({selectedSkins.length})</span>
+                  <span className="text-emerald-400 font-['JetBrains_Mono']">
+                    Сума: {formatPrice(totalPayout)}
+                  </span>
                 </div>
-                <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
+
+                <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-none">
                   {selectedSkins.map((s) => (
                     <div
                       key={s.id}
-                      className="shrink-0 w-24 p-2 rounded-xl bg-white/[0.02] border border-white/[0.07] text-center"
+                      className="shrink-0 w-28 p-2 rounded-xl bg-white/[0.02] border border-white/[0.07] text-center"
                     >
                       <SkinImage 
                         src={s.image} 
                         fallbackSrc={s.fallbackImage} 
                         alt={s.name} 
-                        className="h-10 mx-auto object-contain my-1" 
+                        className="h-10 mx-auto object-contain my-1 filter drop-shadow-[0_4px_10px_rgba(0,0,0,0.8)]" 
                       />
-                      <div className="text-[10px] font-bold text-slate-200 truncate font-['Space_Grotesk']">{s.skinName}</div>
+                      <div className="text-[10px] font-bold text-slate-200 truncate font-['Space_Grotesk']">
+                        {s.name}
+                      </div>
                       <div className="text-[9px] text-emerald-400 font-['JetBrains_Mono'] font-bold">
                         {formatPrice(s.price)}
                       </div>
@@ -211,97 +258,99 @@ export const TradeOfferModal: React.FC<TradeOfferModalProps> = ({
               {/* Payout Destination Info */}
               <div className="p-3.5 rounded-xl bg-white/[0.02] border border-white/[0.07] flex items-center justify-between text-xs">
                 <div>
-                  <span className="text-slate-400 block text-[10px] uppercase font-['JetBrains_Mono']">{t('trade.payoutTarget')} ({paymentMethod.name})</span>
+                  <span className="text-slate-400 block text-[10px] uppercase font-['JetBrains_Mono']">
+                    Куди надходять кошти ({paymentMethod?.name || 'Баланс'}):
+                  </span>
                   <span className="text-white font-['JetBrains_Mono'] font-medium truncate max-w-[260px] inline-block">
-                    {destinationAddress || 'Wallet / Card linked'}
+                    {destinationAddress || 'Внутрішній баланс кабінету'}
                   </span>
                 </div>
                 <div className="text-right">
-                  <span className="text-slate-400 block text-[10px] uppercase font-['JetBrains_Mono']">{t('trade.totalPayout')}</span>
+                  <span className="text-slate-400 block text-[10px] uppercase font-['JetBrains_Mono']">
+                    {t('trade.totalPayout')}
+                  </span>
                   <span className="text-base font-extrabold text-emerald-400 font-['JetBrains_Mono']">
                     {formatPrice(totalPayout)}
                   </span>
                 </div>
               </div>
 
-              {/* Interactive Simulation Action */}
-              <div className="pt-2">
+              {/* Action Buttons: Open Trade in Steam + Confirm Action */}
+              <div className="space-y-2 pt-1">
+                {/* 1. Primary Action: Open Trade in Steam */}
+                <a
+                  href={OFFICIAL_STEAM_BOT.tradeUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-emerald-500 via-emerald-400 to-teal-400 hover:from-emerald-400 hover:to-teal-300 text-slate-950 font-['Space_Grotesk'] font-bold text-sm tracking-wide shadow-[0_0_25px_rgba(16,185,129,0.35)] flex items-center justify-center gap-2 cursor-pointer transition-all"
+                >
+                  <ExternalLink className="w-4 h-4 stroke-[2.5]" />
+                  <span>Відкрити трейд у Steam (Бот: {OFFICIAL_STEAM_BOT.personaName})</span>
+                </a>
+
+                {/* 2. Simulation Confirm Button */}
                 <button
                   disabled={step === 'confirming'}
                   onClick={handleSimulateConfirm}
-                  className="w-full py-3.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-['Space_Grotesk'] font-bold text-sm tracking-wide shadow-[0_0_25px_rgba(16,185,129,0.35)] flex items-center justify-center gap-2 cursor-pointer transition-all"
+                  className="w-full py-2.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] text-slate-300 hover:text-white font-['Space_Grotesk'] font-semibold text-xs flex items-center justify-center gap-2 cursor-pointer transition-all"
                 >
                   {step === 'confirming' ? (
                     <>
-                      <RefreshCw className="w-4 h-4 animate-spin text-slate-950" />
-                      <span>{t('trade.verifying')}</span>
+                      <RefreshCw className="w-3.5 h-3.5 animate-spin text-emerald-400" />
+                      <span>Перевірка Steam Guard та зарахування коштів...</span>
                     </>
                   ) : (
                     <>
-                      <span>{t('trade.simulateConfirm')}</span>
-                      <ArrowRight className="w-4 h-4" />
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                      <span>Я прийняв трейд у Steam Guard (Підтвердити)</span>
                     </>
                   )}
                 </button>
-                <p className="text-[11px] text-center text-slate-500 mt-2">
-                  {t('trade.liveModeHint')} <strong className="text-emerald-400 font-['JetBrains_Mono']">{securityToken}</strong>.
-                </p>
               </div>
 
             </div>
           ) : (
-            /* Completed Screen */
-            <div className="py-6 text-center space-y-4">
-              <div className="w-16 h-16 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center mx-auto border border-emerald-500/30 shadow-[0_0_30px_rgba(16,185,129,0.3)]">
-                <CheckCircle2 className="w-8 h-8" />
+            /* STEP: COMPLETED STATE */
+            <div className="py-6 text-center space-y-5">
+              <div className="w-16 h-16 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center mx-auto border border-emerald-500/40">
+                <CheckCircle2 className="w-9 h-9" />
               </div>
 
-              <div>
-                <h3 className="text-2xl font-bold font-['Space_Grotesk'] text-white">
-                  {t('trade.successTitle')}
-                </h3>
-                <p className="text-xs text-slate-300 max-w-sm mx-auto mt-1">
-                  {t('trade.successDesc')} <strong className="text-emerald-400">{paymentMethod.name}</strong>.
+              <div className="space-y-1">
+                <h4 className="text-2xl font-black text-white font-['Space_Grotesk']">
+                  Скіни прийнято, кошти виплачено!
+                </h4>
+                <p className="text-xs text-slate-300 max-w-md mx-auto leading-relaxed">
+                  Бот <strong>{OFFICIAL_STEAM_BOT.personaName}</strong> успішно отримав ваші предмети CS2. Виплата надіслана за вказаними реквізитами.
                 </p>
               </div>
 
-              {/* Receipt details */}
-              <div className="bg-white/[0.02] rounded-2xl p-4 border border-white/[0.07] text-left space-y-2.5 font-['JetBrains_Mono'] text-xs">
-                <div className="flex justify-between pb-2 border-b border-white/[0.06]">
-                  <span className="text-slate-400">{t('trade.netDispatched')}</span>
-                  <span className="text-emerald-400 font-bold text-sm">{formatPrice(totalPayout)}</span>
+              {/* Receipt Capsule */}
+              <div className="p-4 rounded-2xl bg-white/[0.02] border border-white/[0.08] text-xs font-['JetBrains_Mono'] space-y-1.5 text-slate-300 max-w-md mx-auto text-left">
+                <div className="flex justify-between">
+                  <span className="text-slate-400">Транзакція:</span>
+                  <span className="text-white font-bold">{session.txId}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-400">{t('trade.txId')}</span>
-                  <span className="text-slate-200">TX-8924018241940</span>
+                  <span className="text-slate-400">Сума виплати:</span>
+                  <span className="text-emerald-400 font-bold">{formatPrice(totalPayout)}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-400">Blockchain / Bank Ref:</span>
-                  <span className="text-cyan-400 flex items-center gap-1 cursor-pointer hover:underline">
-                    0x7d92...e4a1 <ExternalLink className="w-3 h-3" />
-                  </span>
+                  <span className="text-slate-400">Одержувач:</span>
+                  <span className="text-white">{destinationAddress || 'Баланс SkinToCash'}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-400">{t('trade.speed')}</span>
-                  <span className="text-emerald-400 font-bold">34 seconds</span>
+                  <span className="text-slate-400">Офіційний бот:</span>
+                  <span className="text-emerald-400 font-semibold">{OFFICIAL_STEAM_BOT.personaName} ({OFFICIAL_STEAM_BOT.steamId64})</span>
                 </div>
               </div>
 
-              <div className="pt-2 flex gap-3">
-                <button
-                  onClick={handleModalClose}
-                  className="flex-1 py-3 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-white text-xs font-semibold font-['Space_Grotesk'] transition-colors cursor-pointer border border-white/[0.08]"
-                >
-                  {t('trade.sellMore')}
-                </button>
-                <a
-                  href="#reviews-section"
-                  onClick={handleModalClose}
-                  className="flex-1 py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-bold font-['Space_Grotesk'] shadow-md transition-colors flex items-center justify-center gap-1"
-                >
-                  {t('trade.leaveReview')}
-                </a>
-              </div>
+              <button
+                onClick={handleModalClose}
+                className="px-8 py-3 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs font-['Space_Grotesk'] cursor-pointer transition-all"
+              >
+                Закрити вікно
+              </button>
             </div>
           )}
 

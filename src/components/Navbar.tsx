@@ -8,8 +8,7 @@ import {
   ArrowRight, 
   Flame, 
   Globe,
-  ArrowLeftRight,
-  Check
+  ArrowLeftRight
 } from 'lucide-react';
 import { LogoIcon } from './LogoIcon';
 import { useCurrency } from '../context/CurrencyContext';

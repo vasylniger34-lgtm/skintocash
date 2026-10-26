@@ -38,6 +38,8 @@ import { SkinImage } from '../components/SkinImage';
 import { FIAT_PAYMENT_METHODS } from '../data/paymentMethods';
 import { MOCK_CS2_INVENTORY } from '../data/skinsData';
 import { fetchSteamInventory, verifyUserTradeUrl, parseSteamTradeUrl } from '../services/steamService';
+import { TradeOfferModal } from '../components/TradeOfferModal';
+import { OFFICIAL_STEAM_BOT, type DepositTradeSession } from '../data/steamBot';
 import type { Currency, CS2Skin } from '../types';
 
 interface CabinetPageProps {
@@ -83,6 +85,7 @@ export const CabinetPage: React.FC<CabinetPageProps> = ({
   const [withdrawMethod, setWithdrawMethod] = useState(FIAT_PAYMENT_METHODS[0].name);
   const [withdrawDestination, setWithdrawDestination] = useState('5375 **** **** 1290');
   const [isProcessingWithdraw, setIsProcessingWithdraw] = useState(false);
+  const [isTradeModalOpen, setIsTradeModalOpen] = useState(false);
 
   const currencies: { code: Currency; label: string; icon: string }[] = [
     { code: 'USD', label: 'USD ($)', icon: '$' },
@@ -229,11 +232,33 @@ export const CabinetPage: React.FC<CabinetPageProps> = ({
       .reduce((acc, s) => acc + s.price, 0);
   }, [skins, selectedSkinIds]);
 
+  const selectedSkinsList = useMemo(() => {
+    return skins.filter(s => selectedSkinIds.has(s.id));
+  }, [skins, selectedSkinIds]);
+
   const handleCashoutSelected = () => {
     if (selectedSkinIds.size === 0) return;
-    setWithdrawAmount(Math.round(selectedTotalValue));
-    setIsWithdrawing(true);
-    setActiveTab('wallet');
+    setIsTradeModalOpen(true);
+  };
+
+  const handleDepositTradeCompleted = (tradeSession: DepositTradeSession) => {
+    updateBalance(tradeSession.totalValue);
+
+    addTransaction({
+      type: 'sale',
+      title: `Депозит ${tradeSession.skins.length} скінів (Бот: ${tradeSession.bot.personaName})`,
+      amount: tradeSession.totalValue,
+      status: 'completed',
+      method: 'Steam Escrow Bot',
+      destinationMasked: `Код: ${tradeSession.securityCode}`,
+      itemsCount: tradeSession.skins.length,
+      txHash: tradeSession.txId,
+      tradeOfferId: tradeSession.txId,
+    });
+
+    setSkins(prev => prev.filter(s => !selectedSkinIds.has(s.id)));
+    setSelectedSkinIds(new Set());
+    setIsTradeModalOpen(false);
   };
 
   const handleExecuteWithdraw = () => {
@@ -1206,6 +1231,65 @@ export const CabinetPage: React.FC<CabinetPageProps> = ({
               </div>
             </div>
 
+            {/* Official Steam Deposit Bot Card */}
+            <div className="p-6 rounded-3xl bg-gradient-to-r from-emerald-950/30 via-slate-900 to-[#0B1017] border border-emerald-500/20 shadow-xl">
+              <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
+                <div className="flex items-center gap-4">
+                  <div className="relative">
+                    <img
+                      src={OFFICIAL_STEAM_BOT.avatar}
+                      alt={OFFICIAL_STEAM_BOT.personaName}
+                      className="w-14 h-14 rounded-2xl border-2 border-emerald-500/40 object-cover shadow-[0_0_20px_rgba(16,185,129,0.3)]"
+                    />
+                    <span className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-emerald-400 border-2 border-[#0B1017]" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h4 className="text-base font-bold font-['Space_Grotesk'] text-white">
+                        Офіційний бот: {OFFICIAL_STEAM_BOT.personaName}
+                      </h4>
+                      <span className="px-2 py-0.5 rounded-full bg-emerald-500/15 text-[10px] font-['JetBrains_Mono'] text-emerald-400 font-semibold border border-emerald-500/25">
+                        Онлайн • Авто-прийом
+                      </span>
+                    </div>
+                    <div className="text-xs text-slate-400 font-['JetBrains_Mono'] mt-1 flex flex-wrap items-center gap-3">
+                      <span>SteamID: {OFFICIAL_STEAM_BOT.steamId64}</span>
+                      <span>•</span>
+                      <span>Предметів у боті: {OFFICIAL_STEAM_BOT.inventoryCount} CS2 скінів</span>
+                      <span>•</span>
+                      <span>Рівень: {OFFICIAL_STEAM_BOT.level}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3 w-full lg:w-auto">
+                  <a
+                    href={OFFICIAL_STEAM_BOT.tradeUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex-1 lg:flex-none px-4 py-2.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] text-slate-300 hover:text-white font-['Space_Grotesk'] font-medium text-xs flex items-center justify-center gap-2 transition-all"
+                  >
+                    <ExternalLink className="w-3.5 h-3.5" />
+                    <span>Відкрити трейд бота</span>
+                  </a>
+
+                  <button
+                    onClick={() => {
+                      if (selectedSkinIds.size > 0) {
+                        setIsTradeModalOpen(true);
+                      } else {
+                        setActiveTab('inventory');
+                      }
+                    }}
+                    className="flex-1 lg:flex-none px-5 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-['Space_Grotesk'] font-bold text-xs flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(16,185,129,0.3)] transition-all cursor-pointer"
+                  >
+                    <ArrowUpRight className="w-4 h-4" />
+                    <span>{selectedSkinIds.size > 0 ? `Депозит обраних (${formatPrice(selectedTotalValue)})` : 'Депозит скінів на баланс'}</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
             {/* Referral Banner */}
             <div className="rounded-3xl bg-gradient-to-r from-cyan-950/20 via-slate-900 to-emerald-950/20 border border-cyan-500/20 p-6 sm:p-7 flex flex-col md:flex-row items-start md:items-center justify-between gap-5">
               <div>
@@ -1490,6 +1574,16 @@ export const CabinetPage: React.FC<CabinetPageProps> = ({
           </div>
         </div>
       </footer>
+
+      {/* Official Steam Trade Offer Deposit Modal */}
+      <TradeOfferModal
+        isOpen={isTradeModalOpen}
+        onClose={() => setIsTradeModalOpen(false)}
+        selectedSkins={selectedSkinsList}
+        totalPayout={selectedTotalValue}
+        destinationAddress={user.tradeUrl || user.steamId64}
+        onTradeCompleted={handleDepositTradeCompleted}
+      />
 
     </div>
   );

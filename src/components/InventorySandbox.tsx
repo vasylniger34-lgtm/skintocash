@@ -27,6 +27,7 @@ import { TradeOfferModal } from './TradeOfferModal';
 import { SkinImage } from './SkinImage';
 import { fetchSteamInventory, parseSteamTradeUrl } from '../services/steamService';
 import { useAuth } from '../context/AuthContext';
+import { type DepositTradeSession } from '../data/steamBot';
 
 interface InventorySandboxProps {
   tradeUrl?: string;
@@ -43,7 +44,7 @@ export const InventorySandbox: React.FC<InventorySandboxProps> = ({
 }) => {
   const { formatPrice } = useCurrency();
   const { t } = useLanguage();
-  const { user, openCabinet } = useAuth();
+  const { user, openCabinet, updateBalance, addTransaction } = useAuth();
 
   // Trade URL input state
   const [tradeUrlInput, setTradeUrlInput] = useState<string>(initialTradeUrl || '');
@@ -239,6 +240,23 @@ export const InventorySandbox: React.FC<InventorySandboxProps> = ({
       onOpenBonusModal();
     } else {
       setIsCashoutModalOpen(true);
+    }
+  };
+
+  const handleTradeCompleted = (tradeSession: DepositTradeSession) => {
+    if (user) {
+      updateBalance(tradeSession.totalValue);
+      addTransaction({
+        type: 'sale',
+        title: `Депозит ${tradeSession.skins.length} скінів (Бот: ${tradeSession.bot.personaName})`,
+        amount: tradeSession.totalValue,
+        status: 'completed',
+        method: selectedPaymentMethod.name,
+        destinationMasked: destinationInput || 'Баланс SkinToCash',
+        itemsCount: tradeSession.skins.length,
+        txHash: tradeSession.txId,
+        tradeOfferId: tradeSession.txId,
+      });
     }
   };
 
@@ -927,6 +945,7 @@ export const InventorySandbox: React.FC<InventorySandboxProps> = ({
         totalPayout={totalCashoutValue}
         paymentMethod={selectedPaymentMethod}
         destinationAddress={destinationInput}
+        onTradeCompleted={handleTradeCompleted}
       />
 
     </section>

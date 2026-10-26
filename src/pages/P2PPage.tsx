@@ -14,7 +14,6 @@ import {
   X,
   Copy,
   Check,
-  ExternalLink,
   ChevronDown,
   Globe,
   Star,

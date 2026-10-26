@@ -118,5 +118,6 @@ export interface UserTransaction {
   itemsCount: number;
   itemsSummary?: string;
   txHash?: string;
+  tradeOfferId?: string;
 }
 
