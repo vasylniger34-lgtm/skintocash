@@ -62,6 +62,77 @@ export function parseSteamTradeUrl(input: string): SteamTradeUrlInfo {
   return { partnerId, token, steamId64, isValid };
 }
 
+export interface TradeUrlVerificationResult {
+  isValid: boolean;
+  partnerId: string | null;
+  token: string | null;
+  steamId64: string | null;
+  belongsToUser: boolean;
+  error?: string;
+}
+
+/**
+ * Strictly verifies whether a given Steam Trade URL belongs to the logged-in user.
+ * Rejects third-party trade URLs that do not belong to the user's SteamID64.
+ */
+export function verifyUserTradeUrl(inputUrl: string, expectedSteamId64: string): TradeUrlVerificationResult {
+  if (!inputUrl || typeof inputUrl !== 'string') {
+    return {
+      isValid: false,
+      partnerId: null,
+      token: null,
+      steamId64: null,
+      belongsToUser: false,
+      error: 'Введіть коректне посилання Steam Trade URL',
+    };
+  }
+
+  const clean = inputUrl.trim();
+  const partnerMatch = clean.match(/partner=(\d+)/i);
+  const tokenMatch = clean.match(/token=([a-zA-Z0-9_-]+)/i);
+
+  const partnerId = partnerMatch ? partnerMatch[1] : null;
+  const token = tokenMatch ? tokenMatch[1] : null;
+
+  if (!partnerId || !token) {
+    return {
+      isValid: false,
+      partnerId: null,
+      token: null,
+      steamId64: null,
+      belongsToUser: false,
+      error: 'Некоректний формат Trade URL. Посилання повинно містити partner=... та token=...',
+    };
+  }
+
+  const BASE_ID = 76561197960265728n;
+  let computedSteamId64: string | null = null;
+  try {
+    computedSteamId64 = (BASE_ID + BigInt(partnerId)).toString();
+  } catch {
+    computedSteamId64 = null;
+  }
+
+  if (!computedSteamId64 || computedSteamId64 !== expectedSteamId64) {
+    return {
+      isValid: true,
+      partnerId,
+      token,
+      steamId64: computedSteamId64,
+      belongsToUser: false,
+      error: `Цей Trade URL належить іншому акаунту Steam (Partner ID: ${partnerId}). Сторонній трейдлінк прив'язати не можна! Вкажіть Trade URL вашого власного акаунта (SteamID: ${expectedSteamId64}).`,
+    };
+  }
+
+  return {
+    isValid: true,
+    partnerId,
+    token,
+    steamId64: computedSteamId64,
+    belongsToUser: true,
+  };
+}
+
 /**
  * Determines weapon category from Steam tags and market hash name
  */

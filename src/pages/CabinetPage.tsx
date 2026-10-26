@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ArrowLeft,
@@ -20,23 +20,31 @@ import {
   TrendingUp,
   AlertTriangle,
   ChevronDown,
-  Globe
+  Globe,
+  Search,
+  CheckSquare,
+  Square,
+  Lock,
+  Layers,
+  ArrowUpDown
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { useAuth } from '../context/AuthContext';
 import { useCurrency } from '../context/CurrencyContext';
 import { useLanguage, LANGUAGES } from '../context/LanguageContext';
 import { LogoIcon } from '../components/LogoIcon';
+import { SkinImage } from '../components/SkinImage';
 import { FIAT_PAYMENT_METHODS } from '../data/paymentMethods';
-import { parseSteamTradeUrl } from '../services/steamService';
-import type { Currency } from '../types';
+import { MOCK_CS2_INVENTORY } from '../data/skinsData';
+import { fetchSteamInventory, verifyUserTradeUrl, parseSteamTradeUrl } from '../services/steamService';
+import type { Currency, CS2Skin } from '../types';
 
 interface CabinetPageProps {
   onNavigateHome: () => void;
   onLoadInventoryAndGoHome: (tradeUrlOrSteamId: string) => void;
 }
 
-type CabinetTab = 'wallet' | 'trade' | 'history' | 'security';
+type CabinetTab = 'inventory' | 'wallet' | 'trade' | 'history' | 'security';
 
 export const CabinetPage: React.FC<CabinetPageProps> = ({ 
   onNavigateHome, 
@@ -46,11 +54,25 @@ export const CabinetPage: React.FC<CabinetPageProps> = ({
   const { currency, setCurrency, formatPrice } = useCurrency();
   const { language, setLanguage, currentOption } = useLanguage();
 
-  const [activeTab, setActiveTab] = useState<CabinetTab>('wallet');
+  // The FIRST page in profile is automatically the user's CS2 inventory!
+  const [activeTab, setActiveTab] = useState<CabinetTab>('inventory');
   const [copiedField, setCopiedField] = useState<string | null>(null);
-  const [tradeUrlInput, setTradeUrlInput] = useState<string>(user?.tradeUrl || '');
-  const [tradeUrlSaved, setTradeUrlSaved] = useState(false);
 
+  // Trade URL State & Strict Verification
+  const [tradeUrlInput, setTradeUrlInput] = useState<string>(user?.tradeUrl || '');
+  const [tradeUrlError, setTradeUrlError] = useState<string | null>(null);
+  const [tradeUrlSuccess, setTradeUrlSuccess] = useState<string | null>(null);
+
+  // User CS2 Inventory State
+  const [skins, setSkins] = useState<CS2Skin[]>(MOCK_CS2_INVENTORY);
+  const [isLoadingInventory, setIsLoadingInventory] = useState(false);
+  const [inventoryStatus, setInventoryStatus] = useState<'success' | 'private' | 'rate_limited' | 'error' | 'demo' | 'empty'>('demo');
+  const [selectedSkinIds, setSelectedSkinIds] = useState<Set<string>>(new Set());
+  const [activeCategory, setActiveCategory] = useState<string>('all');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sortBy, setSortBy] = useState<'price-desc' | 'price-asc' | 'float-asc'>('price-desc');
+
+  // Header Dropdowns
   const [currencyDropdownOpen, setCurrencyDropdownOpen] = useState(false);
   const [langDropdownOpen, setLangDropdownOpen] = useState(false);
 
@@ -68,44 +90,190 @@ export const CabinetPage: React.FC<CabinetPageProps> = ({
     { code: 'CRYPTO', label: 'USDT (₮)', icon: '₮' },
   ];
 
+  // Auto-load the user's Steam CS2 Inventory on mount
+  const loadUserInventory = useCallback(async (target: string, force = false) => {
+    if (!target) return;
+    setIsLoadingInventory(true);
+    try {
+      const res = await fetchSteamInventory(target, force);
+      setIsLoadingInventory(false);
+      setInventoryStatus(res.status);
+
+      if (res.status === 'success' && res.items.length > 0) {
+        setSkins(res.items);
+        // Pre-select first 2 skins for immediate convenience
+        setSelectedSkinIds(new Set(res.items.slice(0, 2).map(s => s.id)));
+      } else if (res.status === 'demo' || (res.items && res.items.length > 0)) {
+        setSkins(res.items);
+        setSelectedSkinIds(new Set(res.items.slice(0, 2).map(s => s.id)));
+      }
+    } catch (err) {
+      console.warn('Failed to load user inventory in cabinet:', err);
+      setIsLoadingInventory(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (user) {
+      const target = user.tradeUrl || user.steamId64;
+      loadUserInventory(target);
+    }
+  }, [user, loadUserInventory]);
+
+  // Keep input in sync if user changes
+  useEffect(() => {
+    if (user?.tradeUrl) {
+      setTradeUrlInput(user.tradeUrl);
+    }
+  }, [user?.tradeUrl]);
+
   const handleCopy = (text: string, fieldName: string) => {
     navigator.clipboard.writeText(text);
     setCopiedField(fieldName);
     setTimeout(() => setCopiedField(null), 2000);
   };
 
+  /**
+   * Strictly verifies whether the trade URL belongs to THIS logged-in user.
+   * If someone tries to paste another account's trade URL, it is blocked with an explicit error!
+   */
   const handleSaveTradeUrl = () => {
-    parseSteamTradeUrl(tradeUrlInput);
+    setTradeUrlError(null);
+    setTradeUrlSuccess(null);
+
+    if (!user) return;
+
+    if (!tradeUrlInput.trim()) {
+      setTradeUrlError('Введіть ваш Steam Trade URL');
+      return;
+    }
+
+    const verification = verifyUserTradeUrl(tradeUrlInput, user.steamId64);
+
+    if (!verification.belongsToUser) {
+      setTradeUrlError(verification.error || 'Цей Trade URL належить іншому акаунту Steam! Сторонній трейдлінк додати не можна.');
+      return;
+    }
+
+    // Success: URL is strictly verified to match user's steamId64
     updateTradeUrl(tradeUrlInput);
-    setTradeUrlSaved(true);
-    setTimeout(() => setTradeUrlSaved(false), 2500);
+    setTradeUrlSuccess('Trade URL успішно верифіковано та закріплено за вашим акаунтом!');
+    loadUserInventory(tradeUrlInput, true);
+
+    setTimeout(() => {
+      setTradeUrlSuccess(null);
+    }, 4500);
+  };
+
+  const toggleSelectSkin = (id: string) => {
+    setSelectedSkinIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  };
+
+  const handleSelectAll = () => {
+    setSelectedSkinIds(new Set(filteredSkins.map(s => s.id)));
+  };
+
+  const handleDeselectAll = () => {
+    setSelectedSkinIds(new Set());
+  };
+
+  // Filtered & Sorted skins
+  const filteredSkins = useMemo(() => {
+    return skins.filter(skin => {
+      // Category filter
+      if (activeCategory === 'knife-gloves') {
+        if (skin.category !== 'Knife' && skin.category !== 'Gloves') return false;
+      } else if (activeCategory === 'rifles') {
+        if (skin.category !== 'Rifle' && skin.category !== 'Sniper') return false;
+      } else if (activeCategory === 'pistols') {
+        if (skin.category !== 'Pistol') return false;
+      } else if (activeCategory === 'stattrak') {
+        if (!skin.isStatTrak) return false;
+      }
+
+      // Search query
+      if (searchQuery.trim()) {
+        const query = searchQuery.toLowerCase();
+        const matchesName = skin.name.toLowerCase().includes(query);
+        const matchesWeapon = skin.weapon.toLowerCase().includes(query);
+        const matchesSkin = skin.skinName.toLowerCase().includes(query);
+        if (!matchesName && !matchesWeapon && !matchesSkin) return false;
+      }
+
+      return true;
+    }).sort((a, b) => {
+      if (sortBy === 'price-desc') return b.price - a.price;
+      if (sortBy === 'price-asc') return a.price - b.price;
+      if (sortBy === 'float-asc') return a.float - b.float;
+      return 0;
+    });
+  }, [skins, activeCategory, searchQuery, sortBy]);
+
+  // Inventory Valuations
+  const totalInventoryValue = useMemo(() => {
+    return skins.reduce((acc, s) => acc + s.price, 0);
+  }, [skins]);
+
+  const selectedTotalValue = useMemo(() => {
+    return skins
+      .filter(s => selectedSkinIds.has(s.id))
+      .reduce((acc, s) => acc + s.price, 0);
+  }, [skins, selectedSkinIds]);
+
+  const handleCashoutSelected = () => {
+    if (selectedSkinIds.size === 0) return;
+    setWithdrawAmount(Math.round(selectedTotalValue));
+    setIsWithdrawing(true);
+    setActiveTab('wallet');
   };
 
   const handleExecuteWithdraw = () => {
-    const currentBalance = user?.balance || 0;
-    if (withdrawAmount <= 0 || withdrawAmount > currentBalance) return;
+    if (withdrawAmount <= 0) return;
 
     setIsProcessingWithdraw(true);
 
     setTimeout(() => {
-      updateBalance(-withdrawAmount);
-      addTransaction({
-        type: 'payout',
-        title: `Виплата коштів на ${withdrawMethod}`,
-        amount: withdrawAmount,
-        status: 'completed',
-        method: withdrawMethod,
-        destinationMasked: withdrawDestination,
-        itemsCount: 1,
-        txHash: `0x${Math.random().toString(16).substring(2, 10)}...${Math.random().toString(16).substring(2, 6)}`,
-      });
+      if (selectedTotalValue > 0) {
+        // Sold selected skins
+        addTransaction({
+          type: 'sale',
+          title: `Продаж ${selectedSkinIds.size} скінів CS2`,
+          amount: selectedTotalValue,
+          status: 'completed',
+          method: withdrawMethod,
+          destinationMasked: withdrawDestination,
+          itemsCount: selectedSkinIds.size,
+          txHash: `0x${Math.random().toString(16).substring(2, 10)}...${Math.random().toString(16).substring(2, 6)}`,
+        });
+        setSelectedSkinIds(new Set());
+      } else {
+        updateBalance(-withdrawAmount);
+        addTransaction({
+          type: 'payout',
+          title: `Виплата коштів на ${withdrawMethod}`,
+          amount: withdrawAmount,
+          status: 'completed',
+          method: withdrawMethod,
+          destinationMasked: withdrawDestination,
+          itemsCount: 1,
+          txHash: `0x${Math.random().toString(16).substring(2, 10)}...${Math.random().toString(16).substring(2, 6)}`,
+        });
+      }
 
       setIsProcessingWithdraw(false);
       setIsWithdrawing(false);
 
       // Celebratory confetti
       confetti({
-        particleCount: 80,
+        particleCount: 90,
         spread: 70,
         origin: { y: 0.6 },
         colors: ['#10B981', '#06B6D4', '#F59E0B'],
@@ -113,20 +281,10 @@ export const CabinetPage: React.FC<CabinetPageProps> = ({
     }, 1000);
   };
 
-  const handleLoadInventory = () => {
-    const target = user?.tradeUrl || user?.steamId64 || '';
-    if (target) {
-      onLoadInventoryAndGoHome(target);
-    } else {
-      onNavigateHome();
-    }
-  };
-
   // If user is not authenticated, show a clean authorization screen
   if (!user) {
     return (
       <div className="min-h-screen bg-[#070A0E] text-white flex flex-col justify-between">
-        {/* Simple Top Bar */}
         <header className="border-b border-white/[0.06] bg-[#070A0E]/80 backdrop-blur-xl py-4 px-6">
           <div className="max-w-7xl mx-auto flex items-center justify-between">
             <div 
@@ -150,7 +308,6 @@ export const CabinetPage: React.FC<CabinetPageProps> = ({
           </div>
         </header>
 
-        {/* Not Logged In Center Banner */}
         <div className="max-w-md mx-auto text-center px-4 py-16">
           <div className="w-16 h-16 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center mx-auto mb-6 text-emerald-400 shadow-[0_0_30px_rgba(16,185,129,0.25)]">
             <svg className="w-8 h-8 fill-emerald-400" viewBox="0 0 24 24">
@@ -163,7 +320,7 @@ export const CabinetPage: React.FC<CabinetPageProps> = ({
           </h1>
 
           <p className="text-sm text-slate-400 leading-relaxed mb-8">
-            Для перегляду балансу, історії виплат та синхронізації інвентарю CS2 увійдіть за допомогою офіційного Steam OpenID.
+            Для перегляду балансу, історії виплат та автоматичного завантаження вашого інвентарю CS2 увійдіть через Valve Steam OpenID.
           </p>
 
           <button
@@ -195,6 +352,10 @@ export const CabinetPage: React.FC<CabinetPageProps> = ({
     : user.personastate === 0 
     ? 'Не в мережі' 
     : 'У Counter-Strike 2';
+
+  // Check if current user has verified Trade URL
+  const tradeUrlInfo = parseSteamTradeUrl(user.tradeUrl || '');
+  const isTradeUrlAttached = Boolean(tradeUrlInfo.isValid && user.tradeUrl);
 
   return (
     <div className="min-h-screen bg-[#070A0E] text-[#E5E7EB] font-sans selection:bg-emerald-500/30 selection:text-emerald-300">
@@ -331,7 +492,7 @@ export const CabinetPage: React.FC<CabinetPageProps> = ({
       </header>
 
       {/* Main Page Body Container */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10 space-y-8">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10 space-y-7">
         
         {/* Breadcrumb / Title row */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -344,72 +505,73 @@ export const CabinetPage: React.FC<CabinetPageProps> = ({
               <span className="text-emerald-400">Особистий кабінет</span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-extrabold font-['Space_Grotesk'] text-white tracking-tight">
-              Особистий кабінет гравця
+              Особистий кабінет: {user.personaname}
             </h1>
           </div>
 
           <button
-            onClick={handleLoadInventory}
+            onClick={() => {
+              const target = user.tradeUrl || user.steamId64;
+              onLoadInventoryAndGoHome(target);
+            }}
             className="self-start sm:self-auto flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 text-slate-950 font-['Space_Grotesk'] font-bold text-xs shadow-[0_0_20px_rgba(16,185,129,0.35)] transition-all cursor-pointer"
           >
             <Zap className="w-4 h-4 fill-slate-950" />
-            <span>Продати скіни CS2</span>
+            <span>Оцінити на головній</span>
           </button>
         </div>
 
-        {/* Master User Profile Card */}
-        <div className="relative rounded-3xl bg-gradient-to-b from-[#0F172A]/90 to-[#0B1017] border border-white/[0.08] p-6 sm:p-8 shadow-[0_20px_50px_rgba(0,0,0,0.8),0_0_40px_rgba(16,185,129,0.1)] overflow-hidden">
-          {/* Ambient Background Glows */}
+        {/* Master User Profile Header Card */}
+        <div className="relative rounded-3xl bg-gradient-to-b from-[#0F172A]/90 to-[#0B1017] border border-white/[0.08] p-6 sm:p-7 shadow-[0_20px_50px_rgba(0,0,0,0.8),0_0_40px_rgba(16,185,129,0.08)] overflow-hidden">
           <div className="absolute top-0 right-10 w-96 h-96 bg-emerald-500/10 rounded-full blur-[120px] pointer-events-none" />
-          <div className="absolute bottom-0 left-10 w-80 h-80 bg-cyan-500/10 rounded-full blur-[100px] pointer-events-none" />
 
           <div className="relative flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
             
             {/* Avatar + Info */}
-            <div className="flex items-center gap-5 sm:gap-6">
+            <div className="flex items-center gap-4 sm:gap-5">
               <div className="relative shrink-0">
-                <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl p-1 bg-gradient-to-tr from-emerald-500 via-cyan-400 to-teal-300 shadow-[0_0_30px_rgba(16,185,129,0.4)] overflow-hidden">
+                <div className="w-18 h-18 sm:w-20 sm:h-20 rounded-2xl p-1 bg-gradient-to-tr from-emerald-500 via-cyan-400 to-teal-300 shadow-[0_0_25px_rgba(16,185,129,0.35)] overflow-hidden">
                   <img
                     src={user.avatarfull || user.avatar}
                     alt={user.personaname}
-                    className="w-full h-full object-cover rounded-[12px]"
+                    className="w-full h-full object-cover rounded-[10px]"
                   />
                 </div>
                 {/* Status Dot */}
                 <span 
-                  className={`absolute -bottom-1 -right-1 w-6 h-6 rounded-full border-3 border-[#0B1017] ${statusColor} shadow-[0_0_12px_rgba(16,185,129,0.9)]`} 
+                  className={`absolute -bottom-1 -right-1 w-5 h-5 rounded-full border-2 border-[#0B1017] ${statusColor} shadow-[0_0_10px_rgba(16,185,129,0.9)]`} 
                   title={statusLabel}
                 />
               </div>
 
               <div>
-                <div className="flex items-center gap-2.5 flex-wrap">
-                  <h2 className="text-2xl sm:text-3xl font-extrabold font-['Space_Grotesk'] text-white tracking-tight">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h2 className="text-xl sm:text-2xl font-extrabold font-['Space_Grotesk'] text-white tracking-tight">
                     {user.personaname}
                   </h2>
-                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-xs font-semibold text-emerald-400 font-['JetBrains_Mono']">
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-[11px] font-semibold text-emerald-400 font-['JetBrains_Mono']">
                     <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
                     Steam Verified
                   </span>
                   {user.loccountrycode && (
-                    <span className="text-xs px-2.5 py-0.5 rounded-md bg-white/[0.06] border border-white/[0.08] font-['JetBrains_Mono'] text-slate-300 uppercase">
+                    <span className="text-[11px] px-2 py-0.5 rounded-md bg-white/[0.06] border border-white/[0.08] font-['JetBrains_Mono'] text-slate-300 uppercase">
                       🇺🇦 {user.loccountrycode}
                     </span>
                   )}
                 </div>
 
                 {/* SteamID and Profile URL */}
-                <div className="flex items-center gap-2.5 mt-2 flex-wrap">
+                <div className="flex items-center gap-2 mt-1.5 flex-wrap">
                   <button
                     onClick={() => handleCopy(user.steamId64, 'steamid')}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900/90 border border-white/[0.08] hover:border-emerald-500/40 text-xs font-['JetBrains_Mono'] text-slate-300 hover:text-white transition-all cursor-pointer group"
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-900/90 border border-white/[0.08] hover:border-emerald-500/40 text-[11px] font-['JetBrains_Mono'] text-slate-300 hover:text-white transition-all cursor-pointer group"
                   >
                     <span className="text-slate-500">SteamID:</span>
                     <span>{user.steamId64}</span>
                     {copiedField === 'steamid' ? (
-                      <Check className="w-3.5 h-3.5 text-emerald-400" />
+                      <Check className="w-3 h-3 text-emerald-400" />
                     ) : (
-                      <Copy className="w-3.5 h-3.5 text-slate-500 group-hover:text-slate-300" />
+                      <Copy className="w-3 h-3 text-slate-500 group-hover:text-slate-300" />
                     )}
                   </button>
 
@@ -417,75 +579,185 @@ export const CabinetPage: React.FC<CabinetPageProps> = ({
                     href={user.profileurl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/[0.03] hover:bg-white/[0.07] border border-white/[0.08] text-xs font-['JetBrains_Mono'] text-slate-300 hover:text-white transition-all"
+                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white/[0.03] hover:bg-white/[0.07] border border-white/[0.08] text-[11px] font-['JetBrains_Mono'] text-slate-300 hover:text-white transition-all"
                   >
                     <span>Профіль у Steam</span>
-                    <ExternalLink className="w-3.5 h-3.5 text-slate-500" />
+                    <ExternalLink className="w-3 h-3 text-slate-500" />
                   </a>
                 </div>
 
                 {/* Badges row */}
-                <div className="flex items-center gap-2 mt-3 flex-wrap">
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-gradient-to-r from-amber-500/20 to-orange-500/20 border border-amber-500/30 text-xs font-bold text-amber-300 font-['JetBrains_Mono']">
-                    <Award className="w-3.5 h-3.5 text-amber-400" />
+                <div className="flex items-center gap-2 mt-2 flex-wrap">
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-gradient-to-r from-amber-500/20 to-orange-500/20 border border-amber-500/30 text-[10px] font-bold text-amber-300 font-['JetBrains_Mono']">
+                    <Award className="w-3 h-3 text-amber-400" />
                     Рівень Steam {user.steamLevel || 1}
                   </span>
 
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-xs font-medium text-emerald-400 font-['JetBrains_Mono']">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-500/10 border border-emerald-500/20 text-[10px] font-medium text-emerald-400 font-['JetBrains_Mono']">
+                    <CheckCircle2 className="w-3 h-3 text-emerald-400" />
                     VAC: Без блокувань
                   </span>
 
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/[0.04] border border-white/[0.06] text-xs text-slate-400 font-['JetBrains_Mono']">
-                    Акаунт із {user.joinedAt || '2024'} р.
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-white/[0.04] border border-white/[0.06] text-[10px] text-slate-400 font-['JetBrains_Mono']">
+                    З нами з {user.joinedAt || '2024'} р.
                   </span>
                 </div>
               </div>
 
             </div>
 
-            {/* Quick Balance Header Pill */}
-            <div className="p-4 sm:p-5 rounded-2xl bg-slate-950/80 border border-emerald-500/30 text-left md:text-right shrink-0">
-              <div className="text-xs font-['JetBrains_Mono'] text-slate-400 mb-1">
-                Доступний баланс:
+            {/* Quick Metrics Capsule */}
+            <div className="flex items-center gap-3 w-full md:w-auto">
+              <div className="p-3.5 sm:p-4 rounded-2xl bg-slate-950/80 border border-emerald-500/30 flex-1 md:flex-initial text-left md:text-right">
+                <div className="text-[11px] font-['JetBrains_Mono'] text-slate-400 mb-0.5">
+                  Баланс SkinToCash:
+                </div>
+                <div className="text-xl sm:text-2xl font-extrabold font-['JetBrains_Mono'] text-emerald-400">
+                  {formatPrice(user.balance || 0)}
+                </div>
               </div>
-              <div className="text-2xl sm:text-3xl font-extrabold font-['JetBrains_Mono'] text-emerald-400 drop-shadow-[0_0_15px_rgba(16,185,129,0.3)]">
-                {formatPrice(user.balance || 0)}
+
+              <div className="p-3.5 sm:p-4 rounded-2xl bg-slate-950/80 border border-white/10 flex-1 md:flex-initial text-left md:text-right">
+                <div className="text-[11px] font-['JetBrains_Mono'] text-slate-400 mb-0.5">
+                  Оцінка CS2 інвентарю:
+                </div>
+                <div className="text-xl sm:text-2xl font-extrabold font-['JetBrains_Mono'] text-white">
+                  {formatPrice(totalInventoryValue)}
+                </div>
               </div>
             </div>
 
           </div>
         </div>
 
-        {/* Tab Navigation Menu */}
+        {/* Trade URL Status / Missing Banner (Strict verification alert) */}
+        {!isTradeUrlAttached ? (
+          <div className="p-5 rounded-2xl bg-gradient-to-r from-amber-950/40 via-slate-900 to-[#0B1017] border border-amber-500/40 shadow-lg">
+            <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
+              <div className="flex items-start gap-3">
+                <div className="w-9 h-9 rounded-xl bg-amber-500/20 flex items-center justify-center text-amber-400 shrink-0 mt-0.5">
+                  <AlertTriangle className="w-5 h-5" />
+                </div>
+                <div>
+                  <h4 className="text-sm font-bold font-['Space_Grotesk'] text-white flex items-center gap-2">
+                    <span>Прив'яжіть ваш Steam Trade URL</span>
+                    <span className="text-[10px] font-['JetBrains_Mono'] bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded-full">
+                      Перевірка власності
+                    </span>
+                  </h4>
+                  <p className="text-xs text-slate-300 mt-1 max-w-2xl leading-relaxed">
+                    Для отримання автоматичних трейдів від ботів вкажіть ваш персональний Trade URL. Сервіс перевірить за вашим SteamID (<strong>{user.steamId64}</strong>), чи трейдлінк дійсно належить вам. <strong>Сторонній трейдлінк прив'язати не можна!</strong>
+                  </p>
+                </div>
+              </div>
+
+              {/* Quick Input Bar */}
+              <div className="w-full lg:w-auto flex flex-col sm:flex-row items-stretch sm:items-center gap-2 shrink-0">
+                <input
+                  type="text"
+                  value={tradeUrlInput}
+                  onChange={(e) => setTradeUrlInput(e.target.value)}
+                  placeholder="https://steamcommunity.com/tradeoffer/new/?partner=..."
+                  className="px-3.5 py-2.5 rounded-xl bg-slate-950 border border-white/10 text-white font-['JetBrains_Mono'] text-xs min-w-[280px] sm:min-w-[340px] focus:border-emerald-500 outline-none"
+                />
+                <button
+                  onClick={handleSaveTradeUrl}
+                  className="px-4 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-['Space_Grotesk'] font-bold text-xs transition-all cursor-pointer whitespace-nowrap"
+                >
+                  Перевірити та зберегти
+                </button>
+              </div>
+            </div>
+
+            {/* Error or Success notification */}
+            {tradeUrlError && (
+              <div className="mt-3 p-3 rounded-xl bg-red-500/15 border border-red-500/30 text-xs text-red-300 flex items-center justify-between gap-2">
+                <span className="flex items-center gap-2">
+                  <AlertTriangle className="w-4 h-4 text-red-400 shrink-0" />
+                  <span>{tradeUrlError}</span>
+                </span>
+                <a
+                  href="https://steamcommunity.com/id/me/tradeoffers/privacy#trade_offer_access_url"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline text-emerald-400 hover:text-emerald-300 whitespace-nowrap"
+                >
+                  Де знайти мій Trade URL? →
+                </a>
+              </div>
+            )}
+
+            {tradeUrlSuccess && (
+              <div className="mt-3 p-3 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-xs text-emerald-300 flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                <span>{tradeUrlSuccess}</span>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="p-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/25 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
+            <div className="flex items-center gap-2 text-emerald-300 font-['Space_Grotesk'] font-semibold">
+              <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+              <span>Ваш офіційний Steam Trade URL верифіковано та закріплено</span>
+              <span className="text-[11px] font-['JetBrains_Mono'] text-slate-400 hidden sm:inline">
+                (Partner: {tradeUrlInfo.partnerId})
+              </span>
+            </div>
+
+            <button
+              onClick={() => setActiveTab('trade')}
+              className="text-xs text-emerald-400 hover:text-emerald-300 underline font-['JetBrains_Mono'] cursor-pointer"
+            >
+              Змінити або переглянути →
+            </button>
+          </div>
+        )}
+
+        {/* Tab Navigation Menu: INVENTORY IS FIRST! */}
         <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none border-b border-white/[0.06]">
+          {/* TAB 1: Мій інвентар CS2 */}
+          <button
+            onClick={() => setActiveTab('inventory')}
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-['Space_Grotesk'] font-bold transition-all cursor-pointer whitespace-nowrap ${
+              activeTab === 'inventory'
+                ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shadow-[0_0_20px_rgba(16,185,129,0.25)]'
+                : 'text-slate-400 hover:text-white hover:bg-white/[0.04]'
+            }`}
+          >
+            <Layers className="w-4 h-4" />
+            <span>Мій інвентар CS2 ({skins.length})</span>
+          </button>
+
+          {/* TAB 2: Гаманець & Баланс */}
           <button
             onClick={() => setActiveTab('wallet')}
-            className={`flex items-center gap-2.5 px-5 py-3 rounded-2xl text-sm font-['Space_Grotesk'] font-bold transition-all cursor-pointer whitespace-nowrap ${
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-['Space_Grotesk'] font-bold transition-all cursor-pointer whitespace-nowrap ${
               activeTab === 'wallet'
                 ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shadow-[0_0_20px_rgba(16,185,129,0.25)]'
                 : 'text-slate-400 hover:text-white hover:bg-white/[0.04]'
             }`}
           >
             <Wallet className="w-4 h-4" />
-            <span>Гаманець & Баланс</span>
+            <span>Гаманець & Виплати</span>
           </button>
 
+          {/* TAB 3: Steam Trade URL */}
           <button
             onClick={() => setActiveTab('trade')}
-            className={`flex items-center gap-2.5 px-5 py-3 rounded-2xl text-sm font-['Space_Grotesk'] font-bold transition-all cursor-pointer whitespace-nowrap ${
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-['Space_Grotesk'] font-bold transition-all cursor-pointer whitespace-nowrap ${
               activeTab === 'trade'
                 ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shadow-[0_0_20px_rgba(16,185,129,0.25)]'
                 : 'text-slate-400 hover:text-white hover:bg-white/[0.04]'
             }`}
           >
             <Link2 className="w-4 h-4" />
-            <span>Steam Trade URL & Інвентар</span>
+            <span>Steam Trade URL</span>
           </button>
 
+          {/* TAB 4: Історія транзакцій */}
           <button
             onClick={() => setActiveTab('history')}
-            className={`flex items-center gap-2.5 px-5 py-3 rounded-2xl text-sm font-['Space_Grotesk'] font-bold transition-all cursor-pointer whitespace-nowrap ${
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-['Space_Grotesk'] font-bold transition-all cursor-pointer whitespace-nowrap ${
               activeTab === 'history'
                 ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shadow-[0_0_20px_rgba(16,185,129,0.25)]'
                 : 'text-slate-400 hover:text-white hover:bg-white/[0.04]'
@@ -495,9 +767,10 @@ export const CabinetPage: React.FC<CabinetPageProps> = ({
             <span>Історія транзакцій ({transactions.length})</span>
           </button>
 
+          {/* TAB 5: Безпека */}
           <button
             onClick={() => setActiveTab('security')}
-            className={`flex items-center gap-2.5 px-5 py-3 rounded-2xl text-sm font-['Space_Grotesk'] font-bold transition-all cursor-pointer whitespace-nowrap ${
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-['Space_Grotesk'] font-bold transition-all cursor-pointer whitespace-nowrap ${
               activeTab === 'security'
                 ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shadow-[0_0_20px_rgba(16,185,129,0.25)]'
                 : 'text-slate-400 hover:text-white hover:bg-white/[0.04]'
@@ -508,7 +781,250 @@ export const CabinetPage: React.FC<CabinetPageProps> = ({
           </button>
         </div>
 
-        {/* Tab 1: WALLET & BALANCES */}
+        {/* TAB 1 CONTENT: AUTOMATICALLY LOADED CS2 INVENTORY (DEFAULT VIEW) */}
+        {activeTab === 'inventory' && (
+          <div className="space-y-6">
+            
+            {/* Inventory Valuation Header Strip */}
+            <div className="p-5 sm:p-6 rounded-3xl bg-[#0B1017] border border-white/[0.08] flex flex-col md:flex-row md:items-center justify-between gap-5 shadow-xl">
+              <div>
+                <div className="flex items-center gap-2 text-xs font-['JetBrains_Mono'] text-emerald-400 font-semibold mb-1">
+                  <Sparkles className="w-3.5 h-3.5" />
+                  Автоматично синхронізований інвентар CS2
+                </div>
+                <div className="text-2xl sm:text-3xl font-extrabold font-['JetBrains_Mono'] text-white">
+                  {formatPrice(totalInventoryValue)}
+                  <span className="text-xs text-slate-400 font-normal ml-3">
+                    ({skins.length} доступних предметів)
+                  </span>
+                </div>
+              </div>
+
+              {/* Selection Summary & Cashout CTA Button */}
+              <div className="flex items-center gap-3">
+                <div className="text-right hidden sm:block">
+                  <div className="text-xs text-slate-400 font-['JetBrains_Mono']">
+                    Обрано: <strong className="text-white">{selectedSkinIds.size}</strong> скінів
+                  </div>
+                  <div className="text-base font-bold font-['JetBrains_Mono'] text-emerald-400">
+                    {formatPrice(selectedTotalValue)}
+                  </div>
+                </div>
+
+                <button
+                  disabled={selectedSkinIds.size === 0}
+                  onClick={handleCashoutSelected}
+                  className="px-5 py-3 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 disabled:opacity-40 text-slate-950 font-['Space_Grotesk'] font-bold text-xs sm:text-sm shadow-[0_0_25px_rgba(16,185,129,0.35)] flex items-center justify-center gap-2 transition-all cursor-pointer"
+                >
+                  <ArrowUpRight className="w-4 h-4 stroke-[2.5]" />
+                  <span>Продати обрані ({formatPrice(selectedTotalValue)})</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Inventory Filter Bar */}
+            <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+              {/* Category Pills */}
+              <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+                <button
+                  onClick={() => setActiveCategory('all')}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-['Space_Grotesk'] font-semibold transition-all cursor-pointer whitespace-nowrap ${
+                    activeCategory === 'all'
+                      ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                      : 'bg-white/[0.03] text-slate-400 hover:text-white'
+                  }`}
+                >
+                  Всі ({skins.length})
+                </button>
+
+                <button
+                  onClick={() => setActiveCategory('knife-gloves')}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-['Space_Grotesk'] font-semibold transition-all cursor-pointer whitespace-nowrap ${
+                    activeCategory === 'knife-gloves'
+                      ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                      : 'bg-white/[0.03] text-slate-400 hover:text-white'
+                  }`}
+                >
+                  Ножі та рукавиці
+                </button>
+
+                <button
+                  onClick={() => setActiveCategory('rifles')}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-['Space_Grotesk'] font-semibold transition-all cursor-pointer whitespace-nowrap ${
+                    activeCategory === 'rifles'
+                      ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                      : 'bg-white/[0.03] text-slate-400 hover:text-white'
+                  }`}
+                >
+                  Гвинтівки та AWP
+                </button>
+
+                <button
+                  onClick={() => setActiveCategory('pistols')}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-['Space_Grotesk'] font-semibold transition-all cursor-pointer whitespace-nowrap ${
+                    activeCategory === 'pistols'
+                      ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                      : 'bg-white/[0.03] text-slate-400 hover:text-white'
+                  }`}
+                >
+                  Пістолети
+                </button>
+
+                <button
+                  onClick={() => setActiveCategory('stattrak')}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-['Space_Grotesk'] font-semibold transition-all cursor-pointer whitespace-nowrap ${
+                    activeCategory === 'stattrak'
+                      ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                      : 'bg-white/[0.03] text-slate-400 hover:text-white'
+                  }`}
+                >
+                  StatTrak™
+                </button>
+              </div>
+
+              {/* Search & Actions */}
+              <div className="flex items-center gap-2">
+                <div className="relative flex-1 sm:w-60">
+                  <Search className="w-3.5 h-3.5 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Пошук скіна..."
+                    className="w-full pl-9 pr-3 py-1.5 rounded-xl bg-slate-900 border border-white/10 text-white text-xs font-['JetBrains_Mono'] focus:border-emerald-500 outline-none"
+                  />
+                </div>
+
+                <button
+                  onClick={() => setSortBy(prev => prev === 'price-desc' ? 'price-asc' : prev === 'price-asc' ? 'float-asc' : 'price-desc')}
+                  title="Змінити сортування"
+                  className="px-2.5 py-1.5 rounded-xl bg-white/[0.03] hover:bg-white/[0.06] border border-white/[0.08] text-xs font-['Space_Grotesk'] text-slate-300 hover:text-white flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
+                >
+                  <ArrowUpDown className="w-3.5 h-3.5 text-emerald-400" />
+                  <span className="hidden md:inline">
+                    {sortBy === 'price-desc' ? 'Ціна: ↓' : sortBy === 'price-asc' ? 'Ціна: ↑' : 'Float: ↑'}
+                  </span>
+                </button>
+
+                <button
+                  onClick={handleSelectAll}
+                  className="px-3 py-1.5 rounded-xl bg-white/[0.03] hover:bg-white/[0.06] border border-white/[0.08] text-xs font-['Space_Grotesk'] text-slate-300 hover:text-white flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
+                >
+                  <CheckSquare className="w-3.5 h-3.5 text-emerald-400" />
+                  <span className="hidden sm:inline">Вибрати все</span>
+                </button>
+
+                <button
+                  onClick={handleDeselectAll}
+                  className="px-3 py-1.5 rounded-xl bg-white/[0.03] hover:bg-white/[0.06] border border-white/[0.08] text-xs font-['Space_Grotesk'] text-slate-300 hover:text-white flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
+                >
+                  <Square className="w-3.5 h-3.5 text-slate-500" />
+                  <span className="hidden sm:inline">Зняти</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Private Inventory Notice */}
+            {inventoryStatus === 'private' && (
+              <div className="p-6 rounded-3xl bg-amber-500/10 border border-amber-500/30 text-center space-y-3">
+                <Lock className="w-10 h-10 text-amber-400 mx-auto" />
+                <h3 className="text-lg font-bold text-white font-['Space_Grotesk']">
+                  Ваш інвентар у Steam наразі приватний
+                </h3>
+                <p className="text-xs text-slate-300 max-w-lg mx-auto leading-relaxed">
+                  Steam за замовчуванням приховує інвентар. Щоб оцінити та продати скіни, відкрийте доступ до інвентарю в налаштуваннях приватності Steam.
+                </p>
+                <a
+                  href="https://steamcommunity.com/id/me/edit/settings"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs font-['Space_Grotesk']"
+                >
+                  <span>Відкрити налаштування приватності Steam</span>
+                  <ExternalLink className="w-3.5 h-3.5" />
+                </a>
+              </div>
+            )}
+
+            {/* Skins Grid */}
+            {isLoadingInventory ? (
+              <div className="py-20 text-center space-y-3">
+                <RefreshCw className="w-8 h-8 text-emerald-400 animate-spin mx-auto" />
+                <div className="text-sm font-['Space_Grotesk'] text-slate-300">
+                  Завантажуємо інвентар вашого акаунта Steam...
+                </div>
+              </div>
+            ) : filteredSkins.length === 0 ? (
+              <div className="py-16 text-center text-slate-500 text-xs font-['JetBrains_Mono'] bg-[#0B1017] rounded-3xl border border-white/[0.05]">
+                Предметів не знайдено за заданими фільтрами.
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3.5 sm:gap-4">
+                {filteredSkins.map((skin) => {
+                  const isSelected = selectedSkinIds.has(skin.id);
+                  return (
+                    <div
+                      key={skin.id}
+                      onClick={() => toggleSelectSkin(skin.id)}
+                      className={`relative group rounded-2xl p-3 sm:p-4 bg-[#0B1017] border transition-all cursor-pointer select-none flex flex-col justify-between overflow-hidden ${
+                        isSelected
+                          ? 'border-emerald-500/80 shadow-[0_0_20px_rgba(16,185,129,0.3)] bg-emerald-950/20 ring-1 ring-emerald-500/50'
+                          : 'border-white/[0.07] hover:border-white/20 hover:bg-white/[0.02]'
+                      }`}
+                    >
+                      {/* Selection Badge Checkbox */}
+                      <div className="absolute top-2.5 right-2.5 z-10">
+                        <div className={`w-5 h-5 rounded-md flex items-center justify-center transition-all ${
+                          isSelected ? 'bg-emerald-500 text-slate-950' : 'bg-slate-900/80 border border-white/20 text-transparent'
+                        }`}>
+                          <Check className="w-3.5 h-3.5 stroke-[3]" />
+                        </div>
+                      </div>
+
+                      {/* Wear & StatTrak badges */}
+                      <div className="flex items-center gap-1.5 mb-2">
+                        <span className="text-[10px] font-bold font-['JetBrains_Mono'] px-1.5 py-0.5 rounded bg-white/[0.06] text-slate-300 uppercase">
+                          {skin.wear}
+                        </span>
+                        {skin.isStatTrak && (
+                          <span className="text-[10px] font-bold font-['JetBrains_Mono'] px-1.5 py-0.5 rounded bg-orange-500/20 text-orange-400">
+                            ST™
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Skin Thumbnail Image */}
+                      <div className="relative h-24 sm:h-28 flex items-center justify-center my-2">
+                        <SkinImage
+                          src={skin.image}
+                          fallback={skin.fallbackImage}
+                          alt={skin.name}
+                          className="max-h-full max-w-full object-contain filter drop-shadow-[0_8px_16px_rgba(0,0,0,0.6)] group-hover:scale-105 transition-transform duration-200"
+                        />
+                      </div>
+
+                      {/* Item Details */}
+                      <div className="pt-2 border-t border-white/[0.05]">
+                        <div className="text-[11px] text-slate-400 font-['Space_Grotesk'] truncate">
+                          {skin.weapon}
+                        </div>
+                        <div className="text-xs font-bold text-white font-['Space_Grotesk'] truncate">
+                          {skin.skinName}
+                        </div>
+                        <div className="text-sm font-extrabold font-['JetBrains_Mono'] text-emerald-400 mt-1">
+                          {formatPrice(skin.price)}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+          </div>
+        )}
+
+        {/* TAB 2: WALLET & BALANCES */}
         {activeTab === 'wallet' && (
           <div className="space-y-6">
             
@@ -542,11 +1058,11 @@ export const CabinetPage: React.FC<CabinetPageProps> = ({
                   </button>
 
                   <button
-                    onClick={handleLoadInventory}
+                    onClick={() => setActiveTab('inventory')}
                     className="px-5 py-3.5 rounded-2xl bg-white/[0.05] hover:bg-white/[0.08] border border-white/[0.1] text-white font-['Space_Grotesk'] font-semibold text-sm flex items-center justify-center gap-2 transition-all cursor-pointer"
                   >
-                    <Zap className="w-4 h-4 text-emerald-400" />
-                    <span>Продати скіни CS2</span>
+                    <Layers className="w-4 h-4 text-emerald-400" />
+                    <span>Мій інвентар ({skins.length})</span>
                   </button>
                 </div>
               </div>
@@ -711,22 +1227,25 @@ export const CabinetPage: React.FC<CabinetPageProps> = ({
           </div>
         )}
 
-        {/* Tab 2: STEAM TRADE URL SETTINGS */}
+        {/* TAB 3: STEAM TRADE URL SETTINGS (WITH STRICT OWNERSHIP VERIFICATION) */}
         {activeTab === 'trade' && (
           <div className="space-y-6">
             <div className="p-6 sm:p-8 rounded-3xl bg-[#0B1017] border border-white/[0.08] space-y-6 shadow-xl">
               <div>
-                <h3 className="text-lg font-bold font-['Space_Grotesk'] text-white mb-1.5">
-                  Steam Trade URL (Посилання на обмін)
+                <h3 className="text-lg font-bold font-['Space_Grotesk'] text-white mb-1.5 flex items-center gap-2">
+                  <span>Steam Trade URL (Посилання на обмін)</span>
+                  <span className="text-xs font-['JetBrains_Mono'] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                    Перевірка власника
+                  </span>
                 </h3>
                 <p className="text-xs sm:text-sm text-slate-400 leading-relaxed max-w-3xl">
-                  Посилання на обмін використовується ботами сервісу для надсилання вам пропозицій обміну. Воно абсолютно безпечне і не надає доступу до ваших паролів чи акаунта.
+                  Trade URL потрібен для отримання трейд-оферів від наших торгових ботів. Наш сервіс автоматично перевіряє, що вказаний Trade URL дійсно належить вашому акаунту <strong>{user.personaname} (SteamID: {user.steamId64})</strong>. Сторонній трейдлінк прив'язати неможливо.
                 </p>
               </div>
 
               <div>
                 <label className="block text-xs font-['JetBrains_Mono'] text-slate-300 mb-2 font-semibold">
-                  Ваш активний Trade URL:
+                  Ваш персональний Trade URL:
                 </label>
                 <div className="flex flex-col sm:flex-row gap-3">
                   <input
@@ -740,11 +1259,29 @@ export const CabinetPage: React.FC<CabinetPageProps> = ({
                     onClick={handleSaveTradeUrl}
                     className="px-6 py-3.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-['Space_Grotesk'] font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all cursor-pointer shrink-0"
                   >
-                    {tradeUrlSaved ? <Check className="w-4 h-4" /> : <Link2 className="w-4 h-4" />}
-                    <span>{tradeUrlSaved ? 'Збережено!' : 'Зберегти'}</span>
+                    <Check className="w-4 h-4" />
+                    <span>Перевірити та зберегти</span>
                   </button>
                 </div>
               </div>
+
+              {/* Status alerts */}
+              {tradeUrlError && (
+                <div className="p-4 rounded-2xl bg-red-500/15 border border-red-500/30 text-xs text-red-300 flex items-start gap-2.5">
+                  <AlertTriangle className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
+                  <div className="leading-relaxed">
+                    <strong className="text-white block mb-0.5">Помилка валідації трейдлінку:</strong>
+                    {tradeUrlError}
+                  </div>
+                </div>
+              )}
+
+              {tradeUrlSuccess && (
+                <div className="p-4 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 text-xs text-emerald-300 flex items-center gap-2.5">
+                  <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
+                  <span>{tradeUrlSuccess}</span>
+                </div>
+              )}
 
               <div className="flex items-center justify-between flex-wrap gap-3 pt-3 border-t border-white/[0.05]">
                 <a
@@ -757,32 +1294,10 @@ export const CabinetPage: React.FC<CabinetPageProps> = ({
                   <ExternalLink className="w-3.5 h-3.5" />
                 </a>
 
-                <button
-                  onClick={() => setTradeUrlInput('https://steamcommunity.com/tradeoffer/new/?partner=184920412&token=9X4bK2sM')}
-                  className="text-xs text-slate-400 hover:text-slate-200 font-['JetBrains_Mono']"
-                >
-                  Вставити тестовий URL
-                </button>
-              </div>
-
-              {/* Instant Load Inventory Shortcut Card */}
-              <div className="p-5 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                <div>
-                  <div className="text-sm font-bold text-emerald-300 font-['Space_Grotesk']">
-                    Завантажити свій CS2 інвентар у калькулятор
-                  </div>
-                  <div className="text-xs text-slate-300 mt-0.5">
-                    Перейдіть до оцінки скінів — система підтягне ваші предмети безпосередньо за вашим SteamID.
-                  </div>
+                {/* Account info pill */}
+                <div className="text-xs text-slate-400 font-['JetBrains_Mono']">
+                  Ваш SteamID64: <span className="text-slate-200">{user.steamId64}</span>
                 </div>
-
-                <button
-                  onClick={handleLoadInventory}
-                  className="px-5 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-['Space_Grotesk'] font-bold text-xs flex items-center gap-2 shrink-0 transition-all cursor-pointer"
-                >
-                  <Zap className="w-4 h-4 fill-slate-950" />
-                  <span>Завантажити інвентар</span>
-                </button>
               </div>
 
               {/* Safety notice */}
@@ -798,7 +1313,7 @@ export const CabinetPage: React.FC<CabinetPageProps> = ({
           </div>
         )}
 
-        {/* Tab 3: TRANSACTION HISTORY */}
+        {/* TAB 4: TRANSACTION HISTORY */}
         {activeTab === 'history' && (
           <div className="space-y-5">
             <div className="flex items-center justify-between">
@@ -858,7 +1373,7 @@ export const CabinetPage: React.FC<CabinetPageProps> = ({
           </div>
         )}
 
-        {/* Tab 4: SECURITY */}
+        {/* TAB 5: SECURITY */}
         {activeTab === 'security' && (
           <div className="space-y-6">
             <div className="p-6 sm:p-8 rounded-3xl bg-[#0B1017] border border-white/[0.08] space-y-6 shadow-xl">

@@ -5,7 +5,6 @@ import {
   Check, 
   Eye, 
   Search, 
-  Sparkles, 
   ArrowUpDown, 
   ShieldCheck, 
   ArrowRight,
@@ -258,11 +257,6 @@ export const InventorySandbox: React.FC<InventorySandboxProps> = ({
         
         {/* Section Header */}
         <div className="text-center max-w-3xl mx-auto mb-10">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-['JetBrains_Mono'] font-bold mb-3">
-            <Sparkles className="w-3.5 h-3.5" />
-            {t('sandbox.badge')}
-          </div>
-
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold font-['Space_Grotesk'] text-white tracking-tight mb-4">
             {t('sandbox.title')}
           </h2>
