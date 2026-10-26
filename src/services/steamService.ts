@@ -237,45 +237,127 @@ function determineWear(marketName: string, tags?: any[]): { wear: CS2Skin['wear'
 
 /**
  * Calculates benchmark market price and SkinToCash instant cashout value
+ * Applies an artificial +15% markup across all items as requested by user.
  */
 function estimateItemPrice(marketName: string, category: string, rarity: string, isStatTrak: boolean): { price: number; steamPrice: number; buffPrice: number } {
-  let basePrice = 25.0;
+  let basePrice = 0.50;
   const lower = marketName.toLowerCase();
 
-  // Tier 1 Knives & Legendary Skins
-  if (lower.includes('dragon lore')) basePrice = 9820;
+  // 1. STICKERS & GRAFFITI
+  if (category === 'Sticker' || lower.includes('sticker |')) {
+    if (lower.includes('katowice 2014')) {
+      if (lower.includes('titan')) basePrice = lower.includes('holo') ? 45000 : 2500;
+      else if (lower.includes('ibuypower')) basePrice = lower.includes('holo') ? 65000 : 3800;
+      else if (lower.includes('reason')) basePrice = lower.includes('holo') ? 42000 : 2200;
+      else if (lower.includes('vox') || lower.includes('ldlc') || lower.includes('dignitas')) basePrice = lower.includes('holo') ? 18000 : 1200;
+      else basePrice = lower.includes('holo') ? 12000 : 950;
+    } else if (lower.includes('crown (foil)')) {
+      basePrice = 950;
+    } else if (lower.includes('krakow 2017') && lower.includes('gold')) {
+      basePrice = 280;
+    } else if (lower.includes('krakow 2017')) {
+      basePrice = 18;
+    } else if (lower.includes('howling dawn')) {
+      basePrice = 1400;
+    } else if (lower.includes('gold')) {
+      basePrice = 18.50;
+    } else if (lower.includes('lenticular')) {
+      basePrice = 8.50;
+    } else if (lower.includes('holo')) {
+      basePrice = 2.40;
+    } else if (lower.includes('foil')) {
+      basePrice = 1.80;
+    } else if (lower.includes('glitter')) {
+      basePrice = 0.35;
+    } else {
+      // Regular tournament and paper stickers (Paris 2023, Antwerp, Stockholm, etc.)
+      basePrice = 0.03;
+    }
+  }
+  // 2. GRAFFITI
+  else if (lower.includes('graffiti')) {
+    basePrice = 0.03;
+  }
+  // 3. CASES & CAPSULES
+  else if (category === 'Case' || lower.includes('case') || lower.includes('capsule')) {
+    if (lower.includes('cs:go weapon case') || lower.includes('weapon case #1')) basePrice = 95.0;
+    else if (lower.includes('operation bravo')) basePrice = 48.0;
+    else if (lower.includes('esports 2013') || lower.includes('esports 2014')) basePrice = 42.0;
+    else if (lower.includes('huntsman') || lower.includes('winter offensive') || lower.includes('vanguard')) basePrice = 9.50;
+    else if (lower.includes('shattered web') || lower.includes('broken fang') || lower.includes('riptide')) basePrice = 4.80;
+    else if (lower.includes('capsule')) basePrice = lower.includes('2014') ? 850 : 0.95;
+    else if (
+      lower.includes('recoil') || 
+      lower.includes('revolution') || 
+      lower.includes('fracture') || 
+      lower.includes('snakebite') || 
+      lower.includes('clutch') || 
+      lower.includes('dreams & nightmares') || 
+      lower.includes('kilowatt') ||
+      lower.includes('prisma')
+    ) {
+      basePrice = 0.28;
+    } else {
+      basePrice = 0.45;
+    }
+  }
+  // 4. TIERS & LEGENDARY SKINS
+  else if (lower.includes('dragon lore')) basePrice = 9820;
   else if (lower.includes('howl')) basePrice = 5200;
-  else if (lower.includes('gungan')) basePrice = 7500;
+  else if (lower.includes('gungnir')) basePrice = 8900;
+  else if (lower.includes('wild lotus')) basePrice = 7850;
+  else if (lower.includes('prince')) basePrice = 3600;
+  else if (lower.includes('medusa')) basePrice = 2800;
   else if (lower.includes('gamma doppler') || lower.includes('emerald')) basePrice = 3450;
+  else if (lower.includes('doppler') && (lower.includes('ruby') || lower.includes('sapphire'))) basePrice = 4200;
   else if (lower.includes('doppler')) basePrice = 1450;
   else if (lower.includes('fade')) basePrice = 1850;
   else if (lower.includes('fire serpent')) basePrice = 1650;
   else if (lower.includes('pandora')) basePrice = 5400;
-  else if (lower.includes('printstream')) basePrice = lower.includes('m4a1') ? 890 : 260;
-  else if (lower.includes('asiimov')) basePrice = lower.includes('awp') ? 220 : 130;
-  else if (lower.includes('vulcan')) basePrice = 640;
-  else if (lower.includes('case hardened')) basePrice = 450;
+  else if (lower.includes('vice')) basePrice = 3200;
+  else if (lower.includes('spearmint')) basePrice = 2600;
+  else if (lower.includes('hedge maze')) basePrice = 3100;
+  else if (lower.includes('printstream')) basePrice = lower.includes('m4a1') ? 495 : (lower.includes('desert eagle') ? 115 : 260);
+  else if (lower.includes('asiimov')) basePrice = lower.includes('awp') ? 140 : 65;
+  else if (lower.includes('vulcan')) basePrice = 580;
+  else if (lower.includes('case hardened')) basePrice = lower.includes('ak-47') ? 350 : 180;
+  else if (lower.includes('redline')) basePrice = lower.includes('ak-47') ? 22.0 : 16.5;
+  else if (lower.includes('slate')) basePrice = 4.20;
+  else if (lower.includes('phantom disruptor')) basePrice = 7.50;
   else if (lower.includes('crane flight')) basePrice = 85;
-  else if (lower.includes('black nile')) basePrice = 14.5;
-  else if (lower.includes('crakow')) basePrice = 48.0;
-  else if (lower.includes('jawbreaker')) basePrice = 32.0;
-  else if (category === 'Knife') basePrice = 420;
-  else if (category === 'Gloves') basePrice = 360;
-  else if (category === 'Case') basePrice = lower.includes('weapon case') ? 95 : 2.8;
-  else if (category === 'Sticker') basePrice = lower.includes('glitter') || lower.includes('holo') ? 16.5 : 3.8;
-  else if (category === 'Agent') basePrice = 28.0;
-  else if (rarity === 'Covert') basePrice = 85;
-  else if (rarity === 'Classified') basePrice = 38;
-  else if (rarity === 'Restricted') basePrice = 12.5;
-  else if (rarity === 'Mil-Spec') basePrice = 4.8;
-  else basePrice = 1.6;
+  else if (lower.includes('black nile')) basePrice = 4.5;
+  else if (lower.includes('jawbreaker')) basePrice = 24.0;
+  // 5. CATEGORIES & RARITIES (General fallback)
+  else if (category === 'Knife') basePrice = 280;
+  else if (category === 'Gloves') basePrice = 220;
+  else if (category === 'Agent') basePrice = 16.0;
+  else if (rarity === 'Contraband') basePrice = 5200;
+  else if (rarity === 'Covert') basePrice = 42.0;
+  else if (rarity === 'Classified') basePrice = 14.0;
+  else if (rarity === 'Restricted') basePrice = 4.5;
+  else if (rarity === 'Mil-Spec') basePrice = 0.85;
+  else if (rarity === 'Industrial') basePrice = 0.22;
+  else {
+    // Consumer Grade (e.g., Safari Mesh, Sand Dune, Predator, Colony, Sage Spray)
+    if (lower.includes('safari mesh') || lower.includes('sand dune') || lower.includes('predator') || lower.includes('colony')) {
+      basePrice = 0.04;
+    } else {
+      basePrice = 0.06;
+    }
+  }
 
-  if (isStatTrak) basePrice *= 1.35;
+  if (isStatTrak) {
+    basePrice *= 1.30;
+  }
 
-  // Round to realistic numbers
-  const buffPrice = Math.round(basePrice * 100) / 100;
-  const steamPrice = Math.round(buffPrice * 1.15 * 100) / 100;
-  const cashoutPrice = Math.round(buffPrice * 0.94 * 100) / 100;
+  // Artificial markup: +15% on ALL items as requested by user
+  const ARTIFICIAL_MARKUP = 1.15;
+  const boostedPrice = basePrice * ARTIFICIAL_MARKUP;
+
+  // Round cleanly (minimum $0.03)
+  const cashoutPrice = Math.max(0.03, Math.round(boostedPrice * 100) / 100);
+  const steamPrice = Math.max(0.04, Math.round(boostedPrice * 1.15 * 100) / 100);
+  const buffPrice = Math.max(0.03, Math.round(boostedPrice * 0.98 * 100) / 100);
 
   return {
     price: cashoutPrice,

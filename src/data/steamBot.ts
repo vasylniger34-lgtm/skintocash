@@ -10,6 +10,7 @@ export interface OfficialSteamBot {
   tradeUrl: string;
   avatar: string;
   profileUrl: string;
+  country: string;
   level: number;
   memberSince: string;
   inventoryCount: number;
@@ -19,18 +20,20 @@ export interface OfficialSteamBot {
 
 /**
  * Real, active working Steam Bot loaded from mafile (anelisabartmann55)
- * Verified active CS2 inventory, open public profile, and active trade URL.
+ * Region set to RU (Russian Federation).
+ * Open public profile, verified avatar, and active trade URL.
  */
 export const OFFICIAL_STEAM_BOT: OfficialSteamBot = {
   id: 'bot-skintocash-01',
-  accountName: 'eloisakostuck',
-  personaName: 'SkinToCash.com | Bot #1',
-  steamId64: '76561199863517720',
-  partnerId: '1903251992',
-  tradeToken: 'f8SoxM7q',
-  tradeUrl: 'https://steamcommunity.com/tradeoffer/new/?partner=1903251992&token=f8SoxM7q',
-  avatar: 'https://avatars.fastly.steamstatic.com/ddbd804c7f15630115025199dd37c1877cfa430c_full.jpg',
-  profileUrl: 'https://steamcommunity.com/id/skintocash_official_bot/',
+  accountName: 'anelisabartmann55',
+  personaName: 'SkinToCash.com | Official Bot #1',
+  steamId64: '76561198694150587',
+  partnerId: '733884859',
+  tradeToken: 'xA2LPIG_',
+  tradeUrl: 'https://steamcommunity.com/tradeoffer/new/?partner=733884859&token=xA2LPIG_',
+  avatar: '/images/skintocash_bot_avatar.jpg',
+  profileUrl: 'https://steamcommunity.com/id/skintocash_bot_01/',
+  country: 'RU',
   level: 1,
   memberSince: '2026',
   inventoryCount: 1,

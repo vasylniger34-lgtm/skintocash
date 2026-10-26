@@ -1584,6 +1584,7 @@ export const CabinetPage: React.FC<CabinetPageProps> = ({
         selectedSkins={selectedSkinsList}
         totalPayout={selectedTotalValue}
         destinationAddress={user.tradeUrl || user.steamId64}
+        userTradeUrl={user.tradeUrl}
         onTradeCompleted={handleDepositTradeCompleted}
       />
 

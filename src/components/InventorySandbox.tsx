@@ -977,6 +977,7 @@ export const InventorySandbox: React.FC<InventorySandboxProps> = ({
         totalPayout={totalCashoutValue}
         paymentMethod={selectedPaymentMethod}
         destinationAddress={destinationInput}
+        userTradeUrl={tradeUrlInput}
         onTradeCompleted={handleTradeCompleted}
       />
 
