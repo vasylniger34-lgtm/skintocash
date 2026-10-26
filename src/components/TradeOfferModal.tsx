@@ -177,7 +177,7 @@ export const TradeOfferModal: React.FC<TradeOfferModalProps> = ({
                 </p>
               </div>
 
-              {/* Bot Identity Card (Real Steam Bot: TheFLC) */}
+              {/* Bot Identity Card: SkinToCash.com | Bot #1 */}
               <div className="p-4 rounded-2xl bg-white/[0.02] border border-white/[0.08] space-y-2.5">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
