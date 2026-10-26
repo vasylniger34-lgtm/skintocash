@@ -86,3 +86,37 @@ export interface ReviewItem {
   payoutMethod: string;
   verified: boolean;
 }
+
+export interface SteamUser {
+  steamId64: string;
+  personaname: string;
+  avatar: string;
+  avatarmedium: string;
+  avatarfull: string;
+  profileurl: string;
+  loccountrycode?: string;
+  personastate?: number; // 0: Offline, 1: Online, 2: Busy, 3: Away, 4: Snooze, 5: Looking to trade, 6: Looking to play
+  timecreated?: number;
+  steamLevel?: number;
+  tradeBanned?: boolean;
+  tradeUrl?: string;
+  balance?: number; // USD
+  totalWithdrawn?: number;
+  totalSales?: number;
+  joinedAt?: string;
+}
+
+export interface UserTransaction {
+  id: string;
+  date: string;
+  type: 'sale' | 'payout';
+  title: string;
+  amount: number; // USD
+  status: 'completed' | 'processing' | 'failed';
+  method: string;
+  destinationMasked: string;
+  itemsCount: number;
+  itemsSummary?: string;
+  txHash?: string;
+}
+

@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, ExternalLink, ShieldCheck, Zap, ArrowRight } from 'lucide-react';
+import { X, ExternalLink, ShieldCheck, Zap, ArrowRight, RefreshCw, AlertCircle } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
+import { useAuth } from '../context/AuthContext';
 
 interface SteamModalProps {
   isOpen: boolean;
@@ -12,18 +13,35 @@ interface SteamModalProps {
 export const SteamModal: React.FC<SteamModalProps> = ({ isOpen, onClose, onSuccess }) => {
   const [tradeUrl, setTradeUrl] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const { t } = useLanguage();
+  const { loginWithSteam, loginWithSteamId } = useAuth();
 
   if (!isOpen) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSteamOpenIdLogin = () => {
     setIsLoading(true);
-    setTimeout(() => {
-      setIsLoading(false);
-      onSuccess(tradeUrl || 'demo');
-      onClose();
-    }, 1200);
+    loginWithSteam();
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrorMessage(null);
+    setIsLoading(true);
+
+    const target = tradeUrl.trim() || 'demo';
+
+    if (target !== 'demo') {
+      const res = await loginWithSteamId(target);
+      if (!res.success) {
+        // If profile fetch fails, still allow sandbox valuation
+        console.warn('Could not authenticate SteamID profile, continuing to sandbox:', res.message);
+      }
+    }
+
+    setIsLoading(false);
+    onSuccess(target);
+    onClose();
   };
 
   const handleUseDemo = () => {
@@ -75,21 +93,19 @@ export const SteamModal: React.FC<SteamModalProps> = ({ isOpen, onClose, onSucce
 
           {/* Option 1: Official Steam OpenID Button */}
           <button
-            onClick={() => {
-              setIsLoading(true);
-              setTimeout(() => {
-                setIsLoading(false);
-                onSuccess('steam-openid');
-                onClose();
-              }, 1000);
-            }}
-            className="w-full py-3.5 px-4 rounded-xl bg-white/[0.03] hover:bg-white/[0.07] border border-white/[0.09] hover:border-emerald-500/40 text-white font-['Space_Grotesk'] font-bold text-xs sm:text-sm flex items-center justify-center gap-3 transition-all mb-4 shadow-md group cursor-pointer"
+            onClick={handleSteamOpenIdLogin}
+            disabled={isLoading}
+            className="w-full py-4 px-4 rounded-xl bg-gradient-to-r from-emerald-500 via-teal-400 to-emerald-400 hover:from-emerald-400 hover:to-teal-300 text-slate-950 font-['Space_Grotesk'] font-bold text-sm flex items-center justify-center gap-3 transition-all mb-4 shadow-[0_0_25px_rgba(16,185,129,0.35)] group cursor-pointer"
           >
-            <svg className="w-5 h-5 fill-white group-hover:scale-110 transition-transform" viewBox="0 0 24 24">
-              <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.44 9.82 8.24 11.44l3.19-4.38a4.48 4.48 0 0 1-.93-.84l-4.52 1.87a9.6 9.6 0 0 1-1.07-5.09c0-5.3 4.3-9.6 9.6-9.6s9.6 4.3 9.6 9.6c0 5.28-4.28 9.57-9.56 9.6l-3.32 4.56c.49.03.98.05 1.48.05 6.63 0 12-5.37 12-12S18.63 0 12 0z" />
-            </svg>
+            {isLoading ? (
+              <RefreshCw className="w-5 h-5 animate-spin text-slate-950" />
+            ) : (
+              <svg className="w-5 h-5 fill-slate-950 group-hover:scale-110 transition-transform" viewBox="0 0 24 24">
+                <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.44 9.82 8.24 11.44l3.19-4.38a4.48 4.48 0 0 1-.93-.84l-4.52 1.87a9.6 9.6 0 0 1-1.07-5.09c0-5.3 4.3-9.6 9.6-9.6s9.6 4.3 9.6 9.6c0 5.28-4.28 9.57-9.56 9.6l-3.32 4.56c.49.03.98.05 1.48.05 6.63 0 12-5.37 12-12S18.63 0 12 0z" />
+              </svg>
+            )}
             <span>{t('steamModal.signInSteam')}</span>
-            <ExternalLink className="w-3.5 h-3.5 text-slate-400" />
+            <ExternalLink className="w-4 h-4 text-slate-950" />
           </button>
 
           <div className="relative my-5 text-center">
@@ -100,6 +116,14 @@ export const SteamModal: React.FC<SteamModalProps> = ({ isOpen, onClose, onSucce
               {t('steamModal.orTradeUrl')}
             </span>
           </div>
+
+          {/* Error Message */}
+          {errorMessage && (
+            <div className="mb-4 p-3 rounded-xl bg-red-500/10 border border-red-500/25 flex items-center gap-2 text-xs text-red-300">
+              <AlertCircle className="w-4 h-4 text-red-400 shrink-0" />
+              <span>{errorMessage}</span>
+            </div>
+          )}
 
           {/* Option 2: Enter Trade URL Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -119,7 +143,7 @@ export const SteamModal: React.FC<SteamModalProps> = ({ isOpen, onClose, onSucce
                 type="text"
                 value={tradeUrl}
                 onChange={(e) => setTradeUrl(e.target.value)}
-                placeholder="https://steamcommunity.com/tradeoffer/new/?partner=..."
+                placeholder="https://steamcommunity.com/tradeoffer/new/?partner=... або SteamID64"
                 className="w-full px-3.5 py-3 rounded-xl bg-white/[0.03] border border-white/[0.08] text-white font-['JetBrains_Mono'] text-xs focus:outline-none focus:border-emerald-400 transition-colors"
               />
 
@@ -140,15 +164,18 @@ export const SteamModal: React.FC<SteamModalProps> = ({ isOpen, onClose, onSucce
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full py-3.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-['Space_Grotesk'] font-bold text-sm tracking-wide shadow-[0_0_25px_rgba(16,185,129,0.35)] flex items-center justify-center gap-2 transition-all cursor-pointer"
+              className="w-full py-3.5 rounded-xl bg-white/[0.05] hover:bg-white/[0.1] border border-white/[0.1] text-white font-['Space_Grotesk'] font-bold text-sm tracking-wide flex items-center justify-center gap-2 transition-all cursor-pointer"
             >
               {isLoading ? (
-                <span>{t('steamModal.loading')}</span>
+                <span className="flex items-center gap-2">
+                  <RefreshCw className="w-4 h-4 animate-spin text-emerald-400" />
+                  {t('steamModal.loading')}
+                </span>
               ) : (
                 <>
-                  <Zap className="w-4 h-4 fill-slate-950" />
-                  <span>{t('steamModal.inspectBtn')}</span>
-                  <ArrowRight className="w-4 h-4" />
+                  <Zap className="w-4 h-4 text-emerald-400" />
+                  <span>Швидкий вхід за Trade URL / SteamID</span>
+                  <ArrowRight className="w-4 h-4 text-slate-400" />
                 </>
               )}
             </button>

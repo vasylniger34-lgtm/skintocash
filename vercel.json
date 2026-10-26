@@ -1,0 +1,8 @@
+{
+  "rewrites": [
+    { "source": "/api/auth/steam/login", "destination": "/api/auth/steam-login" },
+    { "source": "/api/auth/steam/callback", "destination": "/api/auth/steam-callback" },
+    { "source": "/api/auth/steam/user", "destination": "/api/auth/steam-user" },
+    { "source": "/((?!api/).*)", "destination": "/index.html" }
+  ]
+}

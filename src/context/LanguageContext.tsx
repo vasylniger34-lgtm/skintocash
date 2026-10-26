@@ -28,6 +28,8 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     'nav.trustSecurity': 'Trust & Security',
     'nav.faq': 'FAQ',
     'nav.sellViaSteam': 'Sell Skins via Steam',
+    'nav.signInSteam': 'Sign in through Steam',
+    'nav.cabinet': 'My Cabinet',
 
     // Hero
     'hero.trustPill': '99.8% Instant Payouts | 4.9/5 on Trustpilot (14,200+ Reviews)',
@@ -248,6 +250,8 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     'nav.trustSecurity': 'Безпека та надійність',
     'nav.faq': 'FAQ',
     'nav.sellViaSteam': 'Продати скіни через Steam',
+    'nav.signInSteam': 'Увійти через Steam',
+    'nav.cabinet': 'Особистий кабінет',
 
     // Hero
     'hero.trustPill': '99.8% миттєвих виплат | 4.9/5 на Trustpilot (14,200+ відгуків)',
@@ -468,6 +472,8 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     'nav.trustSecurity': 'Безопасность',
     'nav.faq': 'FAQ',
     'nav.sellViaSteam': 'Продать скины через Steam',
+    'nav.signInSteam': 'Войти через Steam',
+    'nav.cabinet': 'Личный кабинет',
 
     // Hero
     'hero.trustPill': '99.8% моментальных выплат | 4.9/5 на Trustpilot (14,200+ отзывов)',
@@ -687,6 +693,8 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     'nav.trustSecurity': 'Bezpieczeństwo',
     'nav.faq': 'FAQ',
     'nav.sellViaSteam': 'Sprzedaj przez Steam',
+    'nav.signInSteam': 'Zaloguj przez Steam',
+    'nav.cabinet': 'Panel gracza',
 
     'hero.trustPill': '99.8% natychmiastowych wypłat | 4.9/5 na Trustpilot (14,200+ opinii)',
     'hero.headlinePart1': 'Sprzedaj skiny CS2.',
@@ -877,6 +885,8 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     'nav.trustSecurity': 'Seguridad',
     'nav.faq': 'FAQ',
     'nav.sellViaSteam': 'Vender vía Steam',
+    'nav.signInSteam': 'Iniciar sesión con Steam',
+    'nav.cabinet': 'Mi Cuenta',
 
     'hero.trustPill': '99.8% de pagos instantáneos | 4.9/5 en Trustpilot (14,200+ opiniones)',
     'hero.headlinePart1': 'Vende Skins de CS2.',
@@ -1067,6 +1077,8 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     'nav.trustSecurity': 'Sicherheit',
     'nav.faq': 'FAQ',
     'nav.sellViaSteam': 'Über Steam verkaufen',
+    'nav.signInSteam': 'Mit Steam anmelden',
+    'nav.cabinet': 'Mein Profil',
 
     'hero.trustPill': '99.8% Sofortauszahlungen | 4.9/5 auf Trustpilot (14,200+ Bewertungen)',
     'hero.headlinePart1': 'CS2 Skins verkaufen.',
