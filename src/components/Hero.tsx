@@ -189,7 +189,7 @@ export const Hero: React.FC<HeroProps> = ({
   };
 
   return (
-    <section className="relative pt-32 pb-24 sm:pt-40 sm:pb-32 lg:pt-44 lg:pb-36 overflow-hidden ambient-mesh">
+    <section className="relative pt-24 pb-16 sm:pt-40 sm:pb-32 lg:pt-44 lg:pb-36 overflow-hidden ambient-mesh">
       
       {/* Background Cyber Grid & Subtle Glow Orbs */}
       <div className="absolute inset-0 bg-grid-pattern opacity-30 pointer-events-none" />
@@ -276,7 +276,7 @@ export const Hero: React.FC<HeroProps> = ({
               <button
                 type="submit"
                 disabled={isScanning}
-                className="h-11 px-4 sm:px-5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 text-slate-950 font-['Space_Grotesk'] font-bold text-xs sm:text-sm tracking-wide shadow-[0_0_20px_rgba(16,185,129,0.35)] flex items-center gap-1.5 cursor-pointer whitespace-nowrap shrink-0 transition-all"
+                className="h-11 px-3 sm:px-5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 text-slate-950 font-['Space_Grotesk'] font-bold text-xs sm:text-sm tracking-wide shadow-[0_0_20px_rgba(16,185,129,0.35)] flex items-center gap-1.5 cursor-pointer whitespace-nowrap shrink-0 transition-all"
               >
                 {isScanning ? (
                   <>
@@ -285,7 +285,8 @@ export const Hero: React.FC<HeroProps> = ({
                   </>
                 ) : (
                   <>
-                    <span>{t('hero.getCashBtn')}</span>
+                    <span className="hidden sm:inline">{t('hero.getCashBtn')}</span>
+                    <span className="sm:hidden inline">Оцінити</span>
                     <ArrowRight className="w-3.5 h-3.5" />
                   </>
                 )}

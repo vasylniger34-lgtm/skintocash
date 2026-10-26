@@ -407,10 +407,11 @@ export const CabinetPage: React.FC<CabinetPageProps> = ({
 
             <button
               onClick={onNavigateHome}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] text-xs font-['Space_Grotesk'] font-semibold text-slate-300 hover:text-white transition-all cursor-pointer"
+              className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] text-xs font-['Space_Grotesk'] font-semibold text-slate-300 hover:text-white transition-all cursor-pointer shrink-0"
+              title="На головну"
             >
               <ArrowLeft className="w-3.5 h-3.5 text-emerald-400" />
-              <span>На головну</span>
+              <span className="hidden sm:inline">На головну</span>
             </button>
 
             <button
@@ -418,10 +419,11 @@ export const CabinetPage: React.FC<CabinetPageProps> = ({
                 window.history.pushState({}, '', '/p2p');
                 window.dispatchEvent(new PopStateEvent('popstate'));
               }}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-emerald-500/15 to-cyan-500/15 hover:from-emerald-500/25 hover:to-cyan-500/25 border border-emerald-500/30 text-xs font-['Space_Grotesk'] font-semibold text-emerald-300 hover:text-white transition-all cursor-pointer"
+              className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-gradient-to-r from-emerald-500/15 to-cyan-500/15 hover:from-emerald-500/25 hover:to-cyan-500/25 border border-emerald-500/30 text-xs font-['Space_Grotesk'] font-semibold text-emerald-300 hover:text-white transition-all cursor-pointer shrink-0"
+              title="P2P Ринок"
             >
               <ArrowLeftRight className="w-3.5 h-3.5 text-emerald-400" />
-              <span>P2P Ринок</span>
+              <span className="hidden sm:inline">P2P Ринок</span>
             </button>
           </div>
 

@@ -472,8 +472,8 @@ export const InventorySandbox: React.FC<InventorySandboxProps> = ({
             {/* Control Bar: Filters, Search & Sort */}
             <div className="p-3.5 rounded-2xl glass-panel flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
               
-              {/* Category Filter Pills */}
-              <div className="flex flex-wrap items-center gap-1.5">
+              {/* Category Filter Pills (Smooth horizontal scroll on mobile) */}
+              <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none w-full sm:w-auto">
                 {[
                   { id: 'all', label: t('sandbox.allItems') },
                   { id: 'knives-gloves', label: t('sandbox.knivesGloves') },
@@ -484,7 +484,7 @@ export const InventorySandbox: React.FC<InventorySandboxProps> = ({
                   <button
                     key={cat.id}
                     onClick={() => setActiveCategory(cat.id)}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-['Space_Grotesk'] font-semibold transition-all cursor-pointer ${
+                    className={`px-3 py-1.5 rounded-xl text-xs font-['Space_Grotesk'] font-semibold transition-all cursor-pointer whitespace-nowrap shrink-0 ${
                       activeCategory === cat.id
                         ? 'bg-emerald-500 text-slate-950 shadow-[0_0_15px_rgba(16,185,129,0.35)]'
                         : 'bg-white/[0.03] text-slate-300 hover:text-white hover:bg-white/[0.08] border border-white/[0.06]'
@@ -925,6 +925,38 @@ export const InventorySandbox: React.FC<InventorySandboxProps> = ({
         </div>
 
       </div>
+
+      {/* Mobile Sticky Cashout Action Bar (Visible on mobile when skins are selected) */}
+      <AnimatePresence>
+        {selectedSkinsList.length > 0 && !isCashoutModalOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: 30, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 30, scale: 0.95 }}
+            transition={{ duration: 0.2 }}
+            className="md:hidden fixed bottom-16 left-3 right-3 z-30 p-3 rounded-2xl bg-[#0B1017]/95 border border-emerald-500/40 backdrop-blur-2xl shadow-[0_10px_35px_rgba(0,0,0,0.9),0_0_20px_rgba(16,185,129,0.3)] flex items-center justify-between gap-3"
+          >
+            <div className="flex flex-col">
+              <span className="text-[10px] text-slate-400 font-['Space_Grotesk'] uppercase tracking-wider font-semibold">
+                Обрано: {selectedSkinsList.length} скінів
+              </span>
+              <span className="text-base font-extrabold font-['JetBrains_Mono'] text-emerald-400">
+                {formatPrice(totalCashoutValue)}
+              </span>
+            </div>
+
+            <motion.button
+              whileTap={{ scale: 0.96 }}
+              onClick={handleTriggerCashout}
+              className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-400 text-slate-950 font-['Space_Grotesk'] font-bold text-xs flex items-center gap-1.5 shadow-[0_0_15px_rgba(16,185,129,0.4)] cursor-pointer"
+            >
+              <Zap className="w-3.5 h-3.5 fill-slate-950" />
+              <span>Продати</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </motion.button>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Inspect Skin Details Modal */}
       <SkinInspectModal

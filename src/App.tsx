@@ -14,6 +14,7 @@ import { FAQSection } from './components/FAQSection';
 import { Footer } from './components/Footer';
 import { SteamModal } from './components/SteamModal';
 import { BonusPromoModal } from './components/BonusPromoModal';
+import { MobileBottomNav } from './components/MobileBottomNav';
 import { CabinetPage } from './pages/CabinetPage';
 import { P2PPage } from './pages/P2PPage';
 
@@ -84,31 +85,79 @@ function MainContent() {
   // If on /cabinet or /profile path: render standalone dedicated Cabinet page!
   if (currentPath === '/cabinet' || currentPath === '/profile') {
     return (
-      <CabinetPage
-        onNavigateHome={() => closeCabinet()}
-        onLoadInventoryAndGoHome={(target) => {
-          handleScanInventory(target);
-          closeCabinet();
-        }}
-      />
+      <div className="min-h-screen bg-[#070A0E] pb-16 md:pb-0">
+        <CabinetPage
+          onNavigateHome={() => {
+            closeCabinet();
+            setCurrentPath('/');
+          }}
+          onLoadInventoryAndGoHome={(target) => {
+            handleScanInventory(target);
+            closeCabinet();
+            setCurrentPath('/');
+          }}
+        />
+        <MobileBottomNav
+          currentPath={currentPath}
+          onNavigateHome={() => {
+            closeCabinet();
+            window.history.pushState({}, '', '/');
+            setCurrentPath('/');
+          }}
+          onNavigateP2P={() => {
+            closeCabinet();
+            window.history.pushState({}, '', '/p2p');
+            setCurrentPath('/p2p');
+          }}
+          onScrollToInventory={() => {
+            closeCabinet();
+            window.history.pushState({}, '', '/');
+            setCurrentPath('/');
+            setTimeout(() => {
+              const el = document.getElementById('inventory-sandbox');
+              if (el) el.scrollIntoView({ behavior: 'smooth' });
+            }, 100);
+          }}
+        />
+      </div>
     );
   }
 
   // If on /p2p path: render standalone dedicated P2P Marketplace page!
   if (currentPath === '/p2p') {
     return (
-      <P2PPage
-        onNavigateHome={() => {
-          window.history.pushState({}, '', '/');
-          setCurrentPath('/');
-        }}
-        onOpenLogin={() => setIsSteamModalOpen(true)}
-      />
+      <div className="min-h-screen bg-[#070A0E] pb-16 md:pb-0">
+        <P2PPage
+          onNavigateHome={() => {
+            window.history.pushState({}, '', '/');
+            setCurrentPath('/');
+          }}
+          onOpenLogin={() => setIsSteamModalOpen(true)}
+        />
+        <MobileBottomNav
+          currentPath={currentPath}
+          onNavigateHome={() => {
+            window.history.pushState({}, '', '/');
+            setCurrentPath('/');
+          }}
+          onNavigateP2P={() => {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }}
+          onScrollToInventory={() => {
+            window.history.pushState({}, '', '/');
+            setCurrentPath('/');
+            setTimeout(() => {
+              const el = document.getElementById('inventory-sandbox');
+              if (el) el.scrollIntoView({ behavior: 'smooth' });
+            }, 100);
+          }}
+        />
+      </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#070A0E] text-[#E5E7EB] font-sans antialiased overflow-x-hidden selection:bg-emerald-500/30 selection:text-emerald-300">
+    <div className="min-h-screen bg-[#070A0E] text-[#E5E7EB] font-sans antialiased overflow-x-hidden selection:bg-emerald-500/30 selection:text-emerald-300 pb-20 md:pb-0">
       
       {/* Sticky Glassmorphic Navbar with Custom SVG Emblem */}
       <Navbar
@@ -168,6 +217,19 @@ function MainContent() {
           setIsBonusApplied(true);
           scrollToSection('inventory-sandbox');
         }}
+      />
+
+      {/* Mobile Sticky Bottom Navigation Bar */}
+      <MobileBottomNav
+        currentPath={currentPath}
+        onNavigateHome={() => {
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }}
+        onNavigateP2P={() => {
+          window.history.pushState({}, '', '/p2p');
+          setCurrentPath('/p2p');
+        }}
+        onScrollToInventory={() => scrollToSection('inventory-sandbox')}
       />
 
     </div>
