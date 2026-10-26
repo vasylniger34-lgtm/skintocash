@@ -15,6 +15,7 @@ import { Footer } from './components/Footer';
 import { SteamModal } from './components/SteamModal';
 import { BonusPromoModal } from './components/BonusPromoModal';
 import { CabinetPage } from './pages/CabinetPage';
+import { P2PPage } from './pages/P2PPage';
 
 function MainContent() {
   const { user, closeCabinet } = useAuth();
@@ -89,6 +90,19 @@ function MainContent() {
           handleScanInventory(target);
           closeCabinet();
         }}
+      />
+    );
+  }
+
+  // If on /p2p path: render standalone dedicated P2P Marketplace page!
+  if (currentPath === '/p2p') {
+    return (
+      <P2PPage
+        onNavigateHome={() => {
+          window.history.pushState({}, '', '/');
+          setCurrentPath('/');
+        }}
+        onOpenLogin={() => setIsSteamModalOpen(true)}
       />
     );
   }

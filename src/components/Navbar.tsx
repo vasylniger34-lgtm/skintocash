@@ -7,7 +7,9 @@ import {
   ChevronDown, 
   ArrowRight, 
   Flame, 
-  Globe 
+  Globe,
+  ArrowLeftRight,
+  Check
 } from 'lucide-react';
 import { LogoIcon } from './LogoIcon';
 import { useCurrency } from '../context/CurrencyContext';
@@ -81,6 +83,20 @@ export const Navbar: React.FC<NavbarProps> = ({ onScrollToSection }) => {
             >
               <Zap className="w-3.5 h-3.5 fill-emerald-400 shrink-0" />
               <span>{t('nav.instantSell')}</span>
+            </button>
+
+            <button
+              onClick={() => {
+                window.history.pushState({}, '', '/p2p');
+                window.dispatchEvent(new PopStateEvent('popstate'));
+              }}
+              className="whitespace-nowrap text-xs font-semibold text-white hover:text-emerald-300 transition-all flex items-center gap-1.5 cursor-pointer px-2.5 py-1 rounded-xl bg-gradient-to-r from-emerald-500/15 to-cyan-500/15 border border-emerald-500/30 hover:border-emerald-500/60 shadow-[0_0_15px_rgba(16,185,129,0.15)]"
+            >
+              <ArrowLeftRight className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+              <span>P2P Ринок</span>
+              <span className="px-1.5 py-0.2 rounded-md bg-emerald-500 text-[9px] font-black text-slate-950 font-['JetBrains_Mono'] uppercase">
+                New
+              </span>
             </button>
 
             <button
@@ -330,6 +346,23 @@ export const Navbar: React.FC<NavbarProps> = ({ onScrollToSection }) => {
                   <span>{t('nav.signInSteam')}</span>
                 </button>
               )}
+              <button
+                onClick={() => {
+                  window.history.pushState({}, '', '/p2p');
+                  window.dispatchEvent(new PopStateEvent('popstate'));
+                  setMobileMenuOpen(false);
+                }}
+                className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-emerald-500/20 to-cyan-500/20 border border-emerald-500/40 text-emerald-300 font-bold text-sm flex items-center justify-between"
+              >
+                <span className="flex items-center gap-2">
+                  <ArrowLeftRight className="w-4 h-4 text-emerald-400" />
+                  <span>P2P Ринок (Скіни на картку)</span>
+                </span>
+                <span className="text-[10px] font-black font-['JetBrains_Mono'] bg-emerald-500 text-slate-950 px-2 py-0.5 rounded uppercase">
+                  New
+                </span>
+              </button>
+
               <button
                 onClick={() => {
                   onScrollToSection('inventory-sandbox');

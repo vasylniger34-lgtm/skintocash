@@ -26,7 +26,8 @@ import {
   Square,
   Lock,
   Layers,
-  ArrowUpDown
+  ArrowUpDown,
+  ArrowLeftRight
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { useAuth } from '../context/AuthContext';
@@ -385,6 +386,17 @@ export const CabinetPage: React.FC<CabinetPageProps> = ({
             >
               <ArrowLeft className="w-3.5 h-3.5 text-emerald-400" />
               <span>На головну</span>
+            </button>
+
+            <button
+              onClick={() => {
+                window.history.pushState({}, '', '/p2p');
+                window.dispatchEvent(new PopStateEvent('popstate'));
+              }}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-emerald-500/15 to-cyan-500/15 hover:from-emerald-500/25 hover:to-cyan-500/25 border border-emerald-500/30 text-xs font-['Space_Grotesk'] font-semibold text-emerald-300 hover:text-white transition-all cursor-pointer"
+            >
+              <ArrowLeftRight className="w-3.5 h-3.5 text-emerald-400" />
+              <span>P2P Ринок</span>
             </button>
           </div>
 
