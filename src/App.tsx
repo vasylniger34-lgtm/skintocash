@@ -4,7 +4,6 @@ import { LanguageProvider } from './context/LanguageContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { Navbar } from './components/Navbar';
 import { Hero } from './components/Hero';
-import { PaymentMarquee } from './components/PaymentMarquee';
 import { LivePayoutsFeed } from './components/LivePayoutsFeed';
 import { InventorySandbox } from './components/InventorySandbox';
 import { WhyChooseUs } from './components/WhyChooseUs';
@@ -172,9 +171,6 @@ function MainContent() {
           if (!isBonusApplied) setIsBonusModalOpen(true);
         }}
       />
-
-      {/* Infinite Dual-Direction Payment Methods Marquee */}
-      <PaymentMarquee />
 
       {/* Live Real-Time Payouts Feed */}
       <LivePayoutsFeed />
