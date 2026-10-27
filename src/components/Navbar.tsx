@@ -77,6 +77,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onScrollToSection }) => {
     { code: 'USD', label: 'USD ($)', icon: '$' },
     { code: 'EUR', label: 'EUR (€)', icon: '€' },
     { code: 'UAH', label: 'UAH (₴)', icon: '₴' },
+    { code: 'RUB', label: 'RUB (₽)', icon: '₽' },
     { code: 'CRYPTO', label: 'USDT (₮)', icon: '₮' },
   ];
 
@@ -481,7 +482,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onScrollToSection }) => {
                     <Globe className="w-3 h-3 text-emerald-400" />
                     <span>Валюта сайту</span>
                   </div>
-                  <div className="grid grid-cols-4 gap-1.5">
+                  <div className="grid grid-cols-5 gap-1">
                     {currencies.map(c => (
                       <button
                         key={c.code}

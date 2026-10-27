@@ -81,6 +81,7 @@ export const P2PPage: React.FC<P2PPageProps> = ({ onNavigateHome, onOpenLogin })
     { code: 'USD', label: 'USD ($)', icon: '$' },
     { code: 'EUR', label: 'EUR (€)', icon: '€' },
     { code: 'UAH', label: 'UAH (₴)', icon: '₴' },
+    { code: 'RUB', label: 'RUB (₽)', icon: '₽' },
     { code: 'CRYPTO', label: 'USDT (₮)', icon: '₮' },
   ];
 

@@ -30,6 +30,13 @@ const CURRENCY_CONFIGS: Record<Currency, CurrencyConfig> = {
     prefix: '',
     suffix: ' ₴',
   },
+  RUB: {
+    code: 'RUB',
+    symbol: '₽',
+    rate: 96.5,
+    prefix: '',
+    suffix: ' ₽',
+  },
   CRYPTO: {
     code: 'CRYPTO',
     symbol: '₮',
