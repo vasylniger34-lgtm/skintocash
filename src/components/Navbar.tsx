@@ -149,12 +149,12 @@ export const Navbar: React.FC<NavbarProps> = ({ onScrollToSection }) => {
 
           {/* Desktop Navigation: Staggered reveal in Phase 3 */}
           <motion.nav 
-            initial={{ opacity: 0, y: -12 }}
+            initial={{ opacity: 0, y: -10 }}
             animate={{ 
               opacity: phase === 'loading' ? 0 : 1, 
-              y: phase === 'loading' ? -12 : 0 
+              y: phase === 'loading' ? -10 : 0 
             }}
-            transition={{ duration: 0.45, delay: 0.05, ease: [0.16, 1, 0.3, 1] }}
+            transition={{ duration: 0.65, delay: 0.08, ease: [0.22, 1, 0.36, 1] }}
             className="hidden lg:flex items-center gap-1 xl:gap-2 min-w-0"
           >
             {/* 1. Instant Sell */}
@@ -257,12 +257,12 @@ export const Navbar: React.FC<NavbarProps> = ({ onScrollToSection }) => {
 
           {/* Right Action Tools - Staggered reveal in Phase 3 */}
           <motion.div 
-            initial={{ opacity: 0, y: -12 }}
+            initial={{ opacity: 0, y: -10 }}
             animate={{ 
               opacity: phase === 'loading' ? 0 : 1, 
-              y: phase === 'loading' ? -12 : 0 
+              y: phase === 'loading' ? -10 : 0 
             }}
-            transition={{ duration: 0.45, delay: 0.12, ease: [0.16, 1, 0.3, 1] }}
+            transition={{ duration: 0.65, delay: 0.14, ease: [0.22, 1, 0.36, 1] }}
             className="flex items-center gap-2 sm:gap-2.5 shrink-0"
           >
             

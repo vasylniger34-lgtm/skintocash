@@ -5,7 +5,6 @@ import { LanguageProvider } from './context/LanguageContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { IntroProvider } from './context/IntroContext';
 import { IntroPreloader } from './components/IntroPreloader';
-import { ReplayIntroButton } from './components/ReplayIntroButton';
 import { Navbar } from './components/Navbar';
 import { Hero } from './components/Hero';
 import { LivePayoutsFeed } from './components/LivePayoutsFeed';
@@ -200,9 +199,6 @@ function MainContent() {
       
       {/* Cinematic Awwwards Intro Preloader with Shared Layout Logo Flight */}
       <IntroPreloader />
-
-      {/* Tiny unobtrusive Replay Intro button for client presentation */}
-      <ReplayIntroButton />
 
       {/* Sticky Glassmorphic Navbar with Custom SVG Emblem */}
       <Navbar

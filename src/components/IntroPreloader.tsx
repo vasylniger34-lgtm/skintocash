@@ -20,127 +20,98 @@ export const IntroPreloader: React.FC = () => {
         initial={{ opacity: 1 }}
         animate={{ opacity: isLoading ? 1 : 0 }}
         exit={{ opacity: 0 }}
-        transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
+        transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
         className={`fixed inset-0 z-[100] bg-[#05080B] flex flex-col items-center justify-center overflow-hidden ${
           isLoading ? 'pointer-events-auto' : 'pointer-events-none'
         }`}
       >
-        {/* Subtle Radial Emerald Pulse Background */}
+        {/* Velvety Deep Radial Emerald Glow Background (No harsh square grids) */}
         <motion.div
           animate={{
             scale: [1, 1.08, 1],
-            opacity: [0.65, 0.95, 0.65],
+            opacity: [0.7, 0.95, 0.7],
           }}
           transition={{
-            duration: 2.2,
+            duration: 2.4,
             repeat: Infinity,
             ease: 'easeInOut',
           }}
-          className="absolute w-[600px] h-[600px] sm:w-[800px] sm:h-[800px] rounded-full pointer-events-none"
+          className="absolute w-[600px] h-[600px] sm:w-[900px] sm:h-[900px] rounded-full pointer-events-none"
           style={{
-            background: 'radial-gradient(circle at center, rgba(16, 185, 129, 0.16) 0%, rgba(6, 182, 212, 0.05) 45%, transparent 70%)',
-            filter: 'blur(50px)',
+            background: 'radial-gradient(circle at center, rgba(16, 185, 129, 0.18) 0%, rgba(6, 182, 212, 0.06) 40%, transparent 70%)',
+            filter: 'blur(60px)',
           }}
         />
 
-        {/* Faint Tactical Grid Overlay */}
-        <div 
-          className="absolute inset-0 pointer-events-none opacity-[0.14]"
-          style={{
-            backgroundImage: `
-              linear-gradient(to right, rgba(255, 255, 255, 0.08) 1px, transparent 1px),
-              linear-gradient(to bottom, rgba(255, 255, 255, 0.08) 1px, transparent 1px)
-            `,
-            backgroundSize: '36px 36px',
-            maskImage: 'radial-gradient(circle at center, black 40%, transparent 85%)',
-            WebkitMaskImage: 'radial-gradient(circle at center, black 40%, transparent 85%)',
-          }}
-        />
+        {/* Ambient Dark Obsidian Vignette */}
+        <div className="absolute inset-0 bg-gradient-to-b from-[#05080B]/80 via-transparent to-[#05080B] pointer-events-none" />
 
-        {/* Tactical Crosshair / Corner brackets */}
-        <div className="absolute inset-8 sm:inset-16 pointer-events-none opacity-20">
-          <div className="absolute top-0 left-0 w-4 h-4 border-t-2 border-l-2 border-emerald-400" />
-          <div className="absolute top-0 right-0 w-4 h-4 border-t-2 border-r-2 border-emerald-400" />
-          <div className="absolute bottom-0 left-0 w-4 h-4 border-b-2 border-l-2 border-emerald-400" />
-          <div className="absolute bottom-0 right-0 w-4 h-4 border-b-2 border-r-2 border-emerald-400" />
-        </div>
-
-        {/* Centered Vault Area */}
-        <div className="relative z-10 flex flex-col items-center">
+        {/* Centered Vault Area (Zero rectangular clipping) */}
+        <div className="relative z-10 flex flex-col items-center overflow-visible">
           
           {/* Centered Logo (Shared Layout Target during Phase 1) */}
-          <div className="h-16 sm:h-20 flex items-center justify-center">
+          <div className="h-16 sm:h-20 flex items-center justify-center overflow-visible">
             {isLoading && (
               <motion.div
                 key="intro-center-logo"
                 layoutId="skintocash-brand-logo"
                 transition={{
                   type: 'spring',
-                  stiffness: 65,
-                  damping: 16,
+                  stiffness: 60,
+                  damping: 18,
                   mass: 1,
                 }}
-                className="flex items-center gap-3 sm:gap-3.5 select-none origin-center scale-[1.3] sm:scale-[1.6]"
+                className="flex items-center gap-3 sm:gap-3.5 select-none origin-center scale-[1.3] sm:scale-[1.6] overflow-visible"
               >
-                {/* Logo Icon with animated stroke draw & neon emerald charge */}
-                <div className="relative flex items-center justify-center filter drop-shadow-[0_0_35px_rgba(16,185,129,0.85)]">
+                {/* Logo Icon with animated stroke draw & pure organic neon glow */}
+                <div className="relative flex items-center justify-center overflow-visible">
                   <LogoIcon size={38} animated={true} />
                   
-                  {/* Surrounding Neon Charge Ring */}
+                  {/* Organic Neon Pulse Glow Ring */}
                   <motion.div
-                    initial={{ opacity: 0, scale: 0.7 }}
-                    animate={{ opacity: [0, 1, 0.6], scale: [0.7, 1.25, 1.1] }}
-                    transition={{ duration: 1.1, ease: 'easeOut' }}
-                    className="absolute inset-0 rounded-full bg-emerald-400/20 blur-md pointer-events-none -z-10"
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: [0, 0.8, 0.4], scale: [0.8, 1.3, 1.15] }}
+                    transition={{ duration: 1.2, ease: 'easeOut' }}
+                    className="absolute -inset-2 rounded-full bg-emerald-400/20 blur-xl pointer-events-none -z-10"
                   />
                 </div>
 
-                {/* Brand Text with Clip-path slide out & light-shimmer */}
-                <div className="overflow-hidden py-1">
-                  <motion.div
-                    initial={{ x: -28, opacity: 0 }}
-                    animate={{ x: 0, opacity: 1 }}
-                    transition={{ duration: 0.65, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
-                    className="font-['Space_Grotesk'] font-bold text-2xl sm:text-3xl tracking-tight text-white flex items-center shrink-0 relative"
-                  >
-                    <span>SkinTo</span>
-                    <span className="text-emerald-400 drop-shadow-[0_0_18px_rgba(16,185,129,0.7)] ml-0.5">
-                      Cash
-                    </span>
-
-                    {/* Light-shimmer sweep across the letters */}
-                    <motion.div
-                      initial={{ x: '-120%' }}
-                      animate={{ x: '240%' }}
-                      transition={{ duration: 1.0, delay: 0.45, ease: 'easeInOut' }}
-                      className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent pointer-events-none -skew-x-12"
-                    />
-                  </motion.div>
-                </div>
+                {/* Brand Text (No overflow-hidden, no clipping boxes, clean organic typography) */}
+                <motion.div
+                  initial={{ opacity: 0, x: -14 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.7, delay: 0.25, ease: [0.16, 1, 0.3, 1] }}
+                  className="font-['Space_Grotesk'] font-bold text-2xl sm:text-3xl tracking-tight text-white flex items-center shrink-0 relative overflow-visible"
+                >
+                  <span className="text-white">SkinTo</span>
+                  <span className="text-emerald-400 drop-shadow-[0_0_15px_rgba(16,185,129,0.7)] ml-0.5">
+                    Cash
+                  </span>
+                </motion.div>
               </motion.div>
             )}
           </div>
 
-          {/* Minimalist Fintech Telemetry Counter (Below the Centered Logo) */}
+          {/* Minimalist Fintech Telemetry Counter */}
           <motion.div
             initial={{ opacity: 0, y: 15 }}
             animate={{
               opacity: isLoading ? 1 : 0,
-              y: isLoading ? 0 : 12,
+              y: isLoading ? 0 : 10,
             }}
-            transition={{ duration: 0.28, ease: 'easeOut' }}
+            transition={{ duration: 0.35, ease: 'easeOut' }}
             className="flex flex-col items-center mt-7 space-y-2.5"
           >
-            {/* Razor-thin 1px progress line filling with emerald-to-cyan gradient */}
-            <div className="w-52 sm:w-64 h-[1.5px] bg-white/[0.08] rounded-full overflow-hidden relative shadow-[0_0_12px_rgba(16,185,129,0.25)]">
+            {/* Razor-thin 1.5px progress line */}
+            <div className="w-52 sm:w-64 h-[1.5px] bg-white/[0.08] rounded-full overflow-hidden relative shadow-[0_0_10px_rgba(16,185,129,0.2)]">
               <motion.div
-                className="h-full bg-gradient-to-r from-emerald-400 via-teal-300 to-cyan-400 shadow-[0_0_18px_rgba(16,185,129,0.9)]"
+                className="h-full bg-gradient-to-r from-emerald-400 via-teal-300 to-cyan-400 shadow-[0_0_16px_rgba(16,185,129,0.85)]"
                 style={{ width: `${progress}%` }}
                 transition={{ duration: 0.05, ease: 'linear' }}
               />
             </div>
 
-            {/* Telemetry info row in JetBrains Mono */}
+            {/* Telemetry status in JetBrains Mono */}
             <div className="w-52 sm:w-64 flex items-center justify-between text-[10px] sm:text-[11px] font-['JetBrains_Mono'] tracking-wider">
               <span className="text-emerald-400/90 uppercase font-medium truncate max-w-[190px]">
                 {statusText}
