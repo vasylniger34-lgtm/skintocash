@@ -34,7 +34,6 @@ export const Navbar: React.FC<NavbarProps> = ({
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [currencyDropdownOpen, setCurrencyDropdownOpen] = useState(false);
   const [langDropdownOpen, setLangDropdownOpen] = useState(false);
-  const [infoDropdownOpen, setInfoDropdownOpen] = useState(false);
   
   const navRef = useRef<HTMLElement>(null);
 
@@ -57,7 +56,6 @@ export const Navbar: React.FC<NavbarProps> = ({
       if (navRef.current && !navRef.current.contains(e.target as Node)) {
         setCurrencyDropdownOpen(false);
         setLangDropdownOpen(false);
-        setInfoDropdownOpen(false);
       }
     };
 
@@ -65,7 +63,6 @@ export const Navbar: React.FC<NavbarProps> = ({
       if (e.key === 'Escape') {
         setCurrencyDropdownOpen(false);
         setLangDropdownOpen(false);
-        setInfoDropdownOpen(false);
         setMobileMenuOpen(false);
       }
     };
@@ -89,7 +86,6 @@ export const Navbar: React.FC<NavbarProps> = ({
   const handleNavClick = (sectionId: string) => {
     onScrollToSection(sectionId);
     setMobileMenuOpen(false);
-    setInfoDropdownOpen(false);
   };
 
   const handleSellClick = () => {
@@ -108,14 +104,12 @@ export const Navbar: React.FC<NavbarProps> = ({
       }
     }
     setMobileMenuOpen(false);
-    setInfoDropdownOpen(false);
   };
 
   const handleNavigateReviews = () => {
     window.history.pushState({}, '', '/reviews');
     window.dispatchEvent(new PopStateEvent('popstate'));
     setMobileMenuOpen(false);
-    setInfoDropdownOpen(false);
   };
 
   return (
@@ -176,87 +170,47 @@ export const Navbar: React.FC<NavbarProps> = ({
             {/* 1. Instant Sell */}
             <button
               onClick={handleSellClick}
-              className="whitespace-nowrap px-2.5 xl:px-3 py-1.5 rounded-xl text-xs font-semibold text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10 transition-all flex items-center gap-1.5 cursor-pointer"
+              className="whitespace-nowrap px-2.5 xl:px-3 py-1.5 rounded-xl text-xs xl:text-sm font-semibold text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10 transition-all flex items-center gap-1.5 cursor-pointer"
             >
               <Zap className="w-3.5 h-3.5 fill-emerald-400 shrink-0" />
               <span>{t('nav.instantSell')}</span>
             </button>
 
-            {/* 2. Buy Skins */}
+            {/* 2. Reviews with 299+ badge */}
             <button
-              onClick={() => handleNavClick('inventory-sandbox')}
-              className="whitespace-nowrap px-2.5 xl:px-3 py-1.5 rounded-xl text-xs font-medium text-slate-300 hover:text-white hover:bg-white/[0.04] transition-all cursor-pointer"
+              onClick={handleNavigateReviews}
+              className="whitespace-nowrap px-2.5 xl:px-3 py-1.5 rounded-xl text-xs xl:text-sm font-medium text-slate-300 hover:text-white hover:bg-white/[0.04] transition-all flex items-center gap-1.5 cursor-pointer"
             >
-              {t('nav.buySkins')}
+              <MessageSquare className="w-3.5 h-3.5 text-emerald-400/80 shrink-0" />
+              <span>{t('nav.reviews')}</span>
+              <span className="px-1.5 py-0.5 rounded-md bg-emerald-500/15 text-emerald-400 text-[10px] font-bold font-['JetBrains_Mono'] leading-none">
+                299+
+              </span>
             </button>
 
-            {/* 4. Dropdown "Інфо ▾" for secondary links (guarantees header never overflows on 1280px-1536px) */}
-            <div className="relative">
-              <button
-                onClick={() => {
-                  setInfoDropdownOpen(!infoDropdownOpen);
-                  setLangDropdownOpen(false);
-                  setCurrencyDropdownOpen(false);
-                }}
-                className={`whitespace-nowrap text-xs font-medium flex items-center gap-1 px-2.5 xl:px-3 py-1.5 rounded-xl transition-all cursor-pointer ${
-                  infoDropdownOpen 
-                    ? 'bg-white/[0.08] text-white border border-white/10' 
-                    : 'text-slate-300 hover:text-white hover:bg-white/[0.04]'
-                }`}
-              >
-                <span>{t('nav.info')}</span>
-                <ChevronDown 
-                  className="w-3 h-3 text-slate-400 transition-transform duration-200" 
-                  style={{ transform: infoDropdownOpen ? 'rotate(180deg)' : 'rotate(0)' }} 
-                />
-              </button>
+            {/* 3. How It Works */}
+            <button
+              onClick={() => handleNavClick('how-it-works')}
+              className="whitespace-nowrap px-2.5 xl:px-3 py-1.5 rounded-xl text-xs xl:text-sm font-medium text-slate-300 hover:text-white hover:bg-white/[0.04] transition-all cursor-pointer"
+            >
+              {t('nav.howItWorks')}
+            </button>
 
-              <AnimatePresence>
-                {infoDropdownOpen && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 6, scale: 0.95 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: 6, scale: 0.95 }}
-                    transition={{ duration: 0.15 }}
-                    className="absolute left-0 mt-2 w-52 rounded-2xl bg-[#0B1017] border border-white/10 shadow-[0_15px_40px_rgba(0,0,0,0.95)] p-1.5 z-50 backdrop-blur-2xl"
-                  >
-                    <button
-                      onClick={handleNavigateReviews}
-                      className="w-full flex items-center justify-between px-3 py-2 text-xs font-['Space_Grotesk'] text-slate-300 hover:text-white hover:bg-white/[0.06] rounded-xl transition-colors cursor-pointer"
-                    >
-                      <div className="flex items-center gap-2.5">
-                        <MessageSquare className="w-3.5 h-3.5 text-emerald-400" />
-                        <span>{t('nav.reviews')}</span>
-                      </div>
-                      <span className="px-1.5 py-0.2 rounded bg-emerald-500/15 text-emerald-400 text-[10px] font-bold font-['JetBrains_Mono']">
-                        299+
-                      </span>
-                    </button>
-                    <button
-                      onClick={() => handleNavClick('how-it-works')}
-                      className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-['Space_Grotesk'] text-slate-300 hover:text-white hover:bg-white/[0.06] rounded-xl transition-colors cursor-pointer"
-                    >
-                      <HelpCircle className="w-3.5 h-3.5 text-emerald-400" />
-                      <span>{t('nav.howItWorks')}</span>
-                    </button>
-                    <button
-                      onClick={() => handleNavClick('why-us')}
-                      className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-['Space_Grotesk'] text-slate-300 hover:text-white hover:bg-white/[0.06] rounded-xl transition-colors cursor-pointer"
-                    >
-                      <ShieldCheck className="w-3.5 h-3.5 text-teal-400" />
-                      <span>{t('nav.trustSecurity')}</span>
-                    </button>
-                    <button
-                      onClick={() => handleNavClick('faq')}
-                      className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-['Space_Grotesk'] text-slate-300 hover:text-white hover:bg-white/[0.06] rounded-xl transition-colors cursor-pointer"
-                    >
-                      <span className="w-3.5 text-center font-bold text-amber-400">?</span>
-                      <span>{t('nav.faq')}</span>
-                    </button>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
+            {/* 4. Trust & Security */}
+            <button
+              onClick={() => handleNavClick('why-us')}
+              className="whitespace-nowrap px-2.5 xl:px-3 py-1.5 rounded-xl text-xs xl:text-sm font-medium text-slate-300 hover:text-white hover:bg-white/[0.04] transition-all cursor-pointer"
+            >
+              {t('nav.trustSecurity')}
+            </button>
+
+            {/* 5. FAQ */}
+            <button
+              onClick={() => handleNavClick('faq')}
+              className="whitespace-nowrap px-2.5 xl:px-3 py-1.5 rounded-xl text-xs xl:text-sm font-medium text-slate-300 hover:text-white hover:bg-white/[0.04] transition-all cursor-pointer"
+            >
+              {t('nav.faq')}
+            </button>
           </motion.nav>
 
           {/* Right Action Tools - Staggered reveal in Phase 3 */}
@@ -276,7 +230,6 @@ export const Navbar: React.FC<NavbarProps> = ({
                 onClick={() => {
                   setLangDropdownOpen(!langDropdownOpen);
                   setCurrencyDropdownOpen(false);
-                  setInfoDropdownOpen(false);
                 }}
                 className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border transition-all cursor-pointer text-xs font-['JetBrains_Mono'] ${
                   langDropdownOpen
@@ -333,7 +286,6 @@ export const Navbar: React.FC<NavbarProps> = ({
                 onClick={() => {
                   setCurrencyDropdownOpen(!currencyDropdownOpen);
                   setLangDropdownOpen(false);
-                  setInfoDropdownOpen(false);
                 }}
                 className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border transition-all cursor-pointer text-xs font-['JetBrains_Mono'] ${
                   currencyDropdownOpen
