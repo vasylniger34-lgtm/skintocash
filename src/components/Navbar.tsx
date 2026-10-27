@@ -7,7 +7,6 @@ import {
   ChevronDown, 
   ArrowRight, 
   Globe,
-  ArrowLeftRight,
   ShieldCheck,
   HelpCircle,
   Coins,
@@ -88,13 +87,6 @@ export const Navbar: React.FC<NavbarProps> = ({ onScrollToSection }) => {
     setInfoDropdownOpen(false);
   };
 
-  const handleNavigateP2P = () => {
-    window.history.pushState({}, '', '/p2p');
-    window.dispatchEvent(new PopStateEvent('popstate'));
-    setMobileMenuOpen(false);
-    setInfoDropdownOpen(false);
-  };
-
   const handleNavigateReviews = () => {
     window.history.pushState({}, '', '/reviews');
     window.dispatchEvent(new PopStateEvent('popstate'));
@@ -166,19 +158,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onScrollToSection }) => {
               <span>{t('nav.instantSell')}</span>
             </button>
 
-            {/* 2. P2P Marketplace (Featured) */}
-            <button
-              onClick={handleNavigateP2P}
-              className="whitespace-nowrap px-2.5 xl:px-3 py-1.5 rounded-xl text-xs font-semibold text-white hover:text-emerald-300 bg-gradient-to-r from-emerald-500/15 to-cyan-500/15 border border-emerald-500/30 hover:border-emerald-500/60 shadow-[0_0_15px_rgba(16,185,129,0.15)] transition-all flex items-center gap-1.5 cursor-pointer"
-            >
-              <ArrowLeftRight className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-              <span>{t('nav.p2pMarket')}</span>
-              <span className="px-1.5 py-0.2 rounded-md bg-emerald-500 text-[9px] font-black text-slate-950 font-['JetBrains_Mono'] uppercase">
-                New
-              </span>
-            </button>
-
-            {/* 3. Buy Skins */}
+            {/* 2. Buy Skins */}
             <button
               onClick={() => handleNavClick('inventory-sandbox')}
               className="whitespace-nowrap px-2.5 xl:px-3 py-1.5 rounded-xl text-xs font-medium text-slate-300 hover:text-white hover:bg-white/[0.04] transition-all cursor-pointer"
@@ -565,21 +545,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onScrollToSection }) => {
                   </span>
                 </button>
 
-                {/* 2. P2P Marketplace */}
-                <button
-                  onClick={handleNavigateP2P}
-                  className="w-full py-3 px-4 rounded-2xl bg-gradient-to-r from-emerald-500/15 to-cyan-500/15 hover:from-emerald-500/25 hover:to-cyan-500/25 border border-emerald-500/40 text-emerald-300 font-bold text-sm flex items-center justify-between cursor-pointer transition-all"
-                >
-                  <span className="flex items-center gap-2.5">
-                    <ArrowLeftRight className="w-4 h-4 text-emerald-400" />
-                    <span>P2P Ринок (Скіни на картку)</span>
-                  </span>
-                  <span className="text-[9px] font-black font-['JetBrains_Mono'] bg-emerald-500 text-slate-950 px-2 py-0.5 rounded-md uppercase">
-                    New
-                  </span>
-                </button>
-
-                {/* 2.5 Steam Reviews (299+) */}
+                {/* 2. Steam Reviews (299+) */}
                 <button
                   onClick={handleNavigateReviews}
                   className="w-full py-2.5 px-4 rounded-xl text-left text-slate-300 hover:text-white hover:bg-white/[0.04] text-xs font-semibold font-['Space_Grotesk'] flex items-center justify-between cursor-pointer"

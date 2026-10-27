@@ -18,13 +18,19 @@ import { SteamModal } from './components/SteamModal';
 import { BonusPromoModal } from './components/BonusPromoModal';
 import { MobileBottomNav } from './components/MobileBottomNav';
 import { CabinetPage } from './pages/CabinetPage';
-import { P2PPage } from './pages/P2PPage';
 import { ReviewsPage } from './pages/ReviewsPage';
 
 function MainContent() {
   const { user, closeCabinet } = useAuth();
   const [currentPath, setCurrentPath] = useState<string>(() => {
-    return typeof window !== 'undefined' ? window.location.pathname : '/';
+    if (typeof window !== 'undefined') {
+      if (window.location.pathname === '/p2p') {
+        window.history.replaceState({}, '', '/');
+        return '/';
+      }
+      return window.location.pathname;
+    }
+    return '/';
   });
   const [isSteamModalOpen, setIsSteamModalOpen] = useState(false);
   const [isBonusModalOpen, setIsBonusModalOpen] = useState(false);
@@ -33,7 +39,13 @@ function MainContent() {
 
   useEffect(() => {
     const handlePopState = () => {
-      setCurrentPath(window.location.pathname || '/');
+      const p = window.location.pathname || '/';
+      if (p === '/p2p') {
+        window.history.replaceState({}, '', '/');
+        setCurrentPath('/');
+      } else {
+        setCurrentPath(p);
+      }
     };
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
@@ -107,46 +119,8 @@ function MainContent() {
             window.history.pushState({}, '', '/');
             setCurrentPath('/');
           }}
-          onNavigateP2P={() => {
-            closeCabinet();
-            window.history.pushState({}, '', '/p2p');
-            setCurrentPath('/p2p');
-          }}
           onScrollToInventory={() => {
             closeCabinet();
-            window.history.pushState({}, '', '/');
-            setCurrentPath('/');
-            setTimeout(() => {
-              const el = document.getElementById('inventory-sandbox');
-              if (el) el.scrollIntoView({ behavior: 'smooth' });
-            }, 100);
-          }}
-        />
-      </div>
-    );
-  }
-
-  // If on /p2p path: render standalone dedicated P2P Marketplace page!
-  if (currentPath === '/p2p') {
-    return (
-      <div className="min-h-screen bg-[#070A0E] pb-16 md:pb-0">
-        <P2PPage
-          onNavigateHome={() => {
-            window.history.pushState({}, '', '/');
-            setCurrentPath('/');
-          }}
-          onOpenLogin={() => setIsSteamModalOpen(true)}
-        />
-        <MobileBottomNav
-          currentPath={currentPath}
-          onNavigateHome={() => {
-            window.history.pushState({}, '', '/');
-            setCurrentPath('/');
-          }}
-          onNavigateP2P={() => {
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-          }}
-          onScrollToInventory={() => {
             window.history.pushState({}, '', '/');
             setCurrentPath('/');
             setTimeout(() => {
@@ -176,10 +150,6 @@ function MainContent() {
           onNavigateHome={() => {
             window.history.pushState({}, '', '/');
             setCurrentPath('/');
-          }}
-          onNavigateP2P={() => {
-            window.history.pushState({}, '', '/p2p');
-            setCurrentPath('/p2p');
           }}
           onScrollToInventory={() => {
             window.history.pushState({}, '', '/');
@@ -275,10 +245,6 @@ function MainContent() {
         currentPath={currentPath}
         onNavigateHome={() => {
           window.scrollTo({ top: 0, behavior: 'smooth' });
-        }}
-        onNavigateP2P={() => {
-          window.history.pushState({}, '', '/p2p');
-          setCurrentPath('/p2p');
         }}
         onScrollToInventory={() => scrollToSection('inventory-sandbox')}
       />
