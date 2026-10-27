@@ -5,6 +5,8 @@ interface SkinImageProps extends React.ImgHTMLAttributes<HTMLImageElement> {
   fallbackSrc?: string;
 }
 
+const DEFAULT_GLOBAL_FALLBACK = '/images/skins/m4a1s_printstream.png';
+
 export const SkinImage: React.FC<SkinImageProps> = ({ 
   src, 
   fallback, 
@@ -13,18 +15,23 @@ export const SkinImage: React.FC<SkinImageProps> = ({
   className, 
   ...props 
 }) => {
-  const effectiveFallback = fallback || fallbackSrc;
-  const [currentSrc, setCurrentSrc] = useState(src);
+  const effectiveFallback = fallback || fallbackSrc || DEFAULT_GLOBAL_FALLBACK;
+  const [currentSrc, setCurrentSrc] = useState(src || effectiveFallback);
   const [prevSrc, setPrevSrc] = useState(src);
+  const [hasFailedOnce, setHasFailedOnce] = useState(false);
 
   if (src !== prevSrc) {
     setPrevSrc(src);
-    setCurrentSrc(src);
+    setCurrentSrc(src || effectiveFallback);
+    setHasFailedOnce(false);
   }
 
   const handleError = () => {
-    if (effectiveFallback && currentSrc !== effectiveFallback) {
+    if (!hasFailedOnce && effectiveFallback && currentSrc !== effectiveFallback) {
+      setHasFailedOnce(true);
       setCurrentSrc(effectiveFallback);
+    } else if (currentSrc !== DEFAULT_GLOBAL_FALLBACK) {
+      setCurrentSrc(DEFAULT_GLOBAL_FALLBACK);
     }
   };
 

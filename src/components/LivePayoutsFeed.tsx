@@ -1,26 +1,23 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Flame, Clock, ChevronLeft, ChevronRight, Database, ArrowRight, ShieldCheck, History } from 'lucide-react';
-import { getOrInitLivePayouts, addNewLivePayout, saveLivePayouts } from '../data/payoutsData';
+import { Flame, Clock, ChevronLeft, ChevronRight } from 'lucide-react';
+import { getOrInitLivePayouts, addNewLivePayout } from '../data/payoutsData';
 import type { LivePayout } from '../types';
 import { useCurrency } from '../context/CurrencyContext';
 import { useLanguage } from '../context/LanguageContext';
 import { SkinImage } from './SkinImage';
 import { PaymentMethodIcon } from './PaymentMethodIcon';
 
-type PriceFilter = 'all' | 'budget' | 'mid' | 'high';
-
 export const LivePayoutsFeed: React.FC = () => {
   const { formatPrice } = useCurrency();
   const { t } = useLanguage();
   
-  // Persistent payouts history state loaded from database/localStorage
+  // Persistent payouts history loaded from database/localStorage (60-80 transactions across 2 hours)
   const [payouts, setPayouts] = useState<LivePayout[]>(() => getOrInitLivePayouts());
-  const [activeFilter, setActiveFilter] = useState<PriceFilter>('all');
   const [currentTime, setCurrentTime] = useState<number>(Date.now());
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
-  // Update current time every 5 seconds to smoothly update relative timestamps
+  // Update current time every 5 seconds to smoothly refresh relative timestamps
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentTime(Date.now());
@@ -28,17 +25,14 @@ export const LivePayoutsFeed: React.FC = () => {
     return () => clearInterval(timer);
   }, []);
 
-  // Dynamic simulation of incoming real trades (ticks every 50-80s, persisted in DB)
+  // Dynamic simulation of incoming real trades (ticks every 45-75s, prepends live & persists)
   useEffect(() => {
     let timeoutId: ReturnType<typeof setTimeout>;
 
     const scheduleNextPayout = () => {
-      const nextDelayMs = Math.floor(45000 + Math.random() * 45000); // 45s to 90s
+      const nextDelayMs = Math.floor(45000 + Math.random() * 30000); // 45s to 75s
       timeoutId = setTimeout(() => {
-        setPayouts(prev => {
-          const updated = addNewLivePayout(prev);
-          return updated;
-        });
+        setPayouts(prev => addNewLivePayout(prev));
         scheduleNextPayout();
       }, nextDelayMs);
     };
@@ -46,20 +40,6 @@ export const LivePayoutsFeed: React.FC = () => {
     scheduleNextPayout();
     return () => clearTimeout(timeoutId);
   }, []);
-
-  // Filter items if user chooses a category
-  const filteredPayouts = useMemo(() => {
-    if (activeFilter === 'budget') {
-      return payouts.filter(p => p.amount < 10);
-    }
-    if (activeFilter === 'mid') {
-      return payouts.filter(p => p.amount >= 10 && p.amount <= 100);
-    }
-    if (activeFilter === 'high') {
-      return payouts.filter(p => p.amount > 100);
-    }
-    return payouts;
-  }, [payouts, activeFilter]);
 
   // Dynamic relative time calculator based on exact timestamp
   const formatTimeAgo = (timestamp: number) => {
@@ -84,67 +64,30 @@ export const LivePayoutsFeed: React.FC = () => {
   // Scroll smoothly by delta
   const handleScroll = (direction: 'left' | 'right') => {
     if (!scrollContainerRef.current) return;
-    const scrollAmount = direction === 'left' ? -380 : 380;
+    const scrollAmount = direction === 'left' ? -360 : 360;
     scrollContainerRef.current.scrollBy({ left: scrollAmount, behavior: 'smooth' });
   };
 
-  // Jump to specific point in time history (e.g. 15m, 30m, 45m, 1h, 1.5h, 2h)
-  const jumpToTime = (minutesAgo: number) => {
-    if (!scrollContainerRef.current) return;
-
-    if (minutesAgo === 0) {
-      scrollContainerRef.current.scrollTo({ left: 0, behavior: 'smooth' });
-      return;
-    }
-
-    const targetTimestamp = currentTime - minutesAgo * 60 * 1000;
-    
-    // Find closest card to this timestamp
-    let closestIndex = 0;
-    let minDiff = Infinity;
-
-    filteredPayouts.forEach((item, index) => {
-      const diff = Math.abs(item.timestamp - targetTimestamp);
-      if (diff < minDiff) {
-        minDiff = diff;
-        closestIndex = index;
-      }
-    });
-
-    const cardWidthWithGap = 304; // 288px width + 16px gap
-    const targetScrollLeft = Math.max(0, closestIndex * cardWidthWithGap - 40);
-
-    scrollContainerRef.current.scrollTo({
-      left: targetScrollLeft,
-      behavior: 'smooth',
-    });
-  };
-
-  // Calculate stats for the database badge
-  const oldestTimestamp = payouts[payouts.length - 1]?.timestamp || currentTime;
-  const historyMinutesSpan = Math.max(1, Math.round((currentTime - oldestTimestamp) / 60000));
-  const historyHoursSpan = (historyMinutesSpan / 60).toFixed(1);
-
   return (
-    <section id="live-payouts" className="py-16 sm:py-24 bg-[#070A0E] relative overflow-hidden border-b border-white/[0.04]">
+    <section id="live-payouts" className="py-14 sm:py-20 bg-[#070A0E] relative overflow-hidden border-b border-white/[0.04]">
       
       {/* Background Accent Gradients */}
       <div className="absolute top-1/2 left-1/4 -translate-y-1/2 w-[500px] h-[500px] bg-emerald-500/5 blur-[140px] rounded-full pointer-events-none" />
       <div className="absolute top-1/2 right-1/4 -translate-y-1/2 w-[400px] h-[400px] bg-cyan-500/5 blur-[120px] rounded-full pointer-events-none" />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-6">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-5">
         
-        {/* Top Header Row */}
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-5 mb-6">
+        {/* Clean Live Stream Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           
-          <div className="flex items-start sm:items-center gap-3.5">
-            <div className="relative flex items-center justify-center w-10 h-10 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 shrink-0 shadow-[0_0_20px_rgba(16,185,129,0.2)]">
+          <div className="flex items-center gap-3">
+            <div className="relative flex items-center justify-center w-9 h-9 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 shrink-0 shadow-[0_0_15px_rgba(16,185,129,0.2)]">
               <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping absolute"></span>
-              <Flame className="w-5 h-5 fill-emerald-400 relative z-10" />
+              <Flame className="w-4 h-4 fill-emerald-400 relative z-10" />
             </div>
 
             <div>
-              <div className="flex flex-wrap items-center gap-2">
+              <div className="flex items-center gap-2">
                 <h2 className="text-xl sm:text-2xl font-extrabold font-['Space_Grotesk'] text-white tracking-tight">
                   {t('feed.title')}
                 </h2>
@@ -152,124 +95,55 @@ export const LivePayoutsFeed: React.FC = () => {
                   {t('feed.badge')}
                 </span>
               </div>
-              <p className="text-xs sm:text-sm text-slate-400 font-normal mt-0.5">
+              <p className="text-xs text-slate-400 font-normal mt-0.5">
                 {t('feed.subtitle')}
               </p>
             </div>
           </div>
 
-          {/* Quick Metrics Badges */}
-          <div className="flex flex-wrap items-center gap-2.5 text-xs font-['JetBrains_Mono'] text-slate-400">
-            <div className="flex items-center gap-1.5 bg-slate-900/80 px-3 py-1.5 rounded-lg border border-white/[0.08] shadow-sm">
-              <Database className="w-3.5 h-3.5 text-emerald-400" />
-              <span>{t('feed.dbSaved')} <strong className="text-emerald-400 font-bold">{payouts.length} ({historyHoursSpan}h)</strong></span>
-            </div>
-
+          {/* Quick Metrics & Carousel Navigation Arrows */}
+          <div className="flex items-center gap-3 text-xs font-['JetBrains_Mono'] text-slate-400 self-start sm:self-auto">
             <div className="flex items-center gap-1.5 bg-slate-900/80 px-3 py-1.5 rounded-lg border border-white/[0.08] shadow-sm">
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
               <span>{t('feed.paid24h')} <strong className="text-emerald-400 font-bold">$412,890.00</strong></span>
             </div>
 
-            <div className="hidden sm:flex items-center gap-1.5 bg-slate-900/80 px-3 py-1.5 rounded-lg border border-white/[0.08] shadow-sm">
+            <div className="hidden md:flex items-center gap-1.5 bg-slate-900/80 px-3 py-1.5 rounded-lg border border-white/[0.08] shadow-sm">
               <Clock className="w-3.5 h-3.5 text-cyan-400" />
               <span>{t('feed.medianSpeed')} <strong className="text-cyan-400 font-bold">41s</strong></span>
             </div>
-          </div>
 
-        </div>
-
-        {/* Timeline Jump & Controls Toolbar */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 pb-2 border-t border-white/[0.06]">
-          
-          {/* Timeline Jump Pills */}
-          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1">
-            <span className="text-[11px] font-['JetBrains_Mono'] uppercase tracking-wider text-slate-500 flex items-center gap-1 mr-1 shrink-0">
-              <History className="w-3 h-3 text-emerald-400" />
-              {t('feed.timeline')}:
-            </span>
-
-            {[
-              { label: t('feed.jumpNow'), min: 0, icon: '⚡' },
-              { label: t('feed.jump15m'), min: 15 },
-              { label: t('feed.jump30m'), min: 30 },
-              { label: t('feed.jump45m'), min: 45 },
-              { label: t('feed.jump1h'), min: 60 },
-              { label: t('feed.jump1_5h'), min: 90 },
-              { label: t('feed.jump2h'), min: 120 },
-            ].map(item => (
-              <button
-                key={item.min}
-                onClick={() => jumpToTime(item.min)}
-                className="px-2.5 py-1 rounded-md text-[11px] font-['JetBrains_Mono'] bg-slate-900/90 hover:bg-slate-800 text-slate-300 hover:text-white border border-white/[0.08] transition-all hover:border-emerald-500/40 shrink-0 flex items-center gap-1 active:scale-95"
-              >
-                {item.icon && <span>{item.icon}</span>}
-                {item.label}
-              </button>
-            ))}
-          </div>
-
-          {/* Right Navigation & Filter controls */}
-          <div className="flex items-center justify-between sm:justify-end gap-2 shrink-0">
-            {/* Price Category Filter Pills */}
-            <div className="flex items-center bg-slate-900/80 p-0.5 rounded-lg border border-white/[0.08] text-[11px] font-['JetBrains_Mono']">
-              <button
-                onClick={() => setActiveFilter('all')}
-                className={`px-2 py-1 rounded-md transition-colors ${activeFilter === 'all' ? 'bg-emerald-500/20 text-emerald-300 font-bold' : 'text-slate-400 hover:text-white'}`}
-              >
-                {t('feed.filterAll')}
-              </button>
-              <button
-                onClick={() => setActiveFilter('budget')}
-                className={`px-2 py-1 rounded-md transition-colors ${activeFilter === 'budget' ? 'bg-emerald-500/20 text-emerald-300 font-bold' : 'text-slate-400 hover:text-white'}`}
-              >
-                {t('feed.filterBudget')}
-              </button>
-              <button
-                onClick={() => setActiveFilter('mid')}
-                className={`px-2 py-1 rounded-md transition-colors ${activeFilter === 'mid' ? 'bg-emerald-500/20 text-emerald-300 font-bold' : 'text-slate-400 hover:text-white'}`}
-              >
-                {t('feed.filterMid')}
-              </button>
-              <button
-                onClick={() => setActiveFilter('high')}
-                className={`px-2 py-1 rounded-md transition-colors ${activeFilter === 'high' ? 'bg-emerald-500/20 text-emerald-300 font-bold' : 'text-slate-400 hover:text-white'}`}
-              >
-                {t('feed.filterHigh')}
-              </button>
-            </div>
-
-            {/* Left / Right Carousel Arrow Buttons */}
+            {/* Subtle Carousel Arrow Buttons */}
             <div className="flex items-center gap-1">
               <button
                 onClick={() => handleScroll('left')}
-                title={t('feed.scrollNewer')}
-                className="w-8 h-8 rounded-lg bg-slate-900/80 hover:bg-slate-800 border border-white/[0.08] hover:border-emerald-500/40 text-slate-300 hover:text-emerald-400 flex items-center justify-center transition-all active:scale-95"
+                title="Scroll Newer"
+                className="w-8 h-8 rounded-lg bg-slate-900/80 hover:bg-slate-800 border border-white/[0.08] hover:border-emerald-500/40 text-slate-400 hover:text-emerald-400 flex items-center justify-center transition-all active:scale-95"
               >
                 <ChevronLeft className="w-4 h-4" />
               </button>
               <button
                 onClick={() => handleScroll('right')}
-                title={t('feed.scrollOlder')}
-                className="w-8 h-8 rounded-lg bg-slate-900/80 hover:bg-slate-800 border border-white/[0.08] hover:border-emerald-500/40 text-slate-300 hover:text-emerald-400 flex items-center justify-center transition-all active:scale-95"
+                title="Scroll History"
+                className="w-8 h-8 rounded-lg bg-slate-900/80 hover:bg-slate-800 border border-white/[0.08] hover:border-emerald-500/40 text-slate-400 hover:text-emerald-400 flex items-center justify-center transition-all active:scale-95"
               >
                 <ChevronRight className="w-4 h-4" />
               </button>
             </div>
-
           </div>
 
         </div>
 
       </div>
 
-      {/* Horizontal Carousel of Payout Cards (Scrollable back in history) */}
+      {/* Horizontal Carousel of Payout Cards (Pure Live Stream) */}
       <div 
         ref={scrollContainerRef}
         className="relative w-full overflow-x-auto no-scrollbar scroll-smooth pb-4 pt-1 px-4 sm:px-6 lg:px-8 select-none"
       >
         <div className="flex gap-4 w-max">
           <AnimatePresence initial={false}>
-            {filteredPayouts.map((item, index) => (
+            {payouts.map((item) => (
               <motion.div
                 key={item.id}
                 layout
@@ -361,19 +235,6 @@ export const LivePayoutsFeed: React.FC = () => {
               </motion.div>
             ))}
           </AnimatePresence>
-        </div>
-      </div>
-
-      {/* History scroll indicator hint for user */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-2 flex items-center justify-between text-[11px] font-['JetBrains_Mono'] text-slate-500">
-        <div className="flex items-center gap-2">
-          <ShieldCheck className="w-3.5 h-3.5 text-emerald-500/70" />
-          <span>{t('feed.avgInterval')}</span>
-        </div>
-
-        <div className="flex items-center gap-2 text-slate-400">
-          <span>{t('feed.scrollOlder')}</span>
-          <ArrowRight className="w-3 h-3 text-emerald-400 animate-pulse" />
         </div>
       </div>
 
