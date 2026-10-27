@@ -47,13 +47,14 @@ export interface LivePayout {
   id: string;
   skinName: string;
   weapon: string;
-  wear: 'FN' | 'MW' | 'FT';
-  float: number;
+  wear: 'FN' | 'MW' | 'FT' | 'WW' | 'BS' | '-';
+  float?: number;
   amount: number;
   currency: string;
   method: string;
   methodIcon: string;
   timeAgo: string;
+  timestamp: number;
   image: string;
   fallbackImage?: string;
   rarityColor: string;
