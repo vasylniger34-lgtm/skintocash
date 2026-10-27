@@ -13,6 +13,7 @@ export const SkinImage: React.FC<SkinImageProps> = ({
   fallbackSrc, 
   alt, 
   className, 
+  loading = 'lazy',
   ...props 
 }) => {
   const effectiveFallback = fallback || fallbackSrc || DEFAULT_GLOBAL_FALLBACK;
@@ -41,7 +42,7 @@ export const SkinImage: React.FC<SkinImageProps> = ({
       alt={alt || 'CS2 Weapon Skin'}
       onError={handleError}
       className={className}
-      loading="lazy"
+      loading={loading}
       {...props}
     />
   );

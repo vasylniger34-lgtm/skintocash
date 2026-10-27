@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence, useMotionValue, useSpring, useTransform } from 'framer-motion';
+import { motion, AnimatePresence, useMotionValue, useSpring, useTransform, type Variants } from 'framer-motion';
 import { 
   ArrowRight, 
   Star, 
@@ -10,6 +10,7 @@ import {
   Sparkles
 } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
+import { useCurrency } from '../context/CurrencyContext';
 import { useIntro } from '../context/IntroContext';
 import { SkinImage } from './SkinImage';
 
@@ -26,7 +27,7 @@ interface ShowcaseSkin {
   float: string;
   wear: string;
   phase: string;
-  payout: string;
+  usdPrice: number;
   paymentRail: string;
   speed: string;
   glowColor: string;
@@ -43,7 +44,7 @@ const SHOWCASE_SKINS: ShowcaseSkin[] = [
     float: '0.0084 FN',
     wear: 'Factory New',
     phase: 'Emerald Phase',
-    payout: '$3,450.00',
+    usdPrice: 3450,
     paymentRail: 'USDT (TRC-20)',
     speed: '42s',
     glowColor: 'rgba(16, 185, 129, 0.45)',
@@ -58,7 +59,7 @@ const SHOWCASE_SKINS: ShowcaseSkin[] = [
     float: '0.0142 FN',
     wear: 'Factory New',
     phase: 'Cobblestone Grail',
-    payout: '$9,820.00',
+    usdPrice: 9820,
     paymentRail: 'Bitcoin (BTC)',
     speed: '58s',
     glowColor: 'rgba(245, 158, 11, 0.45)',
@@ -73,7 +74,7 @@ const SHOWCASE_SKINS: ShowcaseSkin[] = [
     float: '0.0071 FN',
     wear: 'Factory New',
     phase: '100% Full Fade',
-    payout: '$4,190.00',
+    usdPrice: 4190,
     paymentRail: 'Visa Direct',
     speed: '34s',
     glowColor: 'rgba(236, 72, 153, 0.45)',
@@ -88,7 +89,7 @@ const SHOWCASE_SKINS: ShowcaseSkin[] = [
     float: '0.0049 FN',
     wear: 'Factory New',
     phase: 'Pearlescent Tier-1',
-    payout: '$890.00',
+    usdPrice: 890,
     paymentRail: 'Apple Pay',
     speed: '29s',
     glowColor: 'rgba(6, 182, 212, 0.45)',
@@ -103,7 +104,7 @@ const SHOWCASE_SKINS: ShowcaseSkin[] = [
     float: '0.0821 MW',
     wear: 'Minimal Wear',
     phase: 'Ultra Rare Indigo',
-    payout: '$5,420.00',
+    usdPrice: 5420,
     paymentRail: 'USDT (TRC-20)',
     speed: '45s',
     glowColor: 'rgba(139, 92, 246, 0.45)',
@@ -113,35 +114,88 @@ const SHOWCASE_SKINS: ShowcaseSkin[] = [
   },
 ];
 
+const weaponVariants: Variants = {
+  enter: (dir: number) => ({
+    opacity: 0,
+    x: dir > 0 ? 55 : dir < 0 ? -55 : 0,
+    scale: 0.88,
+    rotate: dir > 0 ? 3 : dir < 0 ? -3 : 0,
+  }),
+  center: {
+    opacity: 1,
+    x: 0,
+    scale: 1,
+    rotate: 0,
+    transition: {
+      duration: 0.38,
+      ease: [0.16, 1, 0.3, 1] as const,
+    },
+  },
+  exit: (dir: number) => ({
+    opacity: 0,
+    x: dir > 0 ? -55 : dir < 0 ? 55 : 0,
+    scale: 0.88,
+    rotate: dir > 0 ? -3 : dir < 0 ? 3 : 0,
+    transition: {
+      duration: 0.28,
+      ease: [0.16, 1, 0.3, 1] as const,
+    },
+  }),
+};
+
 export const Hero: React.FC<HeroProps> = ({ 
   onScanInventory, 
   onOpenSteamModal,
   onTriggerSellModal 
 }) => {
   const { t, language } = useLanguage();
+  const { currency, formatPrice } = useCurrency();
   const { phase } = useIntro();
   const isRevealed = phase === 'revealing' || phase === 'completed';
   const [tradeUrl, setTradeUrl] = useState('');
   const [isScanning, setIsScanning] = useState(false);
 
-  // Showcase Active Skin Index & Timer
+  // Showcase Active Skin Index, Direction & Timer
   const [activeSkinIndex, setActiveSkinIndex] = useState(0);
+  const [direction, setDirection] = useState(0);
   const activeSkin = SHOWCASE_SKINS[activeSkinIndex];
 
-  // Auto-rotation every 12 seconds
+  // Preload all showcase weapon images into memory cache immediately on mount
+  useEffect(() => {
+    SHOWCASE_SKINS.forEach((skin) => {
+      const img = new Image();
+      img.src = skin.image;
+      if (img.decode) img.decode().catch(() => {});
+      if (skin.fallback) {
+        const fallbackImg = new Image();
+        fallbackImg.src = skin.fallback;
+        if (fallbackImg.decode) fallbackImg.decode().catch(() => {});
+      }
+    });
+  }, []);
+
+  // Auto-rotation every 10 seconds
   useEffect(() => {
     const interval = setInterval(() => {
+      setDirection(1);
       setActiveSkinIndex((prev) => (prev + 1) % SHOWCASE_SKINS.length);
-    }, 12000);
+    }, 10000);
     return () => clearInterval(interval);
   }, []);
 
   const handleNextSkin = () => {
+    setDirection(1);
     setActiveSkinIndex((prev) => (prev + 1) % SHOWCASE_SKINS.length);
   };
 
   const handlePrevSkin = () => {
+    setDirection(-1);
     setActiveSkinIndex((prev) => (prev - 1 + SHOWCASE_SKINS.length) % SHOWCASE_SKINS.length);
+  };
+
+  const handleSelectSkin = (index: number) => {
+    setDirection(index > activeSkinIndex ? 1 : -1);
+    setActiveSkinIndex(index);
   };
 
   // 3D Mouse Parallax & Tilt Effect for the Showcase Card
@@ -406,9 +460,18 @@ export const Hero: React.FC<HeroProps> = ({
                     className="w-2 h-2 rounded-full animate-pulse" 
                     style={{ backgroundColor: activeSkin.accentBorder }}
                   />
-                  <span className="font-['JetBrains_Mono'] text-[11px] font-bold text-white tracking-tight">
-                    {activeSkin.weapon} • {activeSkin.float}
-                  </span>
+                  <AnimatePresence mode="wait">
+                    <motion.span 
+                      key={`${activeSkin.weapon}-${activeSkin.float}`}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.2 }}
+                      className="font-['JetBrains_Mono'] text-[11px] font-bold text-white tracking-tight"
+                    >
+                      {activeSkin.weapon} • {activeSkin.float}
+                    </motion.span>
+                  </AnimatePresence>
                 </div>
 
                 {/* Arrow switches */}
@@ -435,23 +498,23 @@ export const Hero: React.FC<HeroProps> = ({
 
               {/* Weapon Display Area with AnimatePresence for smooth transitions */}
               <div className="relative h-60 sm:h-64 flex items-center justify-center my-1 overflow-hidden">
-                <AnimatePresence mode="wait">
+                <AnimatePresence mode="popLayout" custom={direction}>
                   <motion.div
                     key={activeSkin.name}
-                    initial={{ opacity: 0, scale: 0.82, rotate: -3, y: 15 }}
-                    animate={{ opacity: 1, scale: 1, rotate: 0, y: 0 }}
-                    exit={{ opacity: 0, scale: 0.88, rotate: 3, y: -15 }}
-                    transition={{
-                      duration: 0.45,
-                      ease: [0.16, 1, 0.3, 1],
-                    }}
+                    custom={direction}
+                    variants={weaponVariants}
+                    initial="enter"
+                    animate="center"
+                    exit="exit"
                     className="w-full h-full flex items-center justify-center relative"
                   >
-                    {/* Weapon Image with glowing filter */}
+                    {/* Weapon Image with preloaded instant asset & glowing filter */}
                     <SkinImage
                       src={activeSkin.image}
                       fallback={activeSkin.fallback}
                       alt={activeSkin.name}
+                      loading="eager"
+                      decoding="async"
                       className="max-h-52 sm:max-h-56 w-auto object-contain filter drop-shadow-[0_15px_30px_rgba(0,0,0,0.85)] select-none pointer-events-none transition-transform duration-300 hover:scale-105"
                     />
                   </motion.div>
@@ -465,9 +528,18 @@ export const Hero: React.FC<HeroProps> = ({
                     <Sparkles className="w-3 h-3 text-amber-400" />
                     <span>{activeSkin.phase}</span>
                   </div>
-                  <div className="text-lg font-bold font-['Space_Grotesk'] text-white truncate max-w-[190px]">
-                    {activeSkin.skinName}
-                  </div>
+                  <AnimatePresence mode="wait">
+                    <motion.div 
+                      key={activeSkin.skinName}
+                      initial={{ opacity: 0, y: 3 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -3 }}
+                      transition={{ duration: 0.22 }}
+                      className="text-lg font-bold font-['Space_Grotesk'] text-white truncate max-w-[190px]"
+                    >
+                      {activeSkin.skinName}
+                    </motion.div>
+                  </AnimatePresence>
                 </div>
 
                 <div 
@@ -481,9 +553,18 @@ export const Hero: React.FC<HeroProps> = ({
                   <div className="text-[10px] font-['JetBrains_Mono'] text-slate-400 group-hover/payout:text-emerald-300 transition-colors">
                     Instant Payout ({activeSkin.speed}) →
                   </div>
-                  <div className="text-xl font-extrabold font-['JetBrains_Mono'] text-emerald-400 drop-shadow-[0_0_12px_rgba(16,185,129,0.4)]">
-                    {activeSkin.payout}
-                  </div>
+                  <AnimatePresence mode="wait">
+                    <motion.div 
+                      key={`${currency}-${activeSkin.name}`}
+                      initial={{ opacity: 0, y: -4 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 4 }}
+                      transition={{ duration: 0.2 }}
+                      className="text-xl font-extrabold font-['JetBrains_Mono'] text-emerald-400 drop-shadow-[0_0_12px_rgba(16,185,129,0.4)]"
+                    >
+                      {formatPrice(activeSkin.usdPrice)}
+                    </motion.div>
+                  </AnimatePresence>
                 </div>
               </div>
 
@@ -495,7 +576,7 @@ export const Hero: React.FC<HeroProps> = ({
                 {SHOWCASE_SKINS.map((_, i) => (
                   <button
                     key={i}
-                    onClick={() => setActiveSkinIndex(i)}
+                    onClick={() => handleSelectSkin(i)}
                     className={`h-1.5 rounded-full transition-all duration-300 cursor-pointer ${
                       activeSkinIndex === i 
                         ? 'w-6 bg-emerald-400 shadow-[0_0_8px_rgba(16,185,129,0.6)]' 
