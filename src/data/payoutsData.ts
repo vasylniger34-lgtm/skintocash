@@ -1,4 +1,5 @@
 import type { LivePayout } from '../types';
+import { VERIFIED_STEAM_TRADERS, type VerifiedSteamTrader } from './verifiedSteamTraders';
 
 export interface CatalogSkinItem {
   weapon: string;
@@ -1670,7 +1671,11 @@ export const PAYMENT_METHODS_OPTIONS = [
   { name: 'Revolut Pay', icon: 'revolut' },
 ];
 
-export const STORAGE_KEY_PAYOUTS = 'skintocash_live_payouts_v6';
+export const STORAGE_KEY_PAYOUTS = 'skintocash_live_payouts_v7';
+
+export function pickRandomVerifiedTrader(): VerifiedSteamTrader {
+  return VERIFIED_STEAM_TRADERS[Math.floor(Math.random() * VERIFIED_STEAM_TRADERS.length)];
+}
 
 /**
  * Weighted random picker from catalog:
@@ -1702,6 +1707,7 @@ export function pickRandomCatalogSkin(): CatalogSkinItem {
  */
 export function createPayoutItem(item: CatalogSkinItem, timestamp: number, idPrefix = 'pay'): LivePayout {
   const methodObj = PAYMENT_METHODS_OPTIONS[Math.floor(Math.random() * PAYMENT_METHODS_OPTIONS.length)];
+  const trader = pickRandomVerifiedTrader();
   
   let floatVal = item.baseFloat;
   if (floatVal !== undefined && item.wear !== '-') {
@@ -1731,6 +1737,9 @@ export function createPayoutItem(item: CatalogSkinItem, timestamp: number, idPre
     fallbackImage: item.fallbackImage || '/images/skins/m4a1s_printstream.png',
     rarityColor: item.rarityColor,
     txHash: `0x${hex1}...${hex2}`,
+    steamId64: trader.steamId64,
+    traderName: trader.traderName,
+    traderAvatar: trader.traderAvatar,
   };
 }
 
@@ -1786,6 +1795,15 @@ export function getOrInitLivePayouts(now = Date.now()): LivePayout[] {
         const cutoff = now - 210 * 60 * 1000;
         const filtered = parsed.filter(p => p.timestamp >= cutoff).slice(0, 120);
         
+        filtered.forEach(p => {
+          if (!p.steamId64 || !p.traderAvatar) {
+            const trader = pickRandomVerifiedTrader();
+            p.steamId64 = trader.steamId64;
+            p.traderName = trader.traderName;
+            p.traderAvatar = trader.traderAvatar;
+          }
+        });
+
         filtered.sort((a, b) => b.timestamp - a.timestamp);
         localStorage.setItem(STORAGE_KEY_PAYOUTS, JSON.stringify(filtered));
         return filtered;

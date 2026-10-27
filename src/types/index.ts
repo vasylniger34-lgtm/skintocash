@@ -59,6 +59,9 @@ export interface LivePayout {
   fallbackImage?: string;
   rarityColor: string;
   txHash?: string;
+  steamId64?: string;
+  traderName?: string;
+  traderAvatar?: string;
 }
 
 export interface PaymentOption {

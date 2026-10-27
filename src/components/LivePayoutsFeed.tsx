@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Flame, Clock, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Flame, ChevronLeft, ChevronRight } from 'lucide-react';
 import { getOrInitLivePayouts, addNewLivePayout } from '../data/payoutsData';
 import type { LivePayout } from '../types';
 import { useCurrency } from '../context/CurrencyContext';
@@ -137,17 +137,38 @@ export const LivePayoutsFeed: React.FC = () => {
                   style={{ backgroundColor: item.rarityColor }}
                 />
 
-                {/* Card Top: Payment Method & Dynamic Timestamp */}
+                {/* Card Top: Payment Method & Steam Trader Avatar */}
                 <div className="flex items-center justify-between text-[11px] mb-2 font-['JetBrains_Mono']">
                   <span className="px-2 py-0.5 rounded-md bg-slate-800/90 text-slate-300 border border-white/[0.07] flex items-center gap-1.5 shadow-sm">
                     <PaymentMethodIcon id={item.methodIcon} size={14} className="rounded-sm" />
-                    <span className="truncate max-w-[110px]">{item.method === 'Карта МИР' ? 'МИР' : item.method}</span>
+                    <span className="truncate max-w-[105px]">{item.method === 'Карта МИР' ? 'МИР' : item.method}</span>
                   </span>
 
-                  <span className="text-slate-400 flex items-center gap-1 font-medium">
-                    <Clock className="w-3 h-3 text-slate-500" />
-                    {formatTimeAgo(item.timestamp)}
-                  </span>
+                  {/* Clickable Steam User Avatar linking to verified Steam Profile */}
+                  <a
+                    href={`https://steamcommunity.com/profiles/${item.steamId64 || '76561198034202275'}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={(e) => e.stopPropagation()}
+                    title={`${item.traderName || 'Користувач Steam'} • ${formatTimeAgo(item.timestamp)} • Відкрити профіль Steam`}
+                    className="flex items-center gap-1.5 pl-1 pr-2 py-0.5 rounded-full bg-slate-800/90 hover:bg-slate-700 text-slate-300 hover:text-white border border-white/[0.07] hover:border-emerald-500/50 transition-all duration-150 group/trader shadow-sm"
+                  >
+                    <div className="relative w-5 h-5 shrink-0">
+                      <img
+                        src={item.traderAvatar || 'https://avatars.steamstatic.com/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb_medium.jpg'}
+                        alt={item.traderName || 'Steam Profile'}
+                        className="w-5 h-5 rounded-full object-cover ring-1 ring-emerald-500/60 group-hover/trader:ring-emerald-400 group-hover/trader:scale-105 transition-all"
+                        loading="lazy"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = 'https://avatars.steamstatic.com/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb_medium.jpg';
+                        }}
+                      />
+                      <span className="absolute -bottom-0.5 -right-0.5 w-1.5 h-1.5 rounded-full bg-emerald-400 ring-1 ring-slate-900" />
+                    </div>
+                    <span className="text-[10px] font-['Space_Grotesk'] font-medium text-slate-300 group-hover/trader:text-emerald-300 truncate max-w-[80px] transition-colors">
+                      {item.traderName || 'Steam Trader'}
+                    </span>
+                  </a>
                 </div>
 
                 {/* Weapon Preview Area with SkinImage */}
