@@ -22,6 +22,7 @@ import { FIAT_PAYMENT_METHODS, CRYPTO_PAYMENT_METHODS } from '../data/paymentMet
 import type { CS2Skin, PaymentOption } from '../types';
 import { useCurrency } from '../context/CurrencyContext';
 import { useLanguage } from '../context/LanguageContext';
+import { getCabinetText } from '../data/pagesTranslations';
 import { SkinInspectModal } from './SkinInspectModal';
 import { TradeOfferModal } from './TradeOfferModal';
 import { SkinImage } from './SkinImage';
@@ -248,11 +249,11 @@ export const InventorySandbox: React.FC<InventorySandboxProps> = ({
       updateBalance(tradeSession.totalValue);
       addTransaction({
         type: 'sale',
-        title: language === 'EN' ? `Deposit ${tradeSession.skins.length} skins (Bot: ${tradeSession.bot.personaName})` : (language === 'RU' ? `Депозит ${tradeSession.skins.length} скинов (Бот: ${tradeSession.bot.personaName})` : `Депозит ${tradeSession.skins.length} скінів (Бот: ${tradeSession.bot.personaName})`),
+        title: getCabinetText(language, 'cabinet.depositTitle', { count: tradeSession.skins.length, bot: tradeSession.bot.personaName }),
         amount: tradeSession.totalValue,
         status: 'completed',
         method: selectedPaymentMethod.name,
-        destinationMasked: destinationInput || (language === 'EN' ? 'SkinToCash Balance' : (language === 'RU' ? 'Баланс SkinToCash' : 'Баланс SkinToCash')),
+        destinationMasked: destinationInput || getCabinetText(language, 'cabinet.availableBalance'),
         itemsCount: tradeSession.skins.length,
         txHash: tradeSession.txId,
         tradeOfferId: tradeSession.txId,
@@ -291,7 +292,7 @@ export const InventorySandbox: React.FC<InventorySandboxProps> = ({
               className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-500/15 border border-emerald-500/40 text-emerald-300 text-xs font-['JetBrains_Mono'] font-bold shadow-[0_0_20px_rgba(16,185,129,0.3)]"
             >
               <Gift className="w-4 h-4 text-emerald-400" />
-              <span>🔥 {language === 'EN' ? '+8% NEWCOMER BONUS ACTIVE ON CASHOUT' : (language === 'RU' ? '+8% БОНУС НОВИЧКА АКТИВИРОВАН К СУММЕ ВЫПЛАТЫ' : '+8% БОНУС НОВАЧКА АКТИВОВАНО ДО СУМИ ВИПЛАТИ')}</span>
+              <span>{t('bonus.bannerActive')}</span>
             </motion.div>
           )}
         </div>
@@ -376,11 +377,11 @@ export const InventorySandbox: React.FC<InventorySandboxProps> = ({
                     type="button"
                     onClick={openCabinet}
                     className="font-bold text-white hover:text-emerald-300 transition-colors flex items-center gap-1 cursor-pointer"
-                    title={language === 'EN' ? 'Open Cabinet' : (language === 'RU' ? 'Открыть Личный кабинет' : 'Відкрити Особистий кабінет')}
+                    title={t('nav.openCabinet')}
                   >
                     <span>{playerInfo?.personaname || user?.personaname}</span>
                     <span className="text-[10px] text-emerald-400 bg-emerald-500/10 px-1.5 py-0.2 rounded border border-emerald-500/20 font-['Space_Grotesk']">
-                      {language === 'EN' ? 'Cabinet' : (language === 'RU' ? 'Кабинет' : 'Кабінет')}
+                      {t('nav.cabinet')}
                     </span>
                   </button>
                 )}

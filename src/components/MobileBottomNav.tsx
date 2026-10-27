@@ -67,7 +67,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
             <span className="absolute -top-1 -right-1.5 w-2 h-2 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.9)]" />
           </div>
           <span className="text-[10px] font-['Space_Grotesk'] tracking-tight">
-            {language === 'EN' ? 'P2P Market' : (language === 'RU' ? 'P2P Рынок' : 'P2P Ринок')}
+            {t('nav.p2pMarket')}
           </span>
         </button>
 
@@ -78,7 +78,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
         >
           <Layers className="w-5 h-5 mb-0.5 text-slate-300" />
           <span className="text-[10px] font-['Space_Grotesk'] tracking-tight">
-            {language === 'EN' ? 'Inventory' : (language === 'RU' ? 'Инвентарь' : 'Інвентар')}
+            {t('tab.inventory') || 'Inventory'}
           </span>
         </button>
 
@@ -115,7 +115,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
           )}
           
           <span className="text-[10px] font-['Space_Grotesk'] tracking-tight">
-            {user ? (language === 'EN' ? 'Cabinet' : (language === 'RU' ? 'Кабинет' : 'Кабінет')) : (language === 'EN' ? 'Sign In' : (language === 'RU' ? 'Войти' : 'Увійти'))}
+            {user ? t('nav.cabinet') : t('nav.signInCompact')}
           </span>
         </button>
 

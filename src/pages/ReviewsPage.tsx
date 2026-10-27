@@ -28,6 +28,7 @@ import { useLanguage, LANGUAGES } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
 import { LogoIcon } from '../components/LogoIcon';
 import { STEAM_REVIEWS_DATA, type SteamReview } from '../data/steamReviewsData';
+import { getReviewsText } from '../data/pagesTranslations';
 import type { Currency } from '../types';
 
 interface ReviewsPageProps {
@@ -39,6 +40,7 @@ export const ReviewsPage: React.FC<ReviewsPageProps> = ({ onNavigateHome, onOpen
   const { user } = useAuth();
   const { currency, setCurrency, formatPrice } = useCurrency();
   const { language, setLanguage, currentOption } = useLanguage();
+  const tr = (key: string, params?: Record<string, string | number>) => getReviewsText(language, key, params);
 
   // Reviews state with optimistic local reviews support
   const [reviewsList, setReviewsList] = useState<SteamReview[]>(STEAM_REVIEWS_DATA);
@@ -167,7 +169,7 @@ export const ReviewsPage: React.FC<ReviewsPageProps> = ({ onNavigateHome, onOpen
       profileUrl: `https://steamcommunity.com/profiles/${steamId}`,
       avatar: userAvatar,
       author: authorName,
-      date: language === 'EN' ? 'Just now' : (language === 'RU' ? 'Только что' : 'Тільки що'),
+      date: tr('reviews.justNow'),
       rating: newRating,
       text: newText.trim(),
       skinSold: newSkinSold || 'AK-47 | Ice Coaled (FN)',
@@ -227,7 +229,7 @@ export const ReviewsPage: React.FC<ReviewsPageProps> = ({ onNavigateHome, onOpen
             <div className="flex items-center gap-2">
               <span className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-xs font-['JetBrains_Mono'] font-bold">
                 <MessageSquare className="w-3.5 h-3.5" />
-                <span>{language === 'EN' ? 'Steam Reviews' : (language === 'RU' ? 'Отзывы Steam' : 'Відгуки Steam')}</span>
+                <span>{tr('reviews.steamReviews')}</span>
               </span>
 
               <button
@@ -235,7 +237,7 @@ export const ReviewsPage: React.FC<ReviewsPageProps> = ({ onNavigateHome, onOpen
                 className="hidden md:flex items-center gap-1.5 px-3 py-1 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] text-xs font-['Space_Grotesk'] font-semibold text-slate-300 hover:text-white transition-all cursor-pointer shrink-0"
               >
                 <ArrowLeft className="w-3.5 h-3.5 text-emerald-400" />
-                <span>{language === 'EN' ? 'Home' : (language === 'RU' ? 'На главную' : 'На головну')}</span>
+                <span>{tr('reviews.home')}</span>
               </button>
             </div>
           </div>
@@ -339,10 +341,10 @@ export const ReviewsPage: React.FC<ReviewsPageProps> = ({ onNavigateHome, onOpen
             >
               <Plus className="w-3.5 h-3.5 stroke-[3]" />
               <span className="hidden sm:inline">
-                {language === 'EN' ? 'Leave Review' : (language === 'RU' ? 'Оставить отзыв' : 'Залишити відгук')}
+                {tr('reviews.leaveReview')}
               </span>
               <span className="sm:hidden">
-                {language === 'EN' ? 'Review' : 'Відгук'}
+                {tr('reviews.review')}
               </span>
             </button>
           </div>
@@ -361,7 +363,7 @@ export const ReviewsPage: React.FC<ReviewsPageProps> = ({ onNavigateHome, onOpen
             </button>
             <span>/</span>
             <span className="text-emerald-400">
-              {language === 'EN' ? 'Reviews' : (language === 'RU' ? 'Отзывы' : 'Відгуки')}
+              {tr('reviews.reviewsTitle')}
             </span>
           </div>
 
@@ -373,45 +375,31 @@ export const ReviewsPage: React.FC<ReviewsPageProps> = ({ onNavigateHome, onOpen
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 text-xs font-['JetBrains_Mono'] font-bold">
                 <ShieldCheck className="w-3.5 h-3.5" />
                 <span>
-                  {language === 'EN' 
-                    ? '100% Verified Steam Community Reviews' 
-                    : (language === 'RU' ? '100% Проверенные отзывы Steam Community' : '100% Перевірені відгуки Steam Community')}
+                  {tr('reviews.verifiedBadge')}
                 </span>
               </div>
 
               <h1 className="text-3xl sm:text-5xl font-extrabold font-['Space_Grotesk'] text-white tracking-tight leading-tight">
-                {language === 'EN' ? (
-                  <>Real Reviews from <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-teal-300 to-cyan-400">Real Steam Players</span></>
-                ) : language === 'RU' ? (
-                  <>Реальные отзывы от <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-teal-300 to-cyan-400">игроков CS2</span></>
-                ) : (
-                  <>Реальні відгуки від <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-teal-300 to-cyan-400">гравців CS2</span></>
-                )}
+                <>{tr('reviews.headlineRealPlayers')} <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-teal-300 to-cyan-400">{tr('reviews.headlineAccent')}</span></>
               </h1>
 
               <p className="text-sm sm:text-base text-slate-300 leading-relaxed max-w-2xl">
-                {language === 'EN' ? (
-                  'Over 299+ transparent reviews directly tied to active Steam Community profiles and verified cashout trades. Instant payouts, zero hidden fees.'
-                ) : language === 'RU' ? (
-                  'Более 299 отзывов с прямыми ссылками на профили Steam Community и проверенными сделками. Моментальные выплаты на карты и криптовалюту.'
-                ) : (
-                  'Понад 299 відгуків із прямими посиланнями на профілі Steam Community та верифікованими угодами виплат. Миттєві виплати на картки та крипту.'
-                )}
+                {tr('reviews.heroDesc')}
               </p>
 
               {/* Trust Badges */}
               <div className="flex flex-wrap items-center gap-3 pt-2">
                 <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/[0.03] border border-white/[0.08] text-xs font-['JetBrains_Mono'] text-slate-200">
                   <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                  <span>{stats.total}+ {language === 'EN' ? 'Reviews' : (language === 'RU' ? 'отзывов' : 'відгуків')}</span>
+                  <span>{stats.total}+ {tr('reviews.statsCount')}</span>
                 </div>
                 <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/[0.03] border border-white/[0.08] text-xs font-['JetBrains_Mono'] text-slate-200">
                   <Zap className="w-4 h-4 text-amber-400" />
-                  <span>{language === 'EN' ? '~42s Avg Payout' : (language === 'RU' ? '~42 сек на выплату' : '~42 сек на виплату')}</span>
+                  <span>{tr('reviews.avgPayout')}</span>
                 </div>
                 <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/[0.03] border border-white/[0.08] text-xs font-['JetBrains_Mono'] text-slate-200">
                   <ShieldCheck className="w-4 h-4 text-cyan-400" />
-                  <span>{language === 'EN' ? 'Steam API Verified' : (language === 'RU' ? 'Steam API Проверка' : 'Steam API Верифікація')}</span>
+                  <span>{tr('reviews.steamApiVerified')}</span>
                 </div>
               </div>
             </div>
@@ -433,7 +421,7 @@ export const ReviewsPage: React.FC<ReviewsPageProps> = ({ onNavigateHome, onOpen
                     ))}
                   </div>
                   <div className="text-xs text-slate-400 font-['JetBrains_Mono'] mt-1">
-                    {language === 'EN' ? 'Excellent rating' : (language === 'RU' ? 'Отличный рейтинг' : 'Відмінний рейтинг')}
+                    {tr('reviews.excellentRating')}
                   </div>
                 </div>
 
@@ -480,14 +468,14 @@ export const ReviewsPage: React.FC<ReviewsPageProps> = ({ onNavigateHome, onOpen
               {/* Bottom CTA Inside Box */}
               <div className="pt-4 flex items-center justify-between gap-3">
                 <span className="text-xs text-slate-400 font-['JetBrains_Mono']">
-                  {language === 'EN' ? 'Made a trade recently?' : (language === 'RU' ? 'Совершили сделку?' : 'Здійснили угоду?')}
+                  {tr('reviews.madeTradeRecently')}
                 </span>
                 <button
                   onClick={handleOpenReviewModal}
                   className="px-4 py-2 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-emerald-300 text-xs font-bold font-['Space_Grotesk'] transition-all flex items-center gap-1.5 cursor-pointer"
                 >
                   <Plus className="w-3.5 h-3.5" />
-                  <span>{language === 'EN' ? 'Write Review' : (language === 'RU' ? 'Написать отзыв' : 'Написати відгук')}</span>
+                  <span>{tr('reviews.writeReview')}</span>
                 </button>
               </div>
 
@@ -513,7 +501,7 @@ export const ReviewsPage: React.FC<ReviewsPageProps> = ({ onNavigateHome, onOpen
                     : 'bg-white/[0.04] text-slate-300 hover:bg-white/[0.08] hover:text-white border border-white/[0.06]'
                 }`}
               >
-                {language === 'EN' ? 'All Reviews' : (language === 'RU' ? 'Все отзывы' : 'Всі відгуки')} ({stats.total})
+                {tr('reviews.allReviews')} ({stats.total})
               </button>
 
               <button
@@ -573,7 +561,7 @@ export const ReviewsPage: React.FC<ReviewsPageProps> = ({ onNavigateHome, onOpen
                   type="text"
                   value={searchQuery}
                   onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
-                  placeholder={language === 'EN' ? 'Search author or text...' : (language === 'RU' ? 'Поиск по автору или тексту...' : 'Пошук за автором або текстом...')}
+                  placeholder={tr('reviews.searchPlaceholder')}
                   className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl pl-9 pr-3 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500/50 transition-all font-['Space_Grotesk']"
                 />
                 {searchQuery && (
@@ -594,13 +582,13 @@ export const ReviewsPage: React.FC<ReviewsPageProps> = ({ onNavigateHome, onOpen
                   className="bg-white/[0.04] border border-white/[0.08] rounded-xl px-3 py-1.5 text-xs text-slate-300 focus:outline-none focus:border-emerald-500/50 transition-all font-['Space_Grotesk'] cursor-pointer"
                 >
                   <option value="newest" className="bg-[#0B1017]">
-                    {language === 'EN' ? 'Newest First' : (language === 'RU' ? 'Сначала новые' : 'Спочатку нові')}
+                    {tr('reviews.sortNewest')}
                   </option>
                   <option value="highest" className="bg-[#0B1017]">
-                    {language === 'EN' ? 'Highest Rating' : (language === 'RU' ? 'Высший балл' : 'Найвищий бал')}
+                    {tr('reviews.sortHighest')}
                   </option>
                   <option value="lowest" className="bg-[#0B1017]">
-                    {language === 'EN' ? 'Lowest Rating' : (language === 'RU' ? 'Низший балл' : 'Найнижчий бал')}
+                    {tr('reviews.sortLowest')}
                   </option>
                 </select>
               </div>
@@ -616,13 +604,7 @@ export const ReviewsPage: React.FC<ReviewsPageProps> = ({ onNavigateHome, onOpen
         {/* Results counter */}
         <div className="flex items-center justify-between text-xs font-['JetBrains_Mono'] text-slate-400 mb-6">
           <div>
-            {language === 'EN' ? (
-              <>Showing <span className="text-white font-bold">{filteredReviews.length === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1}–{Math.min(currentPage * itemsPerPage, filteredReviews.length)}</span> of <span className="text-emerald-400 font-bold">{filteredReviews.length}</span> reviews</>
-            ) : language === 'RU' ? (
-              <>Показано <span className="text-white font-bold">{filteredReviews.length === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1}–{Math.min(currentPage * itemsPerPage, filteredReviews.length)}</span> из <span className="text-emerald-400 font-bold">{filteredReviews.length}</span> отзывов</>
-            ) : (
-              <>Показано <span className="text-white font-bold">{filteredReviews.length === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1}–{Math.min(currentPage * itemsPerPage, filteredReviews.length)}</span> з <span className="text-emerald-400 font-bold">{filteredReviews.length}</span> відгуків</>
-            )}
+            <>{tr('reviews.showing', { from: String(filteredReviews.length === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1), to: String(Math.min(currentPage * itemsPerPage, filteredReviews.length)), total: String(filteredReviews.length) })}</>
           </div>
 
           {searchQuery && (
@@ -631,7 +613,7 @@ export const ReviewsPage: React.FC<ReviewsPageProps> = ({ onNavigateHome, onOpen
               className="text-emerald-400 hover:underline flex items-center gap-1 cursor-pointer"
             >
               <X className="w-3 h-3" />
-              <span>{language === 'EN' ? 'Reset filters' : (language === 'RU' ? 'Сбросить фильтры' : 'Скинути фільтри')}</span>
+              <span>{tr('reviews.resetFilters')}</span>
             </button>
           )}
         </div>
@@ -641,18 +623,16 @@ export const ReviewsPage: React.FC<ReviewsPageProps> = ({ onNavigateHome, onOpen
           <div className="py-20 text-center rounded-3xl bg-white/[0.02] border border-white/[0.06] p-8">
             <MessageSquare className="w-12 h-12 text-slate-600 mx-auto mb-4" />
             <h3 className="text-lg font-bold font-['Space_Grotesk'] text-white mb-2">
-              {language === 'EN' ? 'No reviews found' : (language === 'RU' ? 'Отзывы не найдены' : 'Відгуки не знайдені')}
+              {tr('reviews.noFound')}
             </h3>
             <p className="text-xs text-slate-400 max-w-sm mx-auto mb-6">
-              {language === 'EN' 
-                ? 'Try broadening your search term or selecting "All Reviews".' 
-                : (language === 'RU' ? 'Попробуйте изменить поисковый запрос или выбрать категорию "Все отзывы".' : 'Спробуйте змінити пошуковий запит або обрати категорію "Всі відгуки".')}
+              {tr('reviews.noFoundDesc')}
             </p>
             <button
               onClick={() => { setSearchQuery(''); setRatingFilter('all'); }}
               className="px-4 py-2 rounded-xl bg-emerald-500 text-slate-950 font-bold text-xs font-['Space_Grotesk'] cursor-pointer"
             >
-              {language === 'EN' ? 'Show All Reviews' : (language === 'RU' ? 'Показать все отзывы' : 'Показати всі відгуки')}
+              {tr('reviews.showAll')}
             </button>
           </div>
         ) : (
@@ -710,7 +690,7 @@ export const ReviewsPage: React.FC<ReviewsPageProps> = ({ onNavigateHome, onOpen
                             target="_blank"
                             rel="noopener noreferrer"
                             className="inline-flex items-center gap-1 text-[11px] font-['JetBrains_Mono'] text-slate-400 hover:text-emerald-400 transition-colors mt-0.5 group/link"
-                            title={language === 'EN' ? `Open Steam profile ${rev.steamId}` : (language === 'RU' ? `Открыть профиль Steam ${rev.steamId}` : `Відкрити профіль Steam ${rev.steamId}`)}
+                            title={tr('reviews.openProfile', { id: rev.steamId })}
                           >
                             <span>Steam ID: {rev.steamId.slice(-6)}</span>
                             <ExternalLink className="w-2.5 h-2.5 opacity-60 group-hover/link:opacity-100 group-hover/link:translate-x-0.5 transition-all" />
@@ -748,7 +728,7 @@ export const ReviewsPage: React.FC<ReviewsPageProps> = ({ onNavigateHome, onOpen
                     {/* Item sold */}
                     <div className="flex justify-between items-center text-slate-400">
                       <span className="text-[10px] uppercase tracking-wider text-slate-400">
-                        {language === 'EN' ? 'Traded:' : (language === 'RU' ? 'Продано:' : 'Продано:')}
+                        {tr('reviews.traded')}
                       </span>
                       <span className="text-slate-200 font-semibold truncate max-w-[170px]" title={rev.skinSold}>
                         {rev.skinSold}
@@ -766,9 +746,7 @@ export const ReviewsPage: React.FC<ReviewsPageProps> = ({ onNavigateHome, onOpen
                       <span className="flex items-center gap-1">
                         <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
                         <span>
-                          {language === 'EN' 
-                            ? 'Steam Trade Confirmed' 
-                            : (language === 'RU' ? 'Сделка подтверждена Steam API' : 'Угода підтверджена Steam API')}
+                          {tr('reviews.dealVerifiedSteam')}
                         </span>
                       </span>
                       <span className="text-[9px] text-slate-400 uppercase">CS2 Instant</span>
@@ -791,7 +769,7 @@ export const ReviewsPage: React.FC<ReviewsPageProps> = ({ onNavigateHome, onOpen
               disabled={currentPage === 1}
               className="px-4 py-2 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] disabled:opacity-30 disabled:cursor-not-allowed border border-white/[0.08] text-xs font-['Space_Grotesk'] font-bold text-white transition-all cursor-pointer"
             >
-              ← {language === 'EN' ? 'Previous' : (language === 'RU' ? 'Назад' : 'Попередня')}
+              ← {tr('reviews.previous')}
             </button>
 
             {/* Page number buttons */}
@@ -826,7 +804,7 @@ export const ReviewsPage: React.FC<ReviewsPageProps> = ({ onNavigateHome, onOpen
               disabled={currentPage === totalPages}
               className="px-4 py-2 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] disabled:opacity-30 disabled:cursor-not-allowed border border-white/[0.08] text-xs font-['Space_Grotesk'] font-bold text-white transition-all cursor-pointer"
             >
-              {language === 'EN' ? 'Next' : (language === 'RU' ? 'Вперед' : 'Наступна')} →
+              {tr('reviews.next')} →
             </button>
 
           </div>
@@ -870,12 +848,10 @@ export const ReviewsPage: React.FC<ReviewsPageProps> = ({ onNavigateHome, onOpen
                     <Check className="w-7 h-7 stroke-[3]" />
                   </div>
                   <h3 className="text-xl font-black font-['Space_Grotesk'] text-white">
-                    {language === 'EN' ? 'Thank You!' : (language === 'RU' ? 'Спасибо за отзыв!' : 'Дякуємо за відгук!')}
+                    {tr('reviews.thankYou')}
                   </h3>
                   <p className="text-xs text-slate-300 max-w-xs mx-auto">
-                    {language === 'EN' 
-                      ? 'Your review has been verified and published to the live Steam feed.' 
-                      : (language === 'RU' ? 'Ваш отзыв успешно верифицирован и опубликован в ленте Steam.' : 'Ваш відгук успішно верифіковано та опубліковано у стрічці Steam.')}
+                    {tr('reviews.thankYouDesc')}
                   </p>
                 </div>
               ) : (
@@ -884,22 +860,20 @@ export const ReviewsPage: React.FC<ReviewsPageProps> = ({ onNavigateHome, onOpen
                   <div>
                     <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 text-[10px] font-['JetBrains_Mono'] font-bold mb-2">
                       <Sparkles className="w-3 h-3" />
-                      <span>{language === 'EN' ? 'Steam Verification' : 'Верифікація Steam'}</span>
+                      <span>{tr('reviews.steamVerification')}</span>
                     </div>
                     <h3 className="text-xl font-black font-['Space_Grotesk'] text-white">
-                      {language === 'EN' ? 'Leave a Steam Review' : (language === 'RU' ? 'Оставить отзыв о сделке' : 'Залишити відгук про угоду')}
+                      {tr('reviews.modalTitle')}
                     </h3>
                     <p className="text-xs text-slate-400">
-                      {language === 'EN' 
-                        ? 'Share your experience with instant CS2 payouts and skin trade speeds.' 
-                        : (language === 'RU' ? 'Поделитесь впечатлением о скорости выплат и удобстве SkinToCash.' : 'Поділіться враженнями про швидкість виплат та зручність SkinToCash.')}
+                      {tr('reviews.modalDesc')}
                     </p>
                   </div>
 
                   {/* Rating Selector (1 to 10) */}
                   <div className="space-y-1.5">
                     <label className="text-xs font-['Space_Grotesk'] font-bold text-slate-300 flex justify-between">
-                      <span>{language === 'EN' ? 'Rating:' : (language === 'RU' ? 'Оценка:' : 'Оцінка:')}</span>
+                      <span>{tr('reviews.ratingLabel')}</span>
                       <span className="text-emerald-400 font-['JetBrains_Mono'] font-extrabold">{newRating} / 10 ★</span>
                     </label>
 
@@ -925,7 +899,7 @@ export const ReviewsPage: React.FC<ReviewsPageProps> = ({ onNavigateHome, onOpen
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div className="space-y-1">
                       <label className="text-[11px] font-['Space_Grotesk'] text-slate-300">
-                        {language === 'EN' ? 'Your Steam Nickname' : (language === 'RU' ? 'Ваш Steam Никнейм' : 'Ваш Steam Нікнейм')}
+                        {tr('reviews.yourNick')}
                       </label>
                       <input
                         type="text"
@@ -939,7 +913,7 @@ export const ReviewsPage: React.FC<ReviewsPageProps> = ({ onNavigateHome, onOpen
 
                     <div className="space-y-1">
                       <label className="text-[11px] font-['Space_Grotesk'] text-slate-300">
-                        {language === 'EN' ? 'Steam ID / Profile Link' : (language === 'RU' ? 'Steam ID / Ссылка' : 'Steam ID / Посилання')}
+                        {tr('reviews.steamIdOrLink')}
                       </label>
                       <input
                         type="text"
@@ -954,7 +928,7 @@ export const ReviewsPage: React.FC<ReviewsPageProps> = ({ onNavigateHome, onOpen
                   {/* Traded Skin */}
                   <div className="space-y-1">
                     <label className="text-[11px] font-['Space_Grotesk'] text-slate-300">
-                      {language === 'EN' ? 'Skins / Items Traded' : (language === 'RU' ? 'Проданный скин или кейсы' : 'Проданий скін або кейси')}
+                      {tr('reviews.skinsTraded')}
                     </label>
                     <input
                       type="text"
@@ -968,14 +942,14 @@ export const ReviewsPage: React.FC<ReviewsPageProps> = ({ onNavigateHome, onOpen
                   {/* Review Textarea */}
                   <div className="space-y-1">
                     <label className="text-[11px] font-['Space_Grotesk'] text-slate-300">
-                      {language === 'EN' ? 'Your Feedback' : (language === 'RU' ? 'Текст отзыва' : 'Текст відгуку')}
+                      {tr('reviews.yourFeedback')}
                     </label>
                     <textarea
                       required
                       rows={3}
                       value={newText}
                       onChange={(e) => setNewText(e.target.value)}
-                      placeholder={language === 'EN' ? 'Sold my knife, money was in my card in 40 seconds. Everything top!' : (language === 'RU' ? 'Продал нож, деньги на карте за 40 секунд. Все четко!' : 'Продав ніж, гроші на картці за 40 секунд. Все чітко!')}
+                      placeholder={tr('reviews.feedbackPlaceholder')}
                       className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl p-3 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500/50 font-sans resize-none"
                     />
                   </div>
@@ -984,9 +958,7 @@ export const ReviewsPage: React.FC<ReviewsPageProps> = ({ onNavigateHome, onOpen
                   <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-[11px] text-emerald-300/90 flex items-center gap-2">
                     <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
                     <span>
-                      {language === 'EN'
-                        ? 'Reviews are verified through Steam OpenID and Trade History'
-                        : (language === 'RU' ? 'Отзывы проверяются через историю трейдов Steam API' : 'Відгуки перевіряються через історію трейдів Steam API')}
+                      {tr('reviews.apiVerifyNote')}
                     </span>
                   </div>
 
@@ -997,7 +969,7 @@ export const ReviewsPage: React.FC<ReviewsPageProps> = ({ onNavigateHome, onOpen
                       className="w-full py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-extrabold text-xs font-['Space_Grotesk'] shadow-[0_0_25px_rgba(16,185,129,0.35)] transition-all flex items-center justify-center gap-2 cursor-pointer"
                     >
                       <Send className="w-4 h-4" />
-                      <span>{language === 'EN' ? 'Publish Steam Review' : (language === 'RU' ? 'Опубликовать отзыв' : 'Опублікувати відгук')}</span>
+                      <span>{tr('reviews.publishBtn')}</span>
                     </button>
                   </div>
                 </form>

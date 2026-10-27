@@ -143,7 +143,7 @@ export const SteamModal: React.FC<SteamModalProps> = ({ isOpen, onClose, onSucce
                 type="text"
                 value={tradeUrl}
                 onChange={(e) => setTradeUrl(e.target.value)}
-                placeholder={language === 'EN' ? 'https://steamcommunity.com/tradeoffer/new/?partner=... or SteamID64' : (language === 'RU' ? 'https://steamcommunity.com/tradeoffer/new/?partner=... или SteamID64' : 'https://steamcommunity.com/tradeoffer/new/?partner=... або SteamID64')}
+                placeholder={t('steamModal.tradeUrlPlaceholder')}
                 className="w-full px-3.5 py-3 rounded-xl bg-white/[0.03] border border-white/[0.08] text-white font-['JetBrains_Mono'] text-xs focus:outline-none focus:border-emerald-400 transition-colors"
               />
 
@@ -174,7 +174,7 @@ export const SteamModal: React.FC<SteamModalProps> = ({ isOpen, onClose, onSucce
               ) : (
                 <>
                   <Zap className="w-4 h-4 text-emerald-400" />
-                  <span>{language === 'EN' ? 'Quick Login via Trade URL / SteamID' : (language === 'RU' ? 'Быстрый вход по Trade URL / SteamID' : 'Швидкий вхід за Trade URL / SteamID')}</span>
+                  <span>{t('steamModal.quickLogin')}</span>
                   <ArrowRight className="w-4 h-4 text-slate-400" />
                 </>
               )}

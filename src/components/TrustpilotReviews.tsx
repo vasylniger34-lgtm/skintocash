@@ -8,8 +8,96 @@ interface TrustpilotReviewsProps {
   onNavigateReviews?: () => void;
 }
 
+const TRUSTPILOT_I18N: Record<string, Record<string, string>> = {
+  EN: {
+    badge: 'VERIFIED STEAM REVIEWS',
+    titlePrefix: 'Trusted by',
+    titleHighlight: '299+ CS2 Traders',
+    desc: 'Direct feedback from real Steam Community profiles with confirmed Trade URL transactions.',
+    verified: 'Steam Verified',
+    basedOn: 'Based on 299+ trades',
+    item: 'Item:',
+    ctaTitle: 'Want to read all 299+ Steam reviews or leave your own?',
+    ctaDesc: 'All reviews include verified Steam Community profile links and transaction details.',
+    ctaBtn: 'View All 299+ Reviews',
+  },
+  UA: {
+    badge: 'ВЕРИФІКОВАНІ ВІДГУКИ STEAM',
+    titlePrefix: 'Вибір понад',
+    titleHighlight: '299+ трейдерів CS2',
+    desc: 'Справжні відгуки гравців Steam із підтвердженими угодами та миттєвими виплатами.',
+    verified: 'Перевірено в Steam',
+    basedOn: 'На основі 299+ угод',
+    item: 'Скін:',
+    ctaTitle: 'Бажаєте переглянути всі 299+ відгуків Steam або залишити свій?',
+    ctaDesc: 'Усі відгуки містять прямі посилання на профілі Steam та підтверджені угоди.',
+    ctaBtn: 'Всі 299+ відгуків Steam',
+  },
+  RU: {
+    badge: 'ПРОВЕРЕННЫЕ ОТЗЫВЫ STEAM',
+    titlePrefix: 'Выбор более',
+    titleHighlight: '299+ трейдеров CS2',
+    desc: 'Реальные отзывы игроков Steam с подтвержденными сделками и моментальными выплатами.',
+    verified: 'Проверено в Steam',
+    basedOn: 'На основе 299+ сделок',
+    item: 'Скин:',
+    ctaTitle: 'Хотите прочитать все 299+ отзывов Steam или оставить свой?',
+    ctaDesc: 'Все отзывы содержат прямые ссылки на профили Steam и подтвержденные сделки.',
+    ctaBtn: 'Все 299+ отзывов Steam',
+  },
+  PL: {
+    badge: 'ZWERYFIKOWANE OPINIE STEAM',
+    titlePrefix: 'Zaufanie ponad',
+    titleHighlight: '299+ graczy CS2',
+    desc: 'Bezpośrednie opinie z prawdziwych profili Steam Community z potwierdzonymi transakcjami wypłat.',
+    verified: 'Zweryfikowano w Steam',
+    basedOn: 'Na podstawie 299+ transakcji',
+    item: 'Przedmiot:',
+    ctaTitle: 'Chcesz przeczytać wszystkie 299+ opinii Steam lub zostawić własną?',
+    ctaDesc: 'Wszystkie opinie zawierają bezpośrednie linki do profili Steam i szczegóły transakcji.',
+    ctaBtn: 'Zobacz wszystkie 299+ opinii',
+  },
+  ES: {
+    badge: 'RESEÑAS VERIFICADAS DE STEAM',
+    titlePrefix: 'La confianza de más de',
+    titleHighlight: '299+ comerciantes de CS2',
+    desc: 'Opiniones directas de perfiles reales de Steam Community con intercambios confirmados.',
+    verified: 'Verificado en Steam',
+    basedOn: 'Basado en más de 299+ operaciones',
+    item: 'Artículo:',
+    ctaTitle: '¿Quieres leer las 299+ reseñas de Steam o dejar la tuya?',
+    ctaDesc: 'Todas las reseñas incluyen enlaces directos a perfiles de Steam y detalles de la transacción.',
+    ctaBtn: 'Ver las 299+ reseñas',
+  },
+  ZH: {
+    badge: '经 STEAM 官方核验的玩家好评',
+    titlePrefix: '深受超过',
+    titleHighlight: '299+ 位 CS2 玩家信赖',
+    desc: '来自真实 Steam 社区活跃玩家的公开评价，每笔交易均有链上及银行打款凭证。',
+    verified: 'Steam 官方验证',
+    basedOn: '基于 299+ 笔真实交易',
+    item: '饰品:',
+    ctaTitle: '想要查看全部 299+ 条真实评价或发表您的体验？',
+    ctaDesc: '所有评价均附带经过验证的 Steam 社区主页直达链接及真实交易详情。',
+    ctaBtn: '查看全部 299+ 条评价',
+  },
+  DE: {
+    badge: 'VERIFIZIERTE STEAM-BEWERTUNGEN',
+    titlePrefix: 'Das Vertrauen von',
+    titleHighlight: '299+ CS2-Tradern',
+    desc: 'Echtes Feedback von Steam-Community-Profilen mit bestätigten Trade-URL-Transaktionen.',
+    verified: 'In Steam verifiziert',
+    basedOn: 'Basierend auf 299+ Trades',
+    item: 'Gegenstand:',
+    ctaTitle: 'Möchtest du alle 299+ Steam-Bewertungen lesen oder eine eigene abgeben?',
+    ctaDesc: 'Alle Bewertungen enthalten direkte Links zu Steam-Profilen und Transaktionsdetails.',
+    ctaBtn: 'Alle 299+ Bewertungen ansehen',
+  },
+};
+
 export const TrustpilotReviews: React.FC<TrustpilotReviewsProps> = ({ onNavigateReviews }) => {
   const { t, language } = useLanguage();
+  const tt = TRUSTPILOT_I18N[language] || TRUSTPILOT_I18N['EN'];
 
   // Pick top authentic diverse reviews from real Steam players
   const featuredReviews: SteamReview[] = [
@@ -42,25 +130,15 @@ export const TrustpilotReviews: React.FC<TrustpilotReviewsProps> = ({ onNavigate
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-['JetBrains_Mono'] font-bold mb-3">
               <Star className="w-3.5 h-3.5 fill-emerald-400 text-emerald-400" />
               <span>
-                {language === 'EN' 
-                  ? 'VERIFIED STEAM REVIEWS' 
-                  : (language === 'RU' ? 'ПРОВЕРЕННЫЕ ОТЗЫВЫ STEAM' : 'ВЕРИФІКОВАНІ ВІДГУКИ STEAM')}
+                {tt.badge}
               </span>
             </div>
 
             <h2 className="text-3xl sm:text-4xl font-extrabold font-['Space_Grotesk'] text-white tracking-tight mb-2">
-              {language === 'EN' ? (
-                <>Trusted by <span className="text-emerald-400">299+ CS2 Traders</span></>
-              ) : language === 'RU' ? (
-                <>Выбор более <span className="text-emerald-400">299+ трейдеров CS2</span></>
-              ) : (
-                <>Вибір понад <span className="text-emerald-400">299+ трейдерів CS2</span></>
-              )}
+              <>{tt.titlePrefix} <span className="text-emerald-400">{tt.titleHighlight}</span></>
             </h2>
             <p className="text-sm text-slate-300">
-              {language === 'EN' 
-                ? 'Direct feedback from real Steam Community profiles with confirmed Trade URL transactions.' 
-                : (language === 'RU' ? 'Реальные отзывы игроков Steam с подтвержденными сделками и моментальными выплатами.' : 'Справжні відгуки гравців Steam із підтвердженими угодами та миттєвими виплатами.')}
+              {tt.desc}
             </p>
           </div>
 
@@ -78,10 +156,10 @@ export const TrustpilotReviews: React.FC<TrustpilotReviewsProps> = ({ onNavigate
             <div className="text-left font-['JetBrains_Mono'] text-xs">
               <div className="text-emerald-400 font-bold flex items-center gap-1">
                 <CheckCircle2 className="w-3.5 h-3.5" />
-                <span>{language === 'EN' ? 'Steam Verified' : (language === 'RU' ? 'Проверено в Steam' : 'Перевірено в Steam')}</span>
+                <span>{tt.verified}</span>
               </div>
               <div className="text-slate-400 text-[11px] mt-0.5">
-                {language === 'EN' ? 'Based on 299+ trades' : (language === 'RU' ? 'На основе 299+ сделок' : 'На основі 299+ угод')}
+                {tt.basedOn}
               </div>
             </div>
           </div>
@@ -141,7 +219,7 @@ export const TrustpilotReviews: React.FC<TrustpilotReviewsProps> = ({ onNavigate
               {/* Verified transaction footer */}
               <div className="pt-3 border-t border-white/[0.06] font-['JetBrains_Mono'] text-[11px] space-y-1">
                 <div className="flex justify-between items-center text-slate-400">
-                  <span className="text-[10px]">{language === 'EN' ? 'Item:' : 'Скін:'}</span>
+                  <span className="text-[10px]">{tt.item}</span>
                   <span className="text-slate-200 font-semibold truncate max-w-[130px]">{rev.skinSold}</span>
                 </div>
                 <div className="flex justify-between items-center">
@@ -161,10 +239,10 @@ export const TrustpilotReviews: React.FC<TrustpilotReviewsProps> = ({ onNavigate
             </div>
             <div>
               <div className="text-sm font-bold font-['Space_Grotesk'] text-white">
-                {language === 'EN' ? 'Want to read all 299+ Steam reviews or leave your own?' : (language === 'RU' ? 'Хотите прочитать все 299+ отзывов Steam или оставить свой?' : 'Бажаєте переглянути всі 299+ відгуків Steam або залишити свій?')}
+                {tt.ctaTitle}
               </div>
               <div className="text-xs text-slate-400">
-                {language === 'EN' ? 'All reviews include verified Steam Community profile links and transaction details.' : (language === 'RU' ? 'Все отзывы содержат прямые ссылки на профили Steam и подтвержденные сделки.' : 'Усі відгуки містять прямі посилання на профілі Steam та підтверджені угоди.')}
+                {tt.ctaDesc}
               </div>
             </div>
           </div>
@@ -174,9 +252,7 @@ export const TrustpilotReviews: React.FC<TrustpilotReviewsProps> = ({ onNavigate
             className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-extrabold text-xs font-['Space_Grotesk'] shadow-[0_0_20px_rgba(16,185,129,0.3)] transition-all flex items-center justify-center gap-2 cursor-pointer shrink-0"
           >
             <span>
-              {language === 'EN' 
-                ? 'View All 299+ Reviews' 
-                : (language === 'RU' ? 'Все 299+ отзывов Steam' : 'Всі 299+ відгуків Steam')}
+              {tt.ctaBtn}
             </span>
             <ArrowRight className="w-4 h-4" />
           </button>

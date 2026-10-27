@@ -43,7 +43,7 @@ export const P2PPage: React.FC<P2PPageProps> = ({ onNavigateHome, onOpenLogin })
   const { user } = useAuth();
   const { currency, setCurrency, formatPrice } = useCurrency();
   const { language, setLanguage, currentOption } = useLanguage();
-  const pt = (key: string) => getP2PText(language, key);
+  const pt = (key: string, params?: Record<string, string | number>) => getP2PText(language, key, params);
 
   // Orders State
   const [orders, setOrders] = useState<P2POrder[]>(INITIAL_P2P_ORDERS);
@@ -149,7 +149,7 @@ export const P2PPage: React.FC<P2PPageProps> = ({ onNavigateHome, onOpenLogin })
       id: `p2p-user-${Date.now().toString().slice(-4)}`,
       type: newOrderType,
       creator: {
-        name: user?.personaname || (language === 'EN' ? 'You (My account)' : (language === 'RU' ? 'Вы (Мой аккаунт)' : 'Ви (Мій акаунт)')),
+        name: user?.personaname || pt('p2p.youMyAccount'),
         avatar: user?.avatarfull || 'https://avatars.akamai.steamstatic.com/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb_full.jpg',
         steamId64: user?.steamId64 || '76561198000000000',
         rating: 5.0,
@@ -165,8 +165,8 @@ export const P2PPage: React.FC<P2PPageProps> = ({ onNavigateHome, onOpenLogin })
       paymentDetailsSummary: newOrderRequisites,
       tradeHoldDays: 0,
       steamMarketDiffPercent: -Math.round(((skin.steamPrice - price) / skin.steamPrice) * 100),
-      note: newOrderNote || (language === 'EN' ? 'P2P Escrow deal via SkinToCash' : (language === 'RU' ? 'P2P сделка через гарант SkinToCash' : 'P2P угода через гарант SkinToCash')),
-      createdAt: language === 'EN' ? 'Just now' : (language === 'RU' ? 'Только что' : 'Щойно'),
+      note: newOrderNote || pt('p2p.escrowDealNote'),
+      createdAt: pt('reviews.justNow') || 'Just now',
       status: 'active',
     };
 
@@ -945,7 +945,7 @@ export const P2PPage: React.FC<P2PPageProps> = ({ onNavigateHome, onOpenLogin })
                     />
                   </div>
                   <div className="mt-1 text-[11px] text-emerald-400 font-['JetBrains_Mono']">
-                    ≈ {formatPrice(parseFloat(newOrderPrice) || 0)} {language === 'EN' ? 'in selected currency' : (language === 'RU' ? 'в выбранной валюте' : 'у вибраній валюті')}
+                    ≈ {formatPrice(parseFloat(newOrderPrice) || 0)} {pt('p2p.inSelectedCurrency')}
                   </div>
                 </div>
 
@@ -1174,7 +1174,7 @@ export const P2PPage: React.FC<P2PPageProps> = ({ onNavigateHome, onOpenLogin })
                       <Clock className="w-4 h-4 text-amber-400 animate-spin" />
                       <span>{pt("p2p.timeToPay")}</span>
                     </div>
-                    <span className="text-sm font-bold text-white">{language === 'EN' ? '14:59 min' : '14:59 мин'}</span>
+                    <span className="text-sm font-bold text-white">{pt('p2p.minRemaining', { time: '14:59' })}</span>
                   </div>
 
                   {/* Requisites Card */}

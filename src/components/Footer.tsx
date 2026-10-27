@@ -125,7 +125,7 @@ export const Footer: React.FC<FooterProps> = ({ onScrollToSection, onNavigateRev
                   onClick={handleReviewsClick} 
                   className="hover:text-emerald-400 transition-colors cursor-pointer text-left flex items-center gap-1.5"
                 >
-                  <span>{language === 'EN' ? 'Steam Reviews' : (language === 'RU' ? 'Отзывы Steam' : 'Відгуки Steam')}</span>
+                  <span>{t('nav.steamReviews')}</span>
                   <span className="px-1.5 py-0.2 rounded bg-emerald-500/15 text-emerald-400 text-[10px] font-['JetBrains_Mono'] font-bold">299+</span>
                 </button>
               </li>

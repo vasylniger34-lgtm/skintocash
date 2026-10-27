@@ -59,6 +59,7 @@ export const CabinetPage: React.FC<CabinetPageProps> = ({
   const { user, loginWithSteam, logout, updateTradeUrl, updateBalance, transactions, addTransaction } = useAuth();
   const { currency, setCurrency, formatPrice } = useCurrency();
   const { language, setLanguage, currentOption } = useLanguage();
+  const tc = (key: string, params?: Record<string, string | number>) => getCabinetText(language, key, params);
 
   // The FIRST page in profile is automatically the user's CS2 inventory!
   const [activeTab, setActiveTab] = useState<CabinetTab>('inventory');
@@ -164,20 +165,20 @@ export const CabinetPage: React.FC<CabinetPageProps> = ({
     if (!user) return;
 
     if (!tradeUrlInput.trim()) {
-      setTradeUrlError(language === 'EN' ? 'Please enter your Steam Trade URL' : (language === 'RU' ? 'Введите ваш Steam Trade URL' : 'Введіть ваш Steam Trade URL'));
+      setTradeUrlError(tc('cabinet.errEnterTradeUrl'));
       return;
     }
 
     const verification = verifyUserTradeUrl(tradeUrlInput, user.steamId64);
 
     if (!verification.belongsToUser) {
-      setTradeUrlError(verification.error || (language === 'EN' ? 'This Trade URL belongs to a different Steam account! Third-party trade links cannot be linked.' : (language === 'RU' ? 'Этот Trade URL принадлежит другому аккаунту Steam! Чужой трейдлинк добавить нельзя.' : 'Цей Trade URL належить іншому акаунту Steam! Сторонній трейдлінк додати не можна.')));
+      setTradeUrlError(verification.error || tc('cabinet.errDifferentAccount'));
       return;
     }
 
     // Success: URL is strictly verified to match user's steamId64
     updateTradeUrl(tradeUrlInput);
-    setTradeUrlSuccess(language === 'EN' ? 'Trade URL successfully verified and linked to your account!' : (language === 'RU' ? 'Trade URL успешно проверен и привязан к вашему аккаунту!' : 'Trade URL успішно верифіковано та закріплено за вашим акаунтом!'));
+    setTradeUrlSuccess(tc('cabinet.successTradeUrl'));
     loadUserInventory(tradeUrlInput, true);
 
     setTimeout(() => {
@@ -262,11 +263,11 @@ export const CabinetPage: React.FC<CabinetPageProps> = ({
 
     addTransaction({
       type: 'sale',
-      title: language === "EN" ? `Deposit ${tradeSession.skins.length} skins (Bot: ${tradeSession.bot.personaName})` : (language === "RU" ? `Депозит ${tradeSession.skins.length} скинов (Бот: ${tradeSession.bot.personaName})` : `Депозит ${tradeSession.skins.length} скінів (Бот: ${tradeSession.bot.personaName})`),
+      title: tc('cabinet.depositTitle', { count: tradeSession.skins.length, bot: tradeSession.bot.personaName }),
       amount: tradeSession.totalValue,
       status: 'completed',
       method: 'Steam Escrow Bot',
-      destinationMasked: language === "EN" ? `Code: ${tradeSession.securityCode}` : `Код: ${tradeSession.securityCode}`,
+      destinationMasked: tc('cabinet.depositCode', { code: tradeSession.securityCode }),
       itemsCount: tradeSession.skins.length,
       txHash: tradeSession.txId,
       tradeOfferId: tradeSession.txId,
@@ -365,13 +366,11 @@ export const CabinetPage: React.FC<CabinetPageProps> = ({
           </div>
 
           <h1 className="text-2xl sm:text-3xl font-extrabold font-['Space_Grotesk'] mb-3">
-            {language === 'EN' ? 'Sign in to Personal Cabinet' : (language === 'RU' ? 'Вход в Личный кабинет' : 'Вхід в Особистий кабінет')}
+            {tc('cabinet.signInTitle')}
           </h1>
 
           <p className="text-sm text-slate-400 leading-relaxed mb-8">
-            {language === 'EN' 
-              ? 'To view your balance, payout history, and instantly load your CS2 inventory, sign in via official Valve Steam OpenID.' 
-              : (language === 'RU' ? 'Для просмотра баланса, истории выплат и авто-загрузки вашего инвентаря CS2 войдите через официальный Valve Steam OpenID.' : 'Для перегляду балансу, історії виплат та автоматичного завантаження вашого інвентарю CS2 увійдіть через Valve Steam OpenID.')}
+            {tc('cabinet.signInSubtitle')}
           </p>
 
           <button
@@ -381,12 +380,12 @@ export const CabinetPage: React.FC<CabinetPageProps> = ({
             <svg className="w-5 h-5 fill-slate-950" viewBox="0 0 24 24">
               <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.44 9.82 8.24 11.44l3.19-4.38a4.48 4.48 0 0 1-.93-.84l-4.52 1.87a9.6 9.6 0 0 1-1.07-5.09c0-5.3 4.3-9.6 9.6-9.6s9.6 4.3 9.6 9.6c0 5.28-4.28 9.57-9.56 9.6l-3.32 4.56c.49.03.98.05 1.48.05 6.63 0 12-5.37 12-12S18.63 0 12 0z" />
             </svg>
-            <span>{language === 'EN' ? 'Sign in with STEAM' : (language === 'RU' ? 'Войти через STEAM' : 'Увійти через STEAM')}</span>
+            <span>{tc('cabinet.signInSteam')}</span>
           </button>
         </div>
 
         <footer className="border-t border-white/[0.06] py-6 text-center text-xs text-slate-500 font-['JetBrains_Mono']">
-          © 2026 SkinToCash Technologies Ltd. {language === 'EN' ? 'All rights reserved.' : (language === 'RU' ? 'Все права защищены.' : 'Всі права захищено.')}
+          © 2026 SkinToCash Technologies Ltd. {tc('cabinet.allRights')}
         </footer>
       </div>
     );
@@ -399,10 +398,10 @@ export const CabinetPage: React.FC<CabinetPageProps> = ({
     : 'bg-cyan-400';
 
   const statusLabel = user.personastate === 1 
-    ? (language === 'EN' ? 'Online' : (language === 'RU' ? 'В сети (Online)' : 'У мережі (Online)'))
+    ? tc('cabinet.statusOnline')
     : user.personastate === 0 
-    ? (language === 'EN' ? 'Offline' : (language === 'RU' ? 'Не в сети' : 'Не в мережі'))
-    : (language === 'EN' ? 'Playing Counter-Strike 2' : (language === 'RU' ? 'В Counter-Strike 2' : 'У Counter-Strike 2'));
+    ? tc('cabinet.statusOffline')
+    : tc('cabinet.statusPlaying');
 
   // Check if current user has verified Trade URL
   const tradeUrlInfo = parseSteamTradeUrl(user.tradeUrl || '');
@@ -445,10 +444,10 @@ export const CabinetPage: React.FC<CabinetPageProps> = ({
                 window.dispatchEvent(new PopStateEvent('popstate'));
               }}
               className="flex items-center gap-1.5 px-2 sm:px-3 py-1.5 rounded-xl bg-gradient-to-r from-emerald-500/15 to-cyan-500/15 hover:from-emerald-500/25 hover:to-cyan-500/25 border border-emerald-500/30 text-xs font-['Space_Grotesk'] font-semibold text-emerald-300 hover:text-white transition-all cursor-pointer shrink-0"
-              title={language === "EN" ? "P2P Market" : (language === "RU" ? "P2P Рынок" : "P2P Ринок")}
+              title={tc('cabinet.p2pMarket')}
             >
               <ArrowLeftRight className="w-3.5 h-3.5 text-emerald-400" />
-              <span className="hidden sm:inline">{language === "EN" ? "P2P Market" : (language === "RU" ? "P2P Рынок" : "P2P Ринок")}</span>
+              <span className="hidden sm:inline">{tc('cabinet.p2pMarket')}</span>
             </button>
           </div>
 
@@ -563,7 +562,7 @@ export const CabinetPage: React.FC<CabinetPageProps> = ({
           <div>
             <div className="flex items-center gap-2 text-xs font-['JetBrains_Mono'] text-slate-400 mb-1">
               <button onClick={onNavigateHome} className="hover:text-emerald-400 transition-colors">
-                {language === "EN" ? "Home" : (language === "RU" ? "Главная" : "Головна")}
+                {tc('cabinet.home')}
               </button>
               <span>/</span>
               <span className="text-emerald-400">{ct("cabinet.title")}</span>
@@ -581,7 +580,7 @@ export const CabinetPage: React.FC<CabinetPageProps> = ({
             className="self-start sm:self-auto flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 text-slate-950 font-['Space_Grotesk'] font-bold text-xs shadow-[0_0_20px_rgba(16,185,129,0.35)] transition-all cursor-pointer"
           >
             <Zap className="w-4 h-4 fill-slate-950" />
-            <span>{language === "EN" ? "Value on Homepage" : (language === "RU" ? "Оценить на главной" : "Оцінити на головній")}</span>
+            <span>{tc('cabinet.valueOnHome')}</span>
           </button>
         </div>
 
@@ -645,7 +644,7 @@ export const CabinetPage: React.FC<CabinetPageProps> = ({
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white/[0.03] hover:bg-white/[0.07] border border-white/[0.08] text-[11px] font-['JetBrains_Mono'] text-slate-300 hover:text-white transition-all"
                   >
-                    <span>{language === "EN" ? "Steam Profile" : (language === "RU" ? "Профиль в Steam" : "Профіль у Steam")}</span>
+                    <span>{tc('cabinet.steamProfile')}</span>
                     <ExternalLink className="w-3 h-3 text-slate-500" />
                   </a>
                 </div>
@@ -659,7 +658,7 @@ export const CabinetPage: React.FC<CabinetPageProps> = ({
 
                   <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-500/10 border border-emerald-500/20 text-[10px] font-medium text-emerald-400 font-['JetBrains_Mono']">
                     <CheckCircle2 className="w-3 h-3 text-emerald-400" />
-                    {language === "EN" ? "VAC: Clean (No Bans)" : (language === "RU" ? "VAC: Без блокировок" : "VAC: Без блокувань")}
+                    {tc('cabinet.vacClean')}
                   </span>
 
                   <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-white/[0.04] border border-white/[0.06] text-[10px] text-slate-400 font-['JetBrains_Mono']">
@@ -683,7 +682,7 @@ export const CabinetPage: React.FC<CabinetPageProps> = ({
 
               <div className="p-3.5 sm:p-4 rounded-2xl bg-slate-950/80 border border-white/10 flex-1 md:flex-initial text-left md:text-right">
                 <div className="text-[11px] font-['JetBrains_Mono'] text-slate-400 mb-0.5">
-                  {language === "EN" ? "CS2 Inventory Value:" : (language === "RU" ? "Оценка CS2 инвентаря:" : "Оцінка CS2 інвентарю:")}
+                  {tc('cabinet.invValue')}
                 </div>
                 <div className="text-xl sm:text-2xl font-extrabold font-['JetBrains_Mono'] text-white">
                   {formatPrice(totalInventoryValue)}
@@ -704,13 +703,13 @@ export const CabinetPage: React.FC<CabinetPageProps> = ({
                 </div>
                 <div>
                   <h4 className="text-sm font-bold font-['Space_Grotesk'] text-white flex items-center gap-2">
-                    <span>{language === 'EN' ? 'Link your Steam Trade URL' : (language === 'RU' ? 'Привяжите ваш Steam Trade URL' : 'Прив\'яжіть ваш Steam Trade URL')}</span>
+                    <span>{tc('cabinet.linkTradeUrl')}</span>
                     <span className="text-[10px] font-['JetBrains_Mono'] bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded-full">
-                      {language === "EN" ? "Ownership Check" : (language === "RU" ? "Проверка владельца" : "Перевірка власності")}
+                      {tc('cabinet.ownerCheck')}
                     </span>
                   </h4>
                   <p className="text-xs text-slate-300 mt-1 max-w-2xl leading-relaxed">
-                    {language === 'EN' ? <>To receive automated trades from our bots, enter your personal Trade URL. The service verifies with your SteamID (<strong>{user.steamId64}</strong>) that the link belongs to you. <strong>Third-party links cannot be linked!</strong></> : language === 'RU' ? <>Для получения автоматических обменов укажите персональный Trade URL. Сервис проверит по вашему SteamID (<strong>{user.steamId64}</strong>), что трейдлинк принадлежит вам. <strong>Чужой трейдлинк привязать нельзя!</strong></> : <>Для отримання автоматичних трейдів від ботів вкажіть ваш персональний Trade URL. Сервіс перевірить за вашим SteamID (<strong>{user.steamId64}</strong>), чи трейдлінк дійсно належить вам. <strong>Сторонній трейдлінк прив'язати не можна!</strong></>}
+                    <>{tc('cabinet.linkTradeUrlDesc', { steamId: user.steamId64 })}</>
                   </p>
                 </div>
               </div>
@@ -728,7 +727,7 @@ export const CabinetPage: React.FC<CabinetPageProps> = ({
                   onClick={handleSaveTradeUrl}
                   className="px-4 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-['Space_Grotesk'] font-bold text-xs transition-all cursor-pointer whitespace-nowrap"
                 >
-                  {language === "EN" ? "Verify & Save" : (language === "RU" ? "Проверить и сохранить" : "Перевірити та зберегти")}
+                  {tc('cabinet.verifyAndSave')}
                 </button>
               </div>
             </div>
@@ -746,7 +745,7 @@ export const CabinetPage: React.FC<CabinetPageProps> = ({
                   rel="noopener noreferrer"
                   className="underline text-emerald-400 hover:text-emerald-300 whitespace-nowrap"
                 >
-                  {language === "EN" ? "Where to find my Trade URL? →" : (language === "RU" ? "Где найти мой Trade URL? →" : "Де знайти мій Trade URL? →")}
+                  {tc('trade.findUrl')} →
                 </a>
               </div>
             )}
@@ -762,7 +761,7 @@ export const CabinetPage: React.FC<CabinetPageProps> = ({
           <div className="p-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/25 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
             <div className="flex items-center gap-2 text-emerald-300 font-['Space_Grotesk'] font-semibold">
               <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-              <span>{language === "EN" ? "Your official Steam Trade URL is verified and linked" : (language === "RU" ? "Ваш официальный Steam Trade URL подтвержден и привязан" : "Ваш офіційний Steam Trade URL верифіковано та закріплено")}</span>
+              <span>{tc('cabinet.tradeUrlLinked')}</span>
               <span className="text-[11px] font-['JetBrains_Mono'] text-slate-400 hidden sm:inline">
                 (Partner: {tradeUrlInfo.partnerId})
               </span>
@@ -772,7 +771,7 @@ export const CabinetPage: React.FC<CabinetPageProps> = ({
               onClick={() => setActiveTab('trade')}
               className="text-xs text-emerald-400 hover:text-emerald-300 underline font-['JetBrains_Mono'] cursor-pointer"
             >
-              {language === "EN" ? "Change or view →" : (language === "RU" ? "Изменить или просмотреть →" : "Змінити або переглянути →")}
+              {tc('cabinet.changeOrView')}
             </button>
           </div>
         )}
@@ -854,12 +853,12 @@ export const CabinetPage: React.FC<CabinetPageProps> = ({
               <div>
                 <div className="flex items-center gap-2 text-xs font-['JetBrains_Mono'] text-emerald-400 font-semibold mb-1">
                   <Sparkles className="w-3.5 h-3.5" />
-                  {language === "EN" ? "Automatically synced CS2 Inventory" : (language === "RU" ? "Автоматически синхронизированный инвентарь CS2" : "Автоматично синхронізований інвентар CS2")}
+                  {tc('cabinet.autoSyncedInv')}
                 </div>
                 <div className="text-2xl sm:text-3xl font-extrabold font-['JetBrains_Mono'] text-white">
                   {formatPrice(totalInventoryValue)}
                   <span className="text-xs text-slate-400 font-normal ml-3">
-                    ({skins.length} {language === "EN" ? "available items" : (language === "RU" ? "доступных предметов" : "доступних предметів")})
+                    ({tc('cabinet.availableItems', { count: skins.length })})
                   </span>
                 </div>
               </div>
@@ -868,7 +867,7 @@ export const CabinetPage: React.FC<CabinetPageProps> = ({
               <div className="flex items-center gap-3">
                 <div className="text-right hidden sm:block">
                   <div className="text-xs text-slate-400 font-['JetBrains_Mono']">
-                    {language === "EN" ? "Selected: " : (language === "RU" ? "Выбрано: " : "Обрано: ")}<strong className="text-white">{selectedSkinIds.size}</strong> {language === "EN" ? "skins" : (language === "RU" ? "скинов" : "скінів")}
+                    {tc('inv.selectedItems')} <strong className="text-white">{selectedSkinIds.size}</strong> {tc('sandbox.items')}
                   </div>
                   <div className="text-base font-bold font-['JetBrains_Mono'] text-emerald-400">
                     {formatPrice(selectedTotalValue)}
@@ -881,7 +880,7 @@ export const CabinetPage: React.FC<CabinetPageProps> = ({
                   className="px-5 py-3 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 disabled:opacity-40 text-slate-950 font-['Space_Grotesk'] font-bold text-xs sm:text-sm shadow-[0_0_25px_rgba(16,185,129,0.35)] flex items-center justify-center gap-2 transition-all cursor-pointer"
                 >
                   <ArrowUpRight className="w-4 h-4 stroke-[2.5]" />
-                  <span>{language === "EN" ? "Sell Selected" : (language === "RU" ? "Продать выбранные" : "Продати обрані")} ({formatPrice(selectedTotalValue)})</span>
+                  <span>{tc('inv.btnSell')} ({formatPrice(selectedTotalValue)})</span>
                 </button>
               </div>
             </div>
@@ -898,7 +897,7 @@ export const CabinetPage: React.FC<CabinetPageProps> = ({
                       : 'bg-white/[0.03] text-slate-400 hover:text-white'
                   }`}
                 >
-                  {language === "EN" ? "All" : (language === "RU" ? "Все" : "Всі")} ({skins.length})
+                  {tc('inv.categoryAll')} ({skins.length})
                 </button>
 
                 <button
@@ -909,7 +908,7 @@ export const CabinetPage: React.FC<CabinetPageProps> = ({
                       : 'bg-white/[0.03] text-slate-400 hover:text-white'
                   }`}
                 >
-                  {language === "EN" ? "Knives & Gloves" : (language === "RU" ? "Ножи и перчатки" : "Ножі та рукавиці")}
+                  {tc('inv.categoryKnives')}
                 </button>
 
                 <button
@@ -920,7 +919,7 @@ export const CabinetPage: React.FC<CabinetPageProps> = ({
                       : 'bg-white/[0.03] text-slate-400 hover:text-white'
                   }`}
                 >
-                  {language === "EN" ? "Rifles & AWP" : (language === "RU" ? "Винтовки и AWP" : "Гвинтівки та AWP")}
+                  {tc('inv.categoryRifles')}
                 </button>
 
                 <button
@@ -931,7 +930,7 @@ export const CabinetPage: React.FC<CabinetPageProps> = ({
                       : 'bg-white/[0.03] text-slate-400 hover:text-white'
                   }`}
                 >
-                  {language === "EN" ? "Pistols" : (language === "RU" ? "Пистолеты" : "Пістолети")}
+                  {tc('inv.categoryPistols')}
                 </button>
 
                 <button
@@ -954,19 +953,19 @@ export const CabinetPage: React.FC<CabinetPageProps> = ({
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder={language === "EN" ? "Search skin..." : (language === "RU" ? "Поиск скина..." : "Пошук скіна...")}
+                    placeholder={tc('inv.searchPlaceholder')}
                     className="w-full pl-9 pr-3 py-1.5 rounded-xl bg-slate-900 border border-white/10 text-white text-xs font-['JetBrains_Mono'] focus:border-emerald-500 outline-none"
                   />
                 </div>
 
                 <button
                   onClick={() => setSortBy(prev => prev === 'price-desc' ? 'price-asc' : prev === 'price-asc' ? 'float-asc' : 'price-desc')}
-                  title={language === "EN" ? "Change sorting" : (language === "RU" ? "Изменить сортировку" : "Змінити сортування")}
+                  title={tc('cabinet.changeSort')}
                   className="px-2.5 py-1.5 rounded-xl bg-white/[0.03] hover:bg-white/[0.06] border border-white/[0.08] text-xs font-['Space_Grotesk'] text-slate-300 hover:text-white flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
                 >
                   <ArrowUpDown className="w-3.5 h-3.5 text-emerald-400" />
                   <span className="hidden md:inline">
-                    {sortBy === 'price-desc' ? (language === 'EN' ? 'Price: ↓' : (language === 'RU' ? 'Цена: ↓' : 'Ціна: ↓')) : sortBy === 'price-asc' ? (language === 'EN' ? 'Price: ↑' : (language === 'RU' ? 'Цена: ↑' : 'Ціна: ↑')) : 'Float: ↑'}
+                    {sortBy === 'price-desc' ? tc('inv.sortPriceDesc') : sortBy === 'price-asc' ? tc('inv.sortPriceAsc') : 'Float: ↑'}
                   </span>
                 </button>
 
@@ -975,7 +974,7 @@ export const CabinetPage: React.FC<CabinetPageProps> = ({
                   className="px-3 py-1.5 rounded-xl bg-white/[0.03] hover:bg-white/[0.06] border border-white/[0.08] text-xs font-['Space_Grotesk'] text-slate-300 hover:text-white flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
                 >
                   <CheckSquare className="w-3.5 h-3.5 text-emerald-400" />
-                  <span className="hidden sm:inline">{language === "EN" ? "Select All" : (language === "RU" ? "Выбрать все" : "Вибрати все")}</span>
+                  <span className="hidden sm:inline">{tc('cabinet.selectAll')}</span>
                 </button>
 
                 <button
@@ -983,7 +982,7 @@ export const CabinetPage: React.FC<CabinetPageProps> = ({
                   className="px-3 py-1.5 rounded-xl bg-white/[0.03] hover:bg-white/[0.06] border border-white/[0.08] text-xs font-['Space_Grotesk'] text-slate-300 hover:text-white flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
                 >
                   <Square className="w-3.5 h-3.5 text-slate-500" />
-                  <span className="hidden sm:inline">{language === "EN" ? "Deselect" : (language === "RU" ? "Снять" : "Зняти")}</span>
+                  <span className="hidden sm:inline">{tc('cabinet.deselect')}</span>
                 </button>
               </div>
             </div>
@@ -993,10 +992,10 @@ export const CabinetPage: React.FC<CabinetPageProps> = ({
               <div className="p-6 rounded-3xl bg-amber-500/10 border border-amber-500/30 text-center space-y-3">
                 <Lock className="w-10 h-10 text-amber-400 mx-auto" />
                 <h3 className="text-lg font-bold text-white font-['Space_Grotesk']">
-                  {language === "EN" ? "Your Steam inventory is currently private" : (language === "RU" ? "Ваш инвентарь в Steam сейчас скрыт (приватный)" : "Ваш інвентар у Steam наразі приватний")}
+                  {tc('sandbox.privateTitle')}
                 </h3>
                 <p className="text-xs text-slate-300 max-w-lg mx-auto leading-relaxed">
-                  {language === "EN" ? "Steam hides inventories by default. To value and sell skins, set your inventory to public in Steam privacy settings." : (language === "RU" ? "Steam по умолчанию скрывает инвентарь. Чтобы оценить и продать скины, откройте доступ в настройках приватности Steam." : "Steam за замовчуванням приховує інвентар. Щоб оцінити та продати скіни, відкрийте доступ до інвентарю в налаштуваннях приватності Steam.")}
+                  {tc('sandbox.privateDesc')}
                 </p>
                 <a
                   href="https://steamcommunity.com/id/me/edit/settings"
@@ -1004,7 +1003,7 @@ export const CabinetPage: React.FC<CabinetPageProps> = ({
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs font-['Space_Grotesk']"
                 >
-                  <span>{language === "EN" ? "Open Steam Privacy Settings" : (language === "RU" ? "Открыть настройки приватности Steam" : "Відкрити налаштування приватності Steam")}</span>
+                  <span>{tc('sandbox.openPrivacyBtn')}</span>
                   <ExternalLink className="w-3.5 h-3.5" />
                 </a>
               </div>
@@ -1015,12 +1014,12 @@ export const CabinetPage: React.FC<CabinetPageProps> = ({
               <div className="py-20 text-center space-y-3">
                 <RefreshCw className="w-8 h-8 text-emerald-400 animate-spin mx-auto" />
                 <div className="text-sm font-['Space_Grotesk'] text-slate-300">
-                  {language === "EN" ? "Loading inventory of your Steam account..." : (language === "RU" ? "Загружаем инвентарь вашего аккаунта Steam..." : "Завантажуємо інвентар вашого акаунта Steam...")}
+                  {tc('steamModal.loading')}
                 </div>
               </div>
             ) : filteredSkins.length === 0 ? (
               <div className="py-16 text-center text-slate-500 text-xs font-['JetBrains_Mono'] bg-[#0B1017] rounded-3xl border border-white/[0.05]">
-                {language === "EN" ? "No items found for the selected filters." : (language === "RU" ? "Предметов не найдено по заданным фильтрам." : "Предметів не знайдено за заданими фільтрами.")}
+                {tc('inv.empty')}
               </div>
             ) : (
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3.5 sm:gap-4">
@@ -1102,13 +1101,13 @@ export const CabinetPage: React.FC<CabinetPageProps> = ({
                 <div>
                   <div className="flex items-center gap-2 text-xs font-['JetBrains_Mono'] text-emerald-400 uppercase tracking-wider font-semibold mb-2">
                     <Sparkles className="w-4 h-4 text-emerald-400" />
-                    {language === "EN" ? "Available SkinToCash Balance" : (language === "RU" ? "Доступный баланс SkinToCash" : "Доступний баланс SkinToCash")}
+                    {tc('cabinet.availableBalance')}
                   </div>
                   <div className="text-4xl sm:text-5xl lg:text-6xl font-extrabold font-['JetBrains_Mono'] text-white tracking-tight drop-shadow-[0_0_25px_rgba(16,185,129,0.35)]">
                     {formatPrice(user.balance || 0)}
                   </div>
                   <p className="text-xs sm:text-sm text-slate-400 mt-2.5 max-w-xl">
-                    {language === "EN" ? "Funds are ready for instant cashout to Russian cards (MIR, SBP, Sber, T-Bank), Visa/Mastercard cards, or Crypto (USDT) without delays." : (language === "RU" ? "Средства готовы к моментальному выводу на карты РФ (МИР, СБП, Сбер, Т-Банк), карты Visa/Mastercard или криптовалюту (USDT) без задержек." : "Гроші готові до моментальної виплати на картки МИР/СБП, картки Visa/Mastercard або криптовалюту без затримок.")}
+                    {tc('cabinet.fundsReady')}
                   </p>
                 </div>
 
@@ -1291,7 +1290,7 @@ export const CabinetPage: React.FC<CabinetPageProps> = ({
                   <Sparkles className="w-4 h-4 text-cyan-400" />
                 </div>
                 <div className="text-2xl sm:text-3xl font-extrabold font-['JetBrains_Mono'] text-white">
-                  {user.totalSales || 7} {language === "EN" ? "deals" : (language === "RU" ? "сделок" : "угод")}
+                  {user.totalSales || 7} {tc('p2p.tradesCount')}
                 </div>
                 <div className="text-xs text-slate-400 mt-1 font-['JetBrains_Mono']">
                   {ct("metrics.avgSpeed")}
@@ -1330,15 +1329,15 @@ export const CabinetPage: React.FC<CabinetPageProps> = ({
                         {ct("bot.title")}: {OFFICIAL_STEAM_BOT.personaName}
                       </h4>
                       <span className="px-2 py-0.5 rounded-full bg-emerald-500/15 text-[10px] font-['JetBrains_Mono'] text-emerald-400 font-semibold border border-emerald-500/25">
-                        {language === "EN" ? "Online • Auto-accept" : (language === "RU" ? "В сети • Авто-прием" : "Онлайн • Авто-прийом")}
+                        {tc('cabinet.botOnline')}
                       </span>
                     </div>
                     <div className="text-xs text-slate-400 font-['JetBrains_Mono'] mt-1 flex flex-wrap items-center gap-3">
                       <span>SteamID: {OFFICIAL_STEAM_BOT.steamId64}</span>
                       <span>•</span>
-                      <span>{language === "EN" ? "Bot inventory: " : (language === "RU" ? "Предметов у бота: " : "Предметів у боті: ")}{OFFICIAL_STEAM_BOT.inventoryCount} {language === "EN" ? "CS2 skins" : (language === "RU" ? "CS2 скинов" : "CS2 скінів")}</span>
+                      <span>{tc('cabinet.botInv')} {OFFICIAL_STEAM_BOT.inventoryCount} {tc('sandbox.items')}</span>
                       <span>•</span>
-                      <span>{language === "EN" ? "Level: " : (language === "RU" ? "Уровень: " : "Рівень: ")}{OFFICIAL_STEAM_BOT.level}</span>
+                      <span>{tc('cabinet.steamLevel')}: {OFFICIAL_STEAM_BOT.level}</span>
                     </div>
                   </div>
                 </div>
@@ -1351,7 +1350,7 @@ export const CabinetPage: React.FC<CabinetPageProps> = ({
                     className="flex-1 lg:flex-none px-4 py-2.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] text-slate-300 hover:text-white font-['Space_Grotesk'] font-medium text-xs flex items-center justify-center gap-2 transition-all"
                   >
                     <ExternalLink className="w-3.5 h-3.5" />
-                    <span>{language === "EN" ? "Open Bot Trade" : (language === "RU" ? "Открыть трейд бота" : "Відкрити трейд бота")}</span>
+                    <span>{tc('bot.action')}</span>
                   </a>
 
                   <button
@@ -1365,7 +1364,7 @@ export const CabinetPage: React.FC<CabinetPageProps> = ({
                     className="flex-1 lg:flex-none px-5 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-['Space_Grotesk'] font-bold text-xs flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(16,185,129,0.3)] transition-all cursor-pointer"
                   >
                     <ArrowUpRight className="w-4 h-4" />
-                    <span>{selectedSkinIds.size > 0 ? (language === 'EN' ? `Deposit Selected (${formatPrice(selectedTotalValue)})` : (language === 'RU' ? `Депозит выбранных (${formatPrice(selectedTotalValue)})` : `Депозит обраних (${formatPrice(selectedTotalValue)})`)) : (language === 'EN' ? 'Deposit skins to balance' : (language === 'RU' ? 'Депозит скинов на баланс' : 'Депозит скінів на баланс'))}</span>
+                    <span>{selectedSkinIds.size > 0 ? tc('cabinet.depositSelected', { amount: formatPrice(selectedTotalValue) }) : tc('inv.btnSell')}</span>
                   </button>
                 </div>
               </div>
@@ -1376,10 +1375,10 @@ export const CabinetPage: React.FC<CabinetPageProps> = ({
               <div>
                 <div className="flex items-center gap-2 text-sm font-bold font-['Space_Grotesk'] text-cyan-400 mb-1">
                   <Flame className="w-4 h-4 text-cyan-400" />
-                  {language === "EN" ? "SkinToCash Referral Program" : (language === "RU" ? "Реферальная программа SkinToCash" : "Реферальна програма SkinToCash")}
+                  {tc('cabinet.referralTitle')}
                 </div>
                 <p className="text-xs sm:text-sm text-slate-300">
-                  {language === "EN" ? <>Share your referral link and earn <strong className="text-emerald-400">+1.5%</strong> from every trade made by your friends lifetime!</> : language === "RU" ? <>Делитесь вашей реферальной ссылкой и получайте <strong className="text-emerald-400">+1.5%</strong> с каждой сделки ваших друзей пожизненно!</> : <>Діліться вашим реферальним лінком та отримуйте <strong className="text-emerald-400">+1.5%</strong> з кожного трейду ваших друзів довічно!</>}
+                  <>{tc('cabinet.referralDesc')}</>
                 </p>
               </div>
 
@@ -1390,12 +1389,12 @@ export const CabinetPage: React.FC<CabinetPageProps> = ({
                 {copiedField === 'ref' ? (
                   <>
                     <Check className="w-4 h-4 text-emerald-400" />
-                    <span>{language === "EN" ? "Link copied!" : (language === "RU" ? "Ссылка скопирована!" : "Посилання скопійовано!")}</span>
+                    <span>{tc('cabinet.linkCopied')}</span>
                   </>
                 ) : (
                   <>
                     <Copy className="w-4 h-4" />
-                    <span>{language === "EN" ? "Copy Referral Link" : (language === "RU" ? "Скопировать реф-ссылку" : "Скопіювати реф-лінк")}</span>
+                    <span>{tc('cabinet.copyRefLink')}</span>
                   </>
                 )}
               </button>
@@ -1410,19 +1409,19 @@ export const CabinetPage: React.FC<CabinetPageProps> = ({
             <div className="p-6 sm:p-8 rounded-3xl bg-[#0B1017] border border-white/[0.08] space-y-6 shadow-xl">
               <div>
                 <h3 className="text-lg font-bold font-['Space_Grotesk'] text-white mb-1.5 flex items-center gap-2">
-                  <span>{language === "EN" ? "Steam Trade URL (Trade Offer Link)" : (language === "RU" ? "Steam Trade URL (Ссылка на обмен)" : "Steam Trade URL (Посилання на обмін)")}</span>
+                  <span>{tc('trade.tabTitle')}</span>
                   <span className="text-xs font-['JetBrains_Mono'] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                    {language === "EN" ? "Owner Verification" : (language === "RU" ? "Проверка владельца" : "Перевірка власника")}
+                    {tc('cabinet.ownerCheck')}
                   </span>
                 </h3>
                 <p className="text-xs sm:text-sm text-slate-400 leading-relaxed max-w-3xl">
-                  {language === 'EN' ? <>Trade URL is required to receive trade offers from our automated bots. Our service strictly verifies that the specified Trade URL belongs to your account <strong>{user.personaname} (SteamID: {user.steamId64})</strong>. Third-party trade links cannot be linked.</> : language === 'RU' ? <>Trade URL необходим для получения трейд-офферов от наших ботов. Наш сервис проверяет, что указанный Trade URL принадлежит именно вашему аккаунту <strong>{user.personaname} (SteamID: {user.steamId64})</strong>. Сторонний трейдлинк привязать нельзя.</> : <>Trade URL потрібен для отримання трейд-оферів від наших торгових ботів. Наш сервіс автоматично перевіряє, що вказаний Trade URL дійсно належить вашому акаунту <strong>{user.personaname} (SteamID: {user.steamId64})</strong>. Сторонній трейдлінк прив'язати неможливо.</>}
+                  {tc('trade.desc')}
                 </p>
               </div>
 
               <div>
                 <label className="block text-xs font-['JetBrains_Mono'] text-slate-300 mb-2 font-semibold">
-                  {language === "EN" ? "Your personal Trade URL:" : (language === "RU" ? "Ваш персональный Trade URL:" : "Ваш персональний Trade URL:")}
+                  {tc('cabinet.yourTradeUrl')}
                 </label>
                 <div className="flex flex-col sm:flex-row gap-3">
                   <input
@@ -1437,7 +1436,7 @@ export const CabinetPage: React.FC<CabinetPageProps> = ({
                     className="px-6 py-3.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-['Space_Grotesk'] font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all cursor-pointer shrink-0"
                   >
                     <Check className="w-4 h-4" />
-                    <span>{language === "EN" ? "Verify and Save" : (language === "RU" ? "Проверить и сохранить" : "Перевірити та зберегти")}</span>
+                    <span>{tc('cabinet.verifyAndSave')}</span>
                   </button>
                 </div>
               </div>
@@ -1447,7 +1446,7 @@ export const CabinetPage: React.FC<CabinetPageProps> = ({
                 <div className="p-4 rounded-2xl bg-red-500/15 border border-red-500/30 text-xs text-red-300 flex items-start gap-2.5">
                   <AlertTriangle className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
                   <div className="leading-relaxed">
-                    <strong className="text-white block mb-0.5">{language === "EN" ? "Trade link validation error:" : (language === "RU" ? "Ошибка валидации трейдлинка:" : "Помилка валідації трейдлінку:")}</strong>
+                    <strong className="text-white block mb-0.5">{tc('cabinet.errValidation')}</strong>
                     {tradeUrlError}
                   </div>
                 </div>
@@ -1467,13 +1466,13 @@ export const CabinetPage: React.FC<CabinetPageProps> = ({
                   rel="noopener noreferrer"
                   className="text-xs sm:text-sm text-emerald-400 hover:text-emerald-300 flex items-center gap-1.5 transition-colors font-medium font-['Space_Grotesk']"
                 >
-                  <span>{language === "EN" ? "Where to find your Steam Trade URL?" : (language === "RU" ? "Где найти свой Steam Trade URL?" : "Де знайти свій Steam Trade URL?")}</span>
+                  <span>{tc('trade.findUrl')}</span>
                   <ExternalLink className="w-3.5 h-3.5" />
                 </a>
 
                 {/* Account info pill */}
                 <div className="text-xs text-slate-400 font-['JetBrains_Mono']">
-                  {language === "EN" ? "Your SteamID64:" : (language === "RU" ? "Ваш SteamID64:" : "Ваш SteamID64:")} <span className="text-slate-200">{user.steamId64}</span>
+                  {tc('cabinet.yourSteamId')} <span className="text-slate-200">{user.steamId64}</span>
                 </div>
               </div>
 
@@ -1481,8 +1480,8 @@ export const CabinetPage: React.FC<CabinetPageProps> = ({
               <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-start gap-3">
                 <AlertTriangle className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
                 <div className="text-xs text-slate-300 leading-relaxed">
-                  <strong className="text-amber-300">{language === "EN" ? "Security Memo: " : (language === "RU" ? "Памятка безопасности: " : "Памʼятка безпеки: ")}</strong>
-                  {language === "EN" ? "SkinToCash never asks for your Steam Web API Key or Steam Guard recovery codes under any circumstance. All trades are confirmed solely by you inside your Steam mobile app." : (language === "RU" ? "SkinToCash ни при каких условиях не запрашивает ваш Steam Web API ключ или коды восстановления Steam Guard. Все обмены подтверждаются исключительно вами в мобильном приложении Steam." : "SkinToCash ніколи та ні за яких умов не просить ваш Steam Web API ключ чи код відновлення Steam Guard. Усі обміни підтверджуються виключно вами у вашому мобільному додатку Steam.")}
+                  <strong className="text-amber-300">{tc('cabinet.securityMemo')}</strong>
+                  {tc('cabinet.securityMemoDesc')}
                 </div>
               </div>
 
@@ -1495,10 +1494,10 @@ export const CabinetPage: React.FC<CabinetPageProps> = ({
           <div className="space-y-5">
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-bold font-['Space_Grotesk'] text-white">
-                {language === "EN" ? "Transaction History" : (language === "RU" ? "История операций" : "Історія операцій")} ({transactions.length})
+                {tc('history.title')} ({transactions.length})
               </h3>
               <span className="text-xs text-slate-400 font-['JetBrains_Mono']">
-                {language === "EN" ? "Protected payouts via banking gateways and Web3" : (language === "RU" ? "Защищенные выплаты через банковские шлюзы и Web3" : "Захищені виплати через банківські шлюзи та Web3")}
+                {tc('cabinet.historySub')}
               </span>
             </div>
 
@@ -1541,7 +1540,7 @@ export const CabinetPage: React.FC<CabinetPageProps> = ({
                     </div>
                     <span className="inline-flex items-center gap-1 text-[11px] font-['JetBrains_Mono'] text-emerald-400 bg-emerald-500/10 px-2.5 py-0.5 rounded-full border border-emerald-500/20 font-semibold">
                       <Check className="w-3 h-3" />
-                      {language === "EN" ? "Paid Out" : (language === "RU" ? "Выплачено" : "Виплачено")}
+                      {tc('history.statusCompleted')}
                     </span>
                   </div>
                 </div>
@@ -1556,10 +1555,10 @@ export const CabinetPage: React.FC<CabinetPageProps> = ({
             <div className="p-6 sm:p-8 rounded-3xl bg-[#0B1017] border border-white/[0.08] space-y-6 shadow-xl">
               <div>
                 <h3 className="text-lg font-bold font-['Space_Grotesk'] text-white mb-1.5">
-                  {language === "EN" ? "Security & Active Sessions" : (language === "RU" ? "Безопасность и активные сессии" : "Безпека та активні сеанси")}
+                  {tc('sec.title')}
                 </h3>
                 <p className="text-xs sm:text-sm text-slate-400 leading-relaxed">
-                  {language === "EN" ? "Information about connection status and cryptographic authentication through official Valve OpenID service." : (language === "RU" ? "Информация о состоянии соединения и криптографической аутентификации через официальный OpenID сервис корпорации Valve." : "Інформація про стан вашого зʼєднання та криптографічну автентифікацію через офіційний OpenID сервіс корпорації Valve.")}
+                  {tc('cabinet.secDesc')}
                 </p>
               </div>
 
@@ -1574,12 +1573,12 @@ export const CabinetPage: React.FC<CabinetPageProps> = ({
                         Valve Steam OpenID 2.0
                       </div>
                       <div className="text-xs text-slate-400">
-                        {language === "EN" ? "Account authenticity verified by Valve" : (language === "RU" ? "Подлинность аккаунта подтверждена Valve" : "Автентичність облікового запису підтверджена Valve")}
+                        {tc('cabinet.authValve')}
                       </div>
                     </div>
                   </div>
                   <span className="text-xs font-semibold text-emerald-400 font-['JetBrains_Mono'] bg-emerald-500/10 px-2.5 py-1 rounded-lg border border-emerald-500/20">
-                    {language === "EN" ? "Active" : (language === "RU" ? "Активно" : "Активно")}
+                    {tc('cabinet.active')}
                   </span>
                 </div>
 
@@ -1593,12 +1592,12 @@ export const CabinetPage: React.FC<CabinetPageProps> = ({
                         Steam Mobile Authenticator Guard
                       </div>
                       <div className="text-xs text-slate-400">
-                        {language === "EN" ? "Account protected by 2FA against unauthorized trades" : (language === "RU" ? "Аккаунт защищен 2FA от несанкционированных сделок" : "Акаунт захищено 2FA від несанкціонованих угод")}
+                        {tc('cabinet.mobileGuard')}
                       </div>
                     </div>
                   </div>
                   <span className="text-xs font-semibold text-emerald-400 font-['JetBrains_Mono'] bg-emerald-500/10 px-2.5 py-1 rounded-lg border border-emerald-500/20">
-                    {language === "EN" ? "Protected" : (language === "RU" ? "Защищено" : "Захищено")}
+                    {tc('cabinet.protected')}
                   </span>
                 </div>
 
@@ -1609,15 +1608,15 @@ export const CabinetPage: React.FC<CabinetPageProps> = ({
                     </div>
                     <div>
                       <div className="text-sm font-bold text-white font-['Space_Grotesk']">
-                        {language === "EN" ? "Official SkinToCash Domain" : (language === "RU" ? "Официальный домен SkinToCash" : "Офіційний домен SkinToCash")}
+                        {tc('cabinet.officialDomain')}
                       </div>
                       <div className="text-xs text-slate-400">
-                        {language === "EN" ? "Encrypted SSL Connection" : (language === "RU" ? "Защищенное SSL соединение" : "Захищене SSL зʼєднання")}
+                        {tc('cabinet.encryptedSsl')}
                       </div>
                     </div>
                   </div>
                   <span className="text-xs font-semibold text-emerald-400 font-['JetBrains_Mono'] bg-emerald-500/10 px-2.5 py-1 rounded-lg border border-emerald-500/20">
-                    {language === "EN" ? "Valid" : (language === "RU" ? "Действительно" : "Дійсно")}
+                    {tc('cabinet.valid')}
                   </span>
                 </div>
               </div>
@@ -1631,7 +1630,7 @@ export const CabinetPage: React.FC<CabinetPageProps> = ({
                   className="w-full py-3.5 rounded-2xl bg-red-500/10 hover:bg-red-500/20 border border-red-500/25 text-red-400 hover:text-red-300 font-['Space_Grotesk'] font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all cursor-pointer"
                 >
                   <LogOut className="w-4 h-4" />
-                  <span>{language === "EN" ? "End session and log out" : (language === "RU" ? "Завершить сессию и выйти из аккаунта" : "Завершити сесію та вийти з акаунту")}</span>
+                  <span>{tc('cabinet.endSession')}</span>
                 </button>
               </div>
             </div>
@@ -1644,14 +1643,14 @@ export const CabinetPage: React.FC<CabinetPageProps> = ({
       <footer className="border-t border-white/[0.06] py-8 text-center text-xs text-slate-500 font-['JetBrains_Mono']">
         <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div>
-            © 2026 SkinToCash Technologies Ltd. {language === "EN" ? "All rights reserved." : (language === "RU" ? "Все права защищены." : "Всі права захищено.")}
+            © 2026 SkinToCash Technologies Ltd. {tc('cabinet.allRights')}
           </div>
           <div className="flex items-center gap-4">
             <button onClick={onNavigateHome} className="hover:text-white transition-colors">
-              {language === "EN" ? "Home" : (language === "RU" ? "На главную" : "На головну")}
+              {tc('cabinet.home')}
             </button>
             <span>•</span>
-            <span className="text-emerald-400">{language === "EN" ? "Session:" : (language === "RU" ? "Сессия:" : "Сесія:")} {user.personaname}</span>
+            <span className="text-emerald-400">{tc('cabinet.session')} {user.personaname}</span>
           </div>
         </div>
       </footer>
