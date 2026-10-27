@@ -78,7 +78,7 @@ export const LivePayoutsFeed: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-5">
         
         {/* Clean Live Stream Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex items-center justify-between">
           
           <div className="flex items-center gap-3">
             <div className="relative flex items-center justify-center w-9 h-9 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 shrink-0 shadow-[0_0_15px_rgba(16,185,129,0.2)]">
@@ -86,50 +86,27 @@ export const LivePayoutsFeed: React.FC = () => {
               <Flame className="w-4 h-4 fill-emerald-400 relative z-10" />
             </div>
 
-            <div>
-              <div className="flex items-center gap-2">
-                <h2 className="text-xl sm:text-2xl font-extrabold font-['Space_Grotesk'] text-white tracking-tight">
-                  {t('feed.title')}
-                </h2>
-                <span className="text-[10px] font-['JetBrains_Mono'] bg-emerald-500/15 text-emerald-400 px-2.5 py-0.5 rounded-full border border-emerald-500/30 font-semibold tracking-wider">
-                  {t('feed.badge')}
-                </span>
-              </div>
-              <p className="text-xs text-slate-400 font-normal mt-0.5">
-                {t('feed.subtitle')}
-              </p>
-            </div>
+            <h2 className="text-xl sm:text-2xl font-extrabold font-['Space_Grotesk'] text-white tracking-tight">
+              {t('feed.title')}
+            </h2>
           </div>
 
-          {/* Quick Metrics & Carousel Navigation Arrows */}
-          <div className="flex items-center gap-3 text-xs font-['JetBrains_Mono'] text-slate-400 self-start sm:self-auto">
-            <div className="flex items-center gap-1.5 bg-slate-900/80 px-3 py-1.5 rounded-lg border border-white/[0.08] shadow-sm">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-              <span>{t('feed.paid24h')} <strong className="text-emerald-400 font-bold">$412,890.00</strong></span>
-            </div>
-
-            <div className="hidden md:flex items-center gap-1.5 bg-slate-900/80 px-3 py-1.5 rounded-lg border border-white/[0.08] shadow-sm">
-              <Clock className="w-3.5 h-3.5 text-cyan-400" />
-              <span>{t('feed.medianSpeed')} <strong className="text-cyan-400 font-bold">41s</strong></span>
-            </div>
-
-            {/* Subtle Carousel Arrow Buttons */}
-            <div className="flex items-center gap-1">
-              <button
-                onClick={() => handleScroll('left')}
-                title="Scroll Newer"
-                className="w-8 h-8 rounded-lg bg-slate-900/80 hover:bg-slate-800 border border-white/[0.08] hover:border-emerald-500/40 text-slate-400 hover:text-emerald-400 flex items-center justify-center transition-all active:scale-95"
-              >
-                <ChevronLeft className="w-4 h-4" />
-              </button>
-              <button
-                onClick={() => handleScroll('right')}
-                title="Scroll History"
-                className="w-8 h-8 rounded-lg bg-slate-900/80 hover:bg-slate-800 border border-white/[0.08] hover:border-emerald-500/40 text-slate-400 hover:text-emerald-400 flex items-center justify-center transition-all active:scale-95"
-              >
-                <ChevronRight className="w-4 h-4" />
-              </button>
-            </div>
+          {/* Subtle Carousel Arrow Buttons */}
+          <div className="flex items-center gap-1.5">
+            <button
+              onClick={() => handleScroll('left')}
+              title="Scroll Newer"
+              className="w-8 h-8 rounded-lg bg-slate-900/80 hover:bg-slate-800 border border-white/[0.08] hover:border-emerald-500/40 text-slate-400 hover:text-emerald-400 flex items-center justify-center transition-all active:scale-95 cursor-pointer"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => handleScroll('right')}
+              title="Scroll History"
+              className="w-8 h-8 rounded-lg bg-slate-900/80 hover:bg-slate-800 border border-white/[0.08] hover:border-emerald-500/40 text-slate-400 hover:text-emerald-400 flex items-center justify-center transition-all active:scale-95 cursor-pointer"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
           </div>
 
         </div>
