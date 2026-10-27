@@ -68,7 +68,7 @@ export const P2PPage: React.FC<P2PPageProps> = ({ onNavigateHome, onOpenLogin })
   const [newOrderType, setNewOrderType] = useState<P2POrderType>('sell');
   const [newOrderSkinId, setNewOrderSkinId] = useState<string>(MOCK_CS2_INVENTORY[0].id);
   const [newOrderPrice, setNewOrderPrice] = useState<string>('1200');
-  const [newOrderPaymentMethods, setNewOrderPaymentMethods] = useState<P2PPaymentMethodId[]>(['monobank', 'privatbank']);
+  const [newOrderPaymentMethods, setNewOrderPaymentMethods] = useState<P2PPaymentMethodId[]>(['card_uah', 'usdt_trc20']);
   const [newOrderRequisites, setNewOrderRequisites] = useState<string>('4441 1144 8829 3312');
   const [newOrderNote, setNewOrderNote] = useState<string>('');
 
@@ -161,7 +161,7 @@ export const P2PPage: React.FC<P2PPageProps> = ({ onNavigateHome, onOpenLogin })
       },
       skins: [skin],
       priceUsd: price,
-      paymentMethods: newOrderPaymentMethods.length > 0 ? newOrderPaymentMethods : ['monobank'],
+      paymentMethods: newOrderPaymentMethods.length > 0 ? newOrderPaymentMethods : ['card_uah'],
       paymentDetailsSummary: newOrderRequisites,
       tradeHoldDays: 0,
       steamMarketDiffPercent: -Math.round(((skin.steamPrice - price) / skin.steamPrice) * 100),
@@ -992,7 +992,7 @@ export const P2PPage: React.FC<P2PPageProps> = ({ onNavigateHome, onOpenLogin })
                     type="text"
                     value={newOrderRequisites}
                     onChange={(e) => setNewOrderRequisites(e.target.value)}
-                    placeholder="4441 •••• •••• 1234 (Monobank)"
+                    placeholder="4441 •••• •••• 1234 (Visa / Mastercard)"
                     className="w-full px-4 py-2.5 rounded-2xl bg-slate-900 border border-white/10 text-white text-xs font-['JetBrains_Mono'] outline-none focus:border-emerald-500"
                     required
                   />

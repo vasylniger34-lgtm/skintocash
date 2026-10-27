@@ -401,7 +401,7 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     'steps.step1Desc': 'Вставте посилання на обмін Steam або увійдіть через Steam OpenID. Система підтягне публічний інвентар CS2 за 1.5 секунди.',
     'steps.step2Title': 'Оберіть скіни та спосіб оплати',
     'steps.step2Sub': 'Миттєва оцінка з нульовою комісією платформи',
-    'steps.step2Desc': 'Виберіть скіни або рукавиці. Оберіть зручний метод: USDT, Bitcoin, Visa/Mastercard, Monobank, Privat24 або Revolut.',
+    'steps.step2Desc': 'Виберіть скіни або рукавиці. Оберіть зручний метод: USDT, Bitcoin, Visa/Mastercard, Карта МИР/СБП або Revolut.',
     'steps.step3Title': 'Підтвердіть трейд та отримайте гроші',
     'steps.step3Sub': 'Зарахування гарантовано швидше 120 секунд',
     'steps.step3Desc': 'Наш бот надішле пропозицію обміну. Звірте 6-значний захисний код у додатку Steam Guard, прийміть трейд і гроші вже у вас.',

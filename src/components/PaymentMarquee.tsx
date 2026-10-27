@@ -2,113 +2,14 @@ import React from 'react';
 import { Zap, CreditCard, CheckCircle } from 'lucide-react';
 import { FIAT_PAYMENT_METHODS, CRYPTO_PAYMENT_METHODS } from '../data/paymentMethods';
 import { useLanguage } from '../context/LanguageContext';
+import { PaymentMethodIcon } from './PaymentMethodIcon';
 import type { PaymentOption } from '../types';
 
 export const PaymentMarquee: React.FC = () => {
   const { t } = useLanguage();
 
   const renderIcon = (id: string) => {
-    switch (id) {
-      case 'visa':
-        return (
-          <span className="font-['Space_Grotesk'] font-extrabold italic text-sm tracking-wider text-slate-300 group-hover:text-cyan-300">
-            VISA
-          </span>
-        );
-      case 'mastercard':
-        return (
-          <div className="flex -space-x-2">
-            <span className="w-3.5 h-3.5 rounded-full bg-red-500/80 inline-block"></span>
-            <span className="w-3.5 h-3.5 rounded-full bg-amber-500/80 inline-block"></span>
-          </div>
-        );
-      case 'applepay':
-        return (
-          <span className="font-['Space_Grotesk'] font-bold text-xs tracking-tight text-slate-300 group-hover:text-white">
-             Pay
-          </span>
-        );
-      case 'googlepay':
-        return (
-          <span className="font-['Space_Grotesk'] font-bold text-xs tracking-tight text-slate-300 group-hover:text-white">
-            G Pay
-          </span>
-        );
-      case 'sepa':
-        return (
-          <span className="font-['JetBrains_Mono'] font-bold text-xs tracking-wider text-emerald-400">
-            SEPA
-          </span>
-        );
-      case 'revolut':
-        return (
-          <span className="font-['Space_Grotesk'] font-black text-sm tracking-widest text-slate-200 group-hover:text-emerald-300">
-            R
-          </span>
-        );
-      case 'privat24':
-        return (
-          <span className="font-['Space_Grotesk'] font-bold text-xs text-emerald-400">
-            Privat24
-          </span>
-        );
-      case 'monobank':
-        return (
-          <span className="font-['Space_Grotesk'] font-bold text-xs text-slate-200 group-hover:text-white">
-            mono
-          </span>
-        );
-      case 'payoneer':
-        return (
-          <span className="font-['Space_Grotesk'] font-bold text-xs text-amber-400">
-            Payoneer
-          </span>
-        );
-      case 'usdt-trc20':
-        return (
-          <div className="w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-[11px] border border-emerald-500/30 font-['JetBrains_Mono']">
-            ₮
-          </div>
-        );
-      case 'btc':
-        return (
-          <div className="w-5 h-5 rounded-full bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold text-[11px] border border-amber-500/30 font-['JetBrains_Mono']">
-            ₿
-          </div>
-        );
-      case 'eth':
-        return (
-          <div className="w-5 h-5 rounded-full bg-cyan-500/20 text-cyan-400 flex items-center justify-center font-bold text-[10px] border border-cyan-400/30 font-['JetBrains_Mono']">
-            Ξ
-          </div>
-        );
-      case 'sol':
-        return (
-          <div className="w-5 h-5 rounded-full bg-purple-500/20 text-purple-400 flex items-center justify-center font-bold text-[10px] border border-purple-400/30 font-['JetBrains_Mono']">
-            ◎
-          </div>
-        );
-      case 'ltc':
-        return (
-          <div className="w-5 h-5 rounded-full bg-slate-500/20 text-slate-300 flex items-center justify-center font-bold text-[10px] border border-slate-400/30 font-['JetBrains_Mono']">
-            Ł
-          </div>
-        );
-      case 'binance-pay':
-        return (
-          <div className="w-5 h-5 rounded-md bg-amber-400/20 text-amber-300 flex items-center justify-center font-bold text-[9px] border border-amber-400/30 font-['JetBrains_Mono']">
-            B
-          </div>
-        );
-      case 'ton':
-        return (
-          <div className="w-5 h-5 rounded-full bg-blue-500/20 text-blue-400 flex items-center justify-center font-bold text-[10px] border border-blue-400/30 font-['JetBrains_Mono']">
-            💎
-          </div>
-        );
-      default:
-        return <CreditCard className="w-4 h-4 text-emerald-400" />;
-    }
+    return <PaymentMethodIcon id={id} size={22} />;
   };
 
   const renderBadge = (method: PaymentOption) => {

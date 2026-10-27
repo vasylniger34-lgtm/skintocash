@@ -1108,7 +1108,7 @@ export const CabinetPage: React.FC<CabinetPageProps> = ({
                     {formatPrice(user.balance || 0)}
                   </div>
                   <p className="text-xs sm:text-sm text-slate-400 mt-2.5 max-w-xl">
-                    {language === "EN" ? "Funds are ready for instant cashout to Russian cards (MIR, SBP, Sber, T-Bank), Ukrainian cards (Monobank, Privat24), or Crypto (USDT) without delays." : (language === "RU" ? "Средства готовы к моментальному выводу на карты РФ (МИР, СБП, Сбер, Т-Банк), карты Украины (Monobank, Приват24) или криптовалюту (USDT) без задержек." : "Гроші готові до моментальної виплати на картки МИР/СБП, картки України (Monobank, Privat24, Visa/Mastercard) або криптовалюту без затримок.")}
+                    {language === "EN" ? "Funds are ready for instant cashout to Russian cards (MIR, SBP, Sber, T-Bank), Visa/Mastercard cards, or Crypto (USDT) without delays." : (language === "RU" ? "Средства готовы к моментальному выводу на карты РФ (МИР, СБП, Сбер, Т-Банк), карты Visa/Mastercard или криптовалюту (USDT) без задержек." : "Гроші готові до моментальної виплати на картки МИР/СБП, картки Visa/Mastercard або криптовалюту без затримок.")}
                   </p>
                 </div>
 
@@ -1238,7 +1238,7 @@ export const CabinetPage: React.FC<CabinetPageProps> = ({
                             ? 'bc1q...'
                             : selectedPaymentMethod.category === 'crypto'
                             ? 'TXj... (USDT TRC20)'
-                            : '4441 0000 0000 0000'
+                            : '4441 0000 0000 0000 (Visa/Mastercard)'
                         }
                         className="w-full px-4 py-3 rounded-xl bg-slate-950 border border-white/10 text-white font-['JetBrains_Mono'] text-sm focus:border-emerald-500/50 outline-none"
                       />

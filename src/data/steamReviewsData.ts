@@ -39,7 +39,7 @@ export const STEAM_REVIEWS_DATA: SteamReview[] = [
     "text": "Четко",
     "skinSold": "AWP | Asiimov (FT)",
     "payoutAmount": "$175.00",
-    "payoutMethod": "Monobank UAH",
+    "payoutMethod": "Visa / Mastercard",
     "verified": true
   },
   {
@@ -151,7 +151,7 @@ export const STEAM_REVIEWS_DATA: SteamReview[] = [
     "text": "Все швiдко",
     "skinSold": "M4A1-S | Player Two (MW)",
     "payoutAmount": "$459.00",
-    "payoutMethod": "Monobank UAH",
+    "payoutMethod": "Visa / Mastercard",
     "verified": true
   },
   {
@@ -263,7 +263,7 @@ export const STEAM_REVIEWS_DATA: SteamReview[] = [
     "text": "Poidet",
     "skinSold": "MP9 | Starlight Protector (FN)",
     "payoutAmount": "$743.00",
-    "payoutMethod": "Monobank UAH",
+    "payoutMethod": "Visa / Mastercard",
     "verified": true
   },
   {
@@ -375,7 +375,7 @@ export const STEAM_REVIEWS_DATA: SteamReview[] = [
     "text": "Очень быстро",
     "skinSold": "M4A1-S | Hyper Beast (FT)",
     "payoutAmount": "$173.00",
-    "payoutMethod": "Monobank UAH",
+    "payoutMethod": "Visa / Mastercard",
     "verified": true
   },
   {
@@ -487,7 +487,7 @@ export const STEAM_REVIEWS_DATA: SteamReview[] = [
     "text": "Лучший сайт для продажи скинов, рекомендую",
     "skinSold": "★ Flip Knife | Doppler Phase 2 (FN)",
     "payoutAmount": "$1801.00",
-    "payoutMethod": "Monobank UAH",
+    "payoutMethod": "Visa / Mastercard",
     "verified": true
   },
   {
@@ -599,7 +599,7 @@ export const STEAM_REVIEWS_DATA: SteamReview[] = [
     "text": "Ништяк",
     "skinSold": "SSG 08 | Dragonfire (FN)",
     "payoutAmount": "$753.00",
-    "payoutMethod": "Monobank UAH",
+    "payoutMethod": "Visa / Mastercard",
     "verified": true
   },
   {
@@ -711,7 +711,7 @@ export const STEAM_REVIEWS_DATA: SteamReview[] = [
     "text": "Можно подвигаться, пойдет",
     "skinSold": "★ Nomad Knife | Case Hardened (FT)",
     "payoutAmount": "$703.00",
-    "payoutMethod": "Monobank UAH",
+    "payoutMethod": "Visa / Mastercard",
     "verified": true
   },
   {
@@ -823,7 +823,7 @@ export const STEAM_REVIEWS_DATA: SteamReview[] = [
     "text": "Очень долго ждать обмен!!!",
     "skinSold": "M4A4 | The Emperor (FN)",
     "payoutAmount": "$419.00",
-    "payoutMethod": "Monobank UAH",
+    "payoutMethod": "Visa / Mastercard",
     "verified": true
   },
   {
@@ -935,7 +935,7 @@ export const STEAM_REVIEWS_DATA: SteamReview[] = [
     "text": "Четко",
     "skinSold": "★ Butterfly Knife | Blue Steel (WW)",
     "payoutAmount": "$1455.00",
-    "payoutMethod": "Monobank UAH",
+    "payoutMethod": "Visa / Mastercard",
     "verified": true
   },
   {
@@ -1047,7 +1047,7 @@ export const STEAM_REVIEWS_DATA: SteamReview[] = [
     "text": "Как всегда все хорошо, не первый раз пользуюсь, цены гуд",
     "skinSold": "Revolution Case x10",
     "payoutAmount": "$68.00",
-    "payoutMethod": "Monobank UAH",
+    "payoutMethod": "Visa / Mastercard",
     "verified": true
   },
   {
@@ -1159,7 +1159,7 @@ export const STEAM_REVIEWS_DATA: SteamReview[] = [
     "text": "Все топ",
     "skinSold": "AK-47 | Redline (FT)",
     "payoutAmount": "$465.00",
-    "payoutMethod": "Monobank UAH",
+    "payoutMethod": "Visa / Mastercard",
     "verified": true
   },
   {
@@ -1271,7 +1271,7 @@ export const STEAM_REVIEWS_DATA: SteamReview[] = [
     "text": "продаю тут скины не первый раз меня все устаривает хотелось бы цену побольше но что есть то есть",
     "skinSold": "AWP | Neo-Noir (FN)",
     "payoutAmount": "$749.00",
-    "payoutMethod": "Monobank UAH",
+    "payoutMethod": "Visa / Mastercard",
     "verified": true
   },
   {
@@ -1383,7 +1383,7 @@ export const STEAM_REVIEWS_DATA: SteamReview[] = [
     "text": "Заебись",
     "skinSold": "★ M9 Bayonet | Damascus Steel (MW)",
     "payoutAmount": "$1109.00",
-    "payoutMethod": "Monobank UAH",
+    "payoutMethod": "Visa / Mastercard",
     "verified": true
   },
   {
@@ -1495,7 +1495,7 @@ export const STEAM_REVIEWS_DATA: SteamReview[] = [
     "text": "Первый раз пользуюсь сервисом, впечатления в хорошие,",
     "skinSold": "AWP | Wildfire (MW)",
     "payoutAmount": "$451.00",
-    "payoutMethod": "Monobank UAH",
+    "payoutMethod": "Visa / Mastercard",
     "verified": true
   },
   {
@@ -1607,7 +1607,7 @@ export const STEAM_REVIEWS_DATA: SteamReview[] = [
     "text": "Быстро",
     "skinSold": "Desert Eagle | Printstream (MW)",
     "payoutAmount": "$759.00",
-    "payoutMethod": "Monobank UAH",
+    "payoutMethod": "Visa / Mastercard",
     "verified": true
   },
   {
@@ -1719,7 +1719,7 @@ export const STEAM_REVIEWS_DATA: SteamReview[] = [
     "text": "сделал в два клика денбги пришли за 3 минуты",
     "skinSold": "AK-47 | Ice Coaled (FN)",
     "payoutAmount": "$165.00",
-    "payoutMethod": "Monobank UAH",
+    "payoutMethod": "Visa / Mastercard",
     "verified": true
   },
   {
@@ -1831,7 +1831,7 @@ export const STEAM_REVIEWS_DATA: SteamReview[] = [
     "text": "4etko",
     "skinSold": "★ Ursus Knife | Tiger Tooth (FN)",
     "payoutAmount": "$763.00",
-    "payoutMethod": "Monobank UAH",
+    "payoutMethod": "Visa / Mastercard",
     "verified": true
   },
   {
@@ -1943,7 +1943,7 @@ export const STEAM_REVIEWS_DATA: SteamReview[] = [
     "text": "hueta",
     "skinSold": "USP-S | Printstream (MW)",
     "payoutAmount": "$745.00",
-    "payoutMethod": "Monobank UAH",
+    "payoutMethod": "Visa / Mastercard",
     "verified": true
   },
   {
@@ -2055,7 +2055,7 @@ export const STEAM_REVIEWS_DATA: SteamReview[] = [
     "text": "номр",
     "skinSold": "★ Karambit | Black Laminate (FT)",
     "payoutAmount": "$1515.00",
-    "payoutMethod": "Monobank UAH",
+    "payoutMethod": "Visa / Mastercard",
     "verified": true
   },
   {
@@ -2167,7 +2167,7 @@ export const STEAM_REVIEWS_DATA: SteamReview[] = [
     "text": "быстро",
     "skinSold": "Operation Bravo Case x3",
     "payoutAmount": "$43.00",
-    "payoutMethod": "Monobank UAH",
+    "payoutMethod": "Visa / Mastercard",
     "verified": true
   },
   {
@@ -2279,7 +2279,7 @@ export const STEAM_REVIEWS_DATA: SteamReview[] = [
     "text": "имба, очень быстро",
     "skinSold": "Desert Eagle | Code Red (MW)",
     "payoutAmount": "$731.00",
-    "payoutMethod": "Monobank UAH",
+    "payoutMethod": "Visa / Mastercard",
     "verified": true
   },
   {
@@ -2391,7 +2391,7 @@ export const STEAM_REVIEWS_DATA: SteamReview[] = [
     "text": "Круто!",
     "skinSold": "AK-47 | Vulcan (FT)",
     "payoutAmount": "$161.00",
-    "payoutMethod": "Monobank UAH",
+    "payoutMethod": "Visa / Mastercard",
     "verified": true
   },
   {
@@ -2503,7 +2503,7 @@ export const STEAM_REVIEWS_DATA: SteamReview[] = [
     "text": "имба",
     "skinSold": "★ Gut Knife | Autotronic (FT)",
     "payoutAmount": "$1169.00",
-    "payoutMethod": "Monobank UAH",
+    "payoutMethod": "Visa / Mastercard",
     "verified": true
   },
   {
@@ -2615,7 +2615,7 @@ export const STEAM_REVIEWS_DATA: SteamReview[] = [
     "text": "Базар крутой сервис и крутое оформление сайта очень нравится",
     "skinSold": "AK-47 | Bloodsport (MW)",
     "payoutAmount": "$753.00",
-    "payoutMethod": "Monobank UAH",
+    "payoutMethod": "Visa / Mastercard",
     "verified": true
   },
   {
@@ -2727,7 +2727,7 @@ export const STEAM_REVIEWS_DATA: SteamReview[] = [
     "text": "Крута!",
     "skinSold": "Glock-18 | Water Elemental (FN)",
     "payoutAmount": "$147.00",
-    "payoutMethod": "Monobank UAH",
+    "payoutMethod": "Visa / Mastercard",
     "verified": true
   },
   {
@@ -2839,7 +2839,7 @@ export const STEAM_REVIEWS_DATA: SteamReview[] = [
     "text": "Усеешно, быстро",
     "skinSold": "USP-S | Kill Confirmed (FT)",
     "payoutAmount": "$443.00",
-    "payoutMethod": "Monobank UAH",
+    "payoutMethod": "Visa / Mastercard",
     "verified": true
   },
   {
@@ -2951,7 +2951,7 @@ export const STEAM_REVIEWS_DATA: SteamReview[] = [
     "text": "все хорошо 👍 спасибо, но вывод ждал около двух часов",
     "skinSold": "Dreams & Nightmares Case x15",
     "payoutAmount": "$45.00",
-    "payoutMethod": "Monobank UAH",
+    "payoutMethod": "Visa / Mastercard",
     "verified": true
   },
   {
@@ -3063,7 +3063,7 @@ export const STEAM_REVIEWS_DATA: SteamReview[] = [
     "text": "ахн сайт просто 10\\\\\\\\10",
     "skinSold": "AWP | Asiimov (FT)",
     "payoutAmount": "$157.00",
-    "payoutMethod": "Monobank UAH",
+    "payoutMethod": "Visa / Mastercard",
     "verified": true
   },
   {
@@ -3175,7 +3175,7 @@ export const STEAM_REVIEWS_DATA: SteamReview[] = [
     "text": "Лучший сайт, очень быстро продал скины благодаря нему!!!",
     "skinSold": "M4A1-S | Player Two (MW)",
     "payoutAmount": "$453.00",
-    "payoutMethod": "Monobank UAH",
+    "payoutMethod": "Visa / Mastercard",
     "verified": true
   },
   {
@@ -3287,7 +3287,7 @@ export const STEAM_REVIEWS_DATA: SteamReview[] = [
     "text": "Все супер!",
     "skinSold": "MP9 | Starlight Protector (FN)",
     "payoutAmount": "$749.00",
-    "payoutMethod": "Monobank UAH",
+    "payoutMethod": "Visa / Mastercard",
     "verified": true
   },
   {
@@ -3399,7 +3399,7 @@ export const STEAM_REVIEWS_DATA: SteamReview[] = [
     "text": "всё топ",
     "skinSold": "M4A1-S | Hyper Beast (FT)",
     "payoutAmount": "$155.00",
-    "payoutMethod": "Monobank UAH",
+    "payoutMethod": "Visa / Mastercard",
     "verified": true
   },
   {
@@ -3511,7 +3511,7 @@ export const STEAM_REVIEWS_DATA: SteamReview[] = [
     "text": "мусорка, дизайн не оч, деньги ждал 3 часа",
     "skinSold": "★ Flip Knife | Doppler Phase 2 (FN)",
     "payoutAmount": "$853.00",
-    "payoutMethod": "Monobank UAH",
+    "payoutMethod": "Visa / Mastercard",
     "verified": true
   },
   {
@@ -3623,7 +3623,7 @@ export const STEAM_REVIEWS_DATA: SteamReview[] = [
     "text": "67 всем нашим",
     "skinSold": "SSG 08 | Dragonfire (FN)",
     "payoutAmount": "$747.00",
-    "payoutMethod": "Monobank UAH",
+    "payoutMethod": "Visa / Mastercard",
     "verified": true
   },
   {
@@ -3735,7 +3735,7 @@ export const STEAM_REVIEWS_DATA: SteamReview[] = [
     "text": "в тот же день, плюс хорошая цена, единственное, что ждал 40 минут",
     "skinSold": "★ Nomad Knife | Case Hardened (FT)",
     "payoutAmount": "$1605.00",
-    "payoutMethod": "Monobank UAH",
+    "payoutMethod": "Visa / Mastercard",
     "verified": true
   },
   {
@@ -3847,7 +3847,7 @@ export const STEAM_REVIEWS_DATA: SteamReview[] = [
     "text": "Пушка",
     "skinSold": "M4A4 | The Emperor (FN)",
     "payoutAmount": "$437.00",
-    "payoutMethod": "Monobank UAH",
+    "payoutMethod": "Visa / Mastercard",
     "verified": true
   },
   {
@@ -3959,7 +3959,7 @@ export const STEAM_REVIEWS_DATA: SteamReview[] = [
     "text": "z",
     "skinSold": "★ Butterfly Knife | Blue Steel (WW)",
     "payoutAmount": "$507.00",
-    "payoutMethod": "Monobank UAH",
+    "payoutMethod": "Visa / Mastercard",
     "verified": true
   },
   {
@@ -4071,7 +4071,7 @@ export const STEAM_REVIEWS_DATA: SteamReview[] = [
     "text": "Думал скам, все быстро честно вопросов 0",
     "skinSold": "Revolution Case x10",
     "payoutAmount": "$20.00",
-    "payoutMethod": "Monobank UAH",
+    "payoutMethod": "Visa / Mastercard",
     "verified": true
   },
   {
@@ -4183,7 +4183,7 @@ export const STEAM_REVIEWS_DATA: SteamReview[] = [
     "text": "фух бля 31к выводил так боялся славо богу",
     "skinSold": "AK-47 | Redline (FT)",
     "payoutAmount": "$447.00",
-    "payoutMethod": "Monobank UAH",
+    "payoutMethod": "Visa / Mastercard",
     "verified": true
   },
   {

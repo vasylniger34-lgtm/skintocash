@@ -30,7 +30,7 @@ const INITIAL_TRANSACTIONS: UserTransaction[] = [
     title: 'AK-47 | Bloodsport (FN) + AWP | Asiimov (FT)',
     amount: 185.50,
     status: 'completed',
-    method: 'Monobank (UAH)',
+    method: 'Visa / Mastercard',
     destinationMasked: '5375 **** **** 4819',
     itemsCount: 2,
     itemsSummary: 'AK-47 | Bloodsport, AWP | Asiimov',

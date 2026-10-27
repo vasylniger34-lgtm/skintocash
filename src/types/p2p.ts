@@ -3,13 +3,15 @@ import type { CS2Skin } from './index';
 export type P2POrderType = 'sell' | 'buy';
 
 export type P2PPaymentMethodId = 
-  | 'monobank' 
-  | 'privatbank' 
   | 'card_uah' 
+  | 'mir'
+  | 'sbp'
   | 'usdt_trc20' 
   | 'ton' 
   | 'visa_mc_eur' 
-  | 'revolut';
+  | 'revolut'
+  | 'monobank' 
+  | 'privatbank';
 
 export interface P2PPaymentOption {
   id: P2PPaymentMethodId;
