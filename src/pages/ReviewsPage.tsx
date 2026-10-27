@@ -20,7 +20,10 @@ import {
   Send,
   Zap,
   Flame,
-  Award
+  Award,
+  Package,
+  Lock,
+  AlertCircle
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { useCurrency } from '../context/CurrencyContext';
@@ -37,13 +40,38 @@ interface ReviewsPageProps {
 }
 
 export const ReviewsPage: React.FC<ReviewsPageProps> = ({ onNavigateHome, onOpenLogin }) => {
-  const { user } = useAuth();
+  const { user, loginWithSteam, transactions } = useAuth();
   const { currency, setCurrency, formatPrice } = useCurrency();
   const { language, setLanguage, currentOption } = useLanguage();
   const tr = (key: string, params?: Record<string, string | number>) => getReviewsText(language, key, params);
 
-  // Reviews state with optimistic local reviews support
-  const [reviewsList, setReviewsList] = useState<SteamReview[]>(STEAM_REVIEWS_DATA);
+  // Reviews state with persistent custom user reviews support
+  const [reviewsList, setReviewsList] = useState<SteamReview[]>(() => {
+    try {
+      const saved = localStorage.getItem('skintocash_user_reviews_v1');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return [...parsed, ...STEAM_REVIEWS_DATA];
+        }
+      }
+    } catch {
+      // ignore
+    }
+    return STEAM_REVIEWS_DATA;
+  });
+
+  // Filter completed sale orders eligible for review
+  const completedSales = useMemo(() => {
+    return (transactions || []).filter(tx => tx.type === 'sale' && tx.status === 'completed');
+  }, [transactions]);
+
+  // Selected order state
+  const [selectedOrderId, setSelectedOrderId] = useState<string>('');
+  const selectedSale = useMemo(() => {
+    if (!completedSales.length) return null;
+    return completedSales.find(s => s.id === selectedOrderId) || completedSales[0];
+  }, [completedSales, selectedOrderId]);
   
   // Header dropdowns
   const [currencyDropdownOpen, setCurrencyDropdownOpen] = useState(false);
@@ -61,9 +89,6 @@ export const ReviewsPage: React.FC<ReviewsPageProps> = ({ onNavigateHome, onOpen
   // Leave Review Modal
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newRating, setNewRating] = useState<number>(10);
-  const [newAuthor, setNewAuthor] = useState('');
-  const [newSteamId, setNewSteamId] = useState('');
-  const [newSkinSold, setNewSkinSold] = useState('AK-47 | Ice Coaled (FN)');
   const [newText, setNewText] = useState('');
   const [formSubmitted, setFormSubmitted] = useState(false);
 
@@ -149,20 +174,19 @@ export const ReviewsPage: React.FC<ReviewsPageProps> = ({ onNavigateHome, onOpen
   };
 
   const handleOpenReviewModal = () => {
-    if (user) {
-      setNewAuthor(user.personaname || '');
-      setNewSteamId(user.steamId64 || '');
+    if (completedSales.length > 0 && !selectedOrderId) {
+      setSelectedOrderId(completedSales[0].id);
     }
     setIsModalOpen(true);
   };
 
   const handleSubmitReview = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newText.trim()) return;
+    if (!newText.trim() || !user || !selectedSale) return;
 
-    const steamId = newSteamId.trim() || (user?.steamId64 || '76561198000000000');
-    const authorName = newAuthor.trim() || (user?.personaname || 'CS2 Trader');
-    const userAvatar = user?.avatarmedium || 'https://avatars.fastly.steamstatic.com/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb_medium.jpg';
+    const steamId = user.steamId64;
+    const authorName = user.personaname;
+    const userAvatar = user.avatarmedium || 'https://avatars.fastly.steamstatic.com/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb_medium.jpg';
 
     const newRev: SteamReview = {
       id: `rev-${Date.now()}`,
@@ -173,13 +197,21 @@ export const ReviewsPage: React.FC<ReviewsPageProps> = ({ onNavigateHome, onOpen
       date: tr('reviews.justNow'),
       rating: newRating,
       text: newText.trim(),
-      skinSold: newSkinSold || 'AK-47 | Ice Coaled (FN)',
-      payoutAmount: '$85.00',
-      payoutMethod: 'Visa/Mastercard Direct',
+      skinSold: selectedSale.itemsSummary || selectedSale.title,
+      payoutAmount: formatPrice(selectedSale.amount),
+      payoutMethod: selectedSale.method,
       verified: true
     };
 
     setReviewsList([newRev, ...reviewsList]);
+    try {
+      const saved = localStorage.getItem('skintocash_user_reviews_v1');
+      const existing = saved ? JSON.parse(saved) : [];
+      localStorage.setItem('skintocash_user_reviews_v1', JSON.stringify([newRev, ...existing]));
+    } catch {
+      // ignore
+    }
+
     setFormSubmitted(true);
 
     try {
@@ -660,8 +692,14 @@ export const ReviewsPage: React.FC<ReviewsPageProps> = ({ onNavigateHome, onOpen
                     {/* Header: Avatar, Name, Steam Link & Rating */}
                     <div className="flex items-start justify-between gap-3 mb-3.5">
                       <div className="flex items-center gap-3 min-w-0">
-                        {/* Steam Avatar */}
-                        <div className="relative shrink-0">
+                        {/* Steam Avatar - clickable directly to profile */}
+                        <a
+                          href={rev.profileUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="relative shrink-0 block group/avatar"
+                          title={`Steam: ${rev.author}`}
+                        >
                           <img
                             src={rev.avatar}
                             alt={rev.author}
@@ -669,32 +707,27 @@ export const ReviewsPage: React.FC<ReviewsPageProps> = ({ onNavigateHome, onOpen
                               // Fallback default avatar if Steam fastly CDN blocks or expires
                               (e.target as HTMLImageElement).src = 'https://avatars.fastly.steamstatic.com/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb_medium.jpg';
                             }}
-                            className="w-11 h-11 rounded-full object-cover border-2 border-emerald-500/30 group-hover:border-emerald-400 transition-colors"
+                            className="w-11 h-11 rounded-full object-cover border-2 border-emerald-500/30 group-hover:border-emerald-400 group-hover:scale-105 transition-all"
                           />
                           <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-[#070A0E] flex items-center justify-center">
                             <span className="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
                           </span>
-                        </div>
+                        </a>
 
-                        {/* Nickname & Steam Profile Link */}
+                        {/* Nickname - direct clickable link to Steam Profile */}
                         <div className="min-w-0">
-                          <div className="flex items-center gap-1.5">
-                            <span className="text-sm font-bold font-['Space_Grotesk'] text-white truncate max-w-[140px] sm:max-w-[160px]">
-                              {rev.author}
-                            </span>
-                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                          </div>
-
-                          {/* Direct clickable Steam Profile link */}
                           <a
                             href={rev.profileUrl}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 text-[11px] font-['JetBrains_Mono'] text-slate-400 hover:text-emerald-400 transition-colors mt-0.5 group/link"
-                            title={tr('reviews.openProfile', { id: rev.steamId })}
+                            className="group/nick inline-flex items-center gap-1.5 transition-colors"
+                            title={`Steam: ${rev.author}`}
                           >
-                            <span>Steam ID: {rev.steamId.slice(-6)}</span>
-                            <ExternalLink className="w-2.5 h-2.5 opacity-60 group-hover/link:opacity-100 group-hover/link:translate-x-0.5 transition-all" />
+                            <span className="text-sm font-bold font-['Space_Grotesk'] text-white group-hover/nick:text-emerald-400 group-hover/nick:underline underline-offset-2 transition-colors truncate max-w-[150px] sm:max-w-[190px]">
+                              {rev.author}
+                            </span>
+                            <ExternalLink className="w-3 h-3 text-slate-500 group-hover/nick:text-emerald-400 opacity-60 group-hover/nick:opacity-100 transition-all shrink-0" />
+                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
                           </a>
                         </div>
                       </div>
@@ -855,8 +888,91 @@ export const ReviewsPage: React.FC<ReviewsPageProps> = ({ onNavigateHome, onOpen
                     {tr('reviews.thankYouDesc')}
                   </p>
                 </div>
+              ) : !user ? (
+                /* 1. NOT LOGGED IN -> Steam Login Required */
+                <div className="py-2 space-y-5">
+                  <div className="text-center space-y-3">
+                    <div className="w-16 h-16 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 flex items-center justify-center mx-auto shadow-[0_0_30px_rgba(16,185,129,0.2)]">
+                      <Lock className="w-8 h-8" />
+                    </div>
+                    <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[11px] font-['JetBrains_Mono'] font-bold">
+                      <ShieldCheck className="w-3.5 h-3.5" />
+                      <span>{tr('reviews.steamVerification')}</span>
+                    </div>
+                    <h3 className="text-xl font-black font-['Space_Grotesk'] text-white">
+                      {tr('reviews.authRequiredTitle')}
+                    </h3>
+                    <p className="text-xs text-slate-300 leading-relaxed max-w-sm mx-auto">
+                      {tr('reviews.authRequiredDesc')}
+                    </p>
+                  </div>
+
+                  <div className="p-3.5 rounded-2xl bg-white/[0.03] border border-white/[0.07] space-y-2 text-left">
+                    <div className="flex items-center gap-2 text-xs font-bold text-white font-['Space_Grotesk']">
+                      <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
+                      <span>Анти-фрод захист відгуків</span>
+                    </div>
+                    <p className="text-[11px] text-slate-400 leading-normal">
+                      Ми публікуємо тільки відгуки реальних продавців після підтверджених виплат. Довільний ввід чужих або вигаданих скінів заблоковано.
+                    </p>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsModalOpen(false);
+                      if (onOpenLogin) onOpenLogin();
+                      else loginWithSteam();
+                    }}
+                    className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 text-slate-950 font-['Space_Grotesk'] font-extrabold text-sm shadow-[0_0_25px_rgba(16,185,129,0.35)] transition-all flex items-center justify-center gap-2.5 cursor-pointer"
+                  >
+                    <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
+                      <path d="M11.979 0C5.669 0 .513 4.908.026 11.117l6.634 2.736a3.528 3.528 0 0 1 1.986-.606c.143 0 .283.01.42.028l3.056-4.428v-.063a4.721 4.721 0 1 1 4.722 4.722c-.02 0-.04 0-.06-.002l-4.382 3.091c.018.132.028.267.028.404a3.541 3.541 0 0 1-5.69 2.802l-4.52 1.865A12.012 12.012 0 0 0 11.979 24c6.627 0 12-5.373 12-12s-5.373-12-12-12z" />
+                    </svg>
+                    <span>{tr('reviews.signInSteamBtn')}</span>
+                  </button>
+                </div>
+              ) : completedSales.length === 0 ? (
+                /* 2. LOGGED IN BUT NO COMPLETED SALE ORDERS */
+                <div className="py-2 space-y-5">
+                  <div className="text-center space-y-3">
+                    <div className="w-16 h-16 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-400 flex items-center justify-center mx-auto shadow-[0_0_30px_rgba(245,158,11,0.2)]">
+                      <AlertCircle className="w-8 h-8" />
+                    </div>
+                    
+                    {/* User Mini Card */}
+                    <div className="inline-flex items-center gap-2.5 px-3 py-1.5 rounded-full bg-white/[0.04] border border-white/[0.08]">
+                      <img
+                        src={user.avatarmedium || 'https://avatars.fastly.steamstatic.com/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb_medium.jpg'}
+                        alt={user.personaname}
+                        className="w-5 h-5 rounded-full object-cover"
+                      />
+                      <span className="text-xs font-bold text-white font-['Space_Grotesk']">{user.personaname}</span>
+                      <span className="text-[10px] text-amber-400 font-['JetBrains_Mono']">0 угод</span>
+                    </div>
+
+                    <h3 className="text-xl font-black font-['Space_Grotesk'] text-white">
+                      {tr('reviews.noSalesTitle')}
+                    </h3>
+                    <p className="text-xs text-slate-300 leading-relaxed max-w-sm mx-auto">
+                      {tr('reviews.noSalesDesc')}
+                    </p>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsModalOpen(false);
+                      onNavigateHome();
+                    }}
+                    className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 text-slate-950 font-['Space_Grotesk'] font-extrabold text-sm shadow-[0_0_25px_rgba(16,185,129,0.35)] transition-all flex items-center justify-center gap-2 cursor-pointer"
+                  >
+                    <Zap className="w-4 h-4 fill-current" />
+                    <span>{tr('reviews.goToSellBtn')}</span>
+                  </button>
+                </div>
               ) : (
-                /* Form */
+                /* 3. LOGGED IN WITH COMPLETED SALE ORDERS -> Authentic Review Form */
                 <form onSubmit={handleSubmitReview} className="space-y-4">
                   <div>
                     <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 text-[10px] font-['JetBrains_Mono'] font-bold mb-2">
@@ -869,6 +985,92 @@ export const ReviewsPage: React.FC<ReviewsPageProps> = ({ onNavigateHome, onOpen
                     <p className="text-xs text-slate-400">
                       {tr('reviews.modalDesc')}
                     </p>
+                  </div>
+
+                  {/* Verified Steam Profile Header (Locked) */}
+                  <div className="p-3 rounded-2xl bg-white/[0.03] border border-white/[0.08] flex items-center justify-between">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <img
+                        src={user.avatarmedium || 'https://avatars.fastly.steamstatic.com/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb_medium.jpg'}
+                        alt={user.personaname}
+                        className="w-9 h-9 rounded-full object-cover border border-emerald-500/40"
+                      />
+                      <div className="min-w-0">
+                        <div className="text-xs font-bold text-white font-['Space_Grotesk'] flex items-center gap-1 truncate">
+                          <span>{user.personaname}</span>
+                          <CheckCircle2 className="w-3 h-3 text-emerald-400 shrink-0" />
+                        </div>
+                        <div className="text-[10px] text-slate-400 font-['JetBrains_Mono'] truncate">
+                          ID: {user.steamId64}
+                        </div>
+                      </div>
+                    </div>
+                    <span className="px-2.5 py-1 rounded-full bg-emerald-500/15 text-emerald-400 text-[10px] font-bold font-['Space_Grotesk'] shrink-0 border border-emerald-500/30">
+                      {tr('reviews.verifiedSeller')}
+                    </span>
+                  </div>
+
+                  {/* Verified Order Selection (Locked - No Arbitrary Skin Input) */}
+                  <div className="space-y-2">
+                    <label className="text-xs font-['Space_Grotesk'] font-bold text-slate-300 flex items-center justify-between">
+                      <span className="flex items-center gap-1.5">
+                        <Package className="w-3.5 h-3.5 text-emerald-400" />
+                        <span>{tr('reviews.selectOrderLabel')}</span>
+                      </span>
+                      <span className="text-[10px] font-['JetBrains_Mono'] text-emerald-400">
+                        {completedSales.length} {completedSales.length === 1 ? 'угода' : 'угод'}
+                      </span>
+                    </label>
+
+                    {completedSales.length === 1 ? (
+                      /* Single verified order card */
+                      <div className="p-3 rounded-2xl bg-emerald-500/[0.05] border border-emerald-500/30 space-y-1.5">
+                        <div className="flex items-center justify-between text-[11px] font-['JetBrains_Mono']">
+                          <span className="text-emerald-400 font-bold">#{selectedSale?.id}</span>
+                          <span className="text-slate-400">{selectedSale?.date}</span>
+                        </div>
+                        <div className="text-xs font-bold font-['Space_Grotesk'] text-white">
+                          {selectedSale?.itemsSummary || selectedSale?.title}
+                        </div>
+                        <div className="flex items-center justify-between text-[11px] font-['JetBrains_Mono'] pt-1 border-t border-white/[0.06]">
+                          <span className="text-slate-400">{selectedSale?.method}</span>
+                          <span className="text-emerald-400 font-extrabold">{formatPrice(selectedSale?.amount || 0)}</span>
+                        </div>
+                      </div>
+                    ) : (
+                      /* Multiple verified orders picker */
+                      <div className="space-y-1.5 max-h-40 overflow-y-auto pr-1">
+                        {completedSales.map((sale) => {
+                          const isSelected = (selectedSale?.id === sale.id);
+                          return (
+                            <button
+                              key={sale.id}
+                              type="button"
+                              onClick={() => setSelectedOrderId(sale.id)}
+                              className={`w-full text-left p-2.5 rounded-xl transition-all cursor-pointer border ${
+                                isSelected
+                                  ? 'bg-emerald-500/10 border-emerald-500/40 shadow-[0_0_15px_rgba(16,185,129,0.15)]'
+                                  : 'bg-white/[0.02] border-white/[0.06] hover:bg-white/[0.05] hover:border-white/10'
+                              }`}
+                            >
+                              <div className="flex items-center justify-between text-[10px] font-['JetBrains_Mono'] mb-1">
+                                <span className={isSelected ? 'text-emerald-400 font-bold' : 'text-slate-400'}>
+                                  #{sale.id}
+                                </span>
+                                <span className="text-slate-500">{sale.date}</span>
+                              </div>
+                              <div className="text-xs font-bold font-['Space_Grotesk'] text-white truncate">
+                                {sale.itemsSummary || sale.title}
+                              </div>
+                              <div className="flex items-center justify-between text-[10px] font-['JetBrains_Mono'] mt-1">
+                                <span className="text-slate-400">{sale.method}</span>
+                                <span className="text-emerald-400 font-extrabold">{formatPrice(sale.amount)}</span>
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
 
                   {/* Rating Selector (1 to 10) */}
@@ -894,50 +1096,6 @@ export const ReviewsPage: React.FC<ReviewsPageProps> = ({ onNavigateHome, onOpen
                         </button>
                       ))}
                     </div>
-                  </div>
-
-                  {/* Nickname & Steam ID */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div className="space-y-1">
-                      <label className="text-[11px] font-['Space_Grotesk'] text-slate-300">
-                        {tr('reviews.yourNick')}
-                      </label>
-                      <input
-                        type="text"
-                        required
-                        value={newAuthor}
-                        onChange={(e) => setNewAuthor(e.target.value)}
-                        placeholder="s1mple_fan_99"
-                        className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500/50 font-['Space_Grotesk']"
-                      />
-                    </div>
-
-                    <div className="space-y-1">
-                      <label className="text-[11px] font-['Space_Grotesk'] text-slate-300">
-                        {tr('reviews.steamIdOrLink')}
-                      </label>
-                      <input
-                        type="text"
-                        value={newSteamId}
-                        onChange={(e) => setNewSteamId(e.target.value)}
-                        placeholder="76561198..."
-                        className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500/50 font-['JetBrains_Mono']"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Traded Skin */}
-                  <div className="space-y-1">
-                    <label className="text-[11px] font-['Space_Grotesk'] text-slate-300">
-                      {tr('reviews.skinsTraded')}
-                    </label>
-                    <input
-                      type="text"
-                      value={newSkinSold}
-                      onChange={(e) => setNewSkinSold(e.target.value)}
-                      placeholder="★ Karambit | Doppler (FN)"
-                      className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500/50 font-['Space_Grotesk']"
-                    />
                   </div>
 
                   {/* Review Textarea */}
@@ -967,7 +1125,8 @@ export const ReviewsPage: React.FC<ReviewsPageProps> = ({ onNavigateHome, onOpen
                   <div className="pt-2">
                     <button
                       type="submit"
-                      className="w-full py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-extrabold text-xs font-['Space_Grotesk'] shadow-[0_0_25px_rgba(16,185,129,0.35)] transition-all flex items-center justify-center gap-2 cursor-pointer"
+                      disabled={!selectedSale}
+                      className="w-full py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 disabled:opacity-40 text-slate-950 font-extrabold text-xs font-['Space_Grotesk'] shadow-[0_0_25px_rgba(16,185,129,0.35)] transition-all flex items-center justify-center gap-2 cursor-pointer"
                     >
                       <Send className="w-4 h-4" />
                       <span>{tr('reviews.publishBtn')}</span>

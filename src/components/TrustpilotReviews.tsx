@@ -177,26 +177,34 @@ export const TrustpilotReviews: React.FC<TrustpilotReviewsProps> = ({ onNavigate
                 {/* Author row & rating */}
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2.5 min-w-0">
-                    <img
-                      src={rev.avatar}
-                      alt={rev.author}
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).src = 'https://avatars.fastly.steamstatic.com/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb_medium.jpg';
-                      }}
-                      className="w-9 h-9 rounded-full object-cover border border-emerald-500/30 shrink-0"
-                    />
+                    <a
+                      href={rev.profileUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="block shrink-0 group/avatar"
+                      title={rev.author}
+                    >
+                      <img
+                        src={rev.avatar}
+                        alt={rev.author}
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = 'https://avatars.fastly.steamstatic.com/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb_medium.jpg';
+                        }}
+                        className="w-9 h-9 rounded-full object-cover border border-emerald-500/30 group-hover/avatar:border-emerald-400 group-hover/avatar:scale-105 transition-all"
+                      />
+                    </a>
                     <div className="min-w-0">
-                      <div className="text-xs font-bold font-['Space_Grotesk'] text-white truncate max-w-[110px]">
-                        {rev.author}
-                      </div>
                       <a
                         href={rev.profileUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 text-[10px] text-slate-400 hover:text-emerald-400 font-['JetBrains_Mono'] transition-colors"
+                        className="group/nick inline-flex items-center gap-1.5 transition-colors"
+                        title={rev.author}
                       >
-                        <span>Steam Profile</span>
-                        <ExternalLink className="w-2.5 h-2.5" />
+                        <span className="text-xs font-bold font-['Space_Grotesk'] text-white group-hover/nick:text-emerald-400 group-hover/nick:underline underline-offset-2 transition-colors truncate max-w-[125px]">
+                          {rev.author}
+                        </span>
+                        <ExternalLink className="w-2.5 h-2.5 text-slate-500 group-hover/nick:text-emerald-400 opacity-60 group-hover/nick:opacity-100 transition-all shrink-0" />
                       </a>
                     </div>
                   </div>
