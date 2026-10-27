@@ -44,7 +44,7 @@ export const TradeOfferModal: React.FC<TradeOfferModalProps> = ({
   onTradeCompleted,
 }) => {
   const { formatPrice } = useCurrency();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
 
   const [step, setStep] = useState<'dispatching' | 'sent' | 'confirming' | 'completed'>('dispatching');
   const [copiedField, setCopiedField] = useState<string | null>(null);
@@ -58,9 +58,9 @@ export const TradeOfferModal: React.FC<TradeOfferModalProps> = ({
       selectedSkins,
       totalPayout,
       destinationAddress,
-      paymentMethod?.name || 'Виплата на баланс'
+      paymentMethod?.name || (language === 'EN' ? 'Account Balance' : (language === 'RU' ? 'Баланс аккаунта' : 'Баланс кабінету'))
     );
-  }, [selectedSkins, totalPayout, destinationAddress, paymentMethod]);
+  }, [selectedSkins, totalPayout, destinationAddress, paymentMethod, language]);
 
   // Dispatch trade offer automatically via official bot when opened
   useEffect(() => {
@@ -86,8 +86,8 @@ export const TradeOfferModal: React.FC<TradeOfferModalProps> = ({
               selectedItems: selectedSkins,
               txId: session.txId,
               securityCode: session.securityCode,
-              payoutMethod: paymentMethod?.name || 'Виплата на баланс',
-              destinationAddress: destinationAddress || 'Внутрішній баланс',
+              payoutMethod: paymentMethod?.name || (language === 'EN' ? 'Account Balance' : (language === 'RU' ? 'Баланс аккаунта' : 'Баланс кабінету')),
+              destinationAddress: destinationAddress || (language === 'EN' ? 'Internal Balance' : (language === 'RU' ? 'Внутренний баланс' : 'Внутрішній баланс')),
             }),
           });
 
@@ -190,13 +190,13 @@ export const TradeOfferModal: React.FC<TradeOfferModalProps> = ({
               <div>
                 <h3 className="text-base sm:text-lg font-bold font-['Space_Grotesk'] text-white">
                   {step === 'completed'
-                    ? 'Депозит успішно зараховано!'
+                    ? (language === 'EN' ? 'Deposit successfully credited!' : (language === 'RU' ? 'Депозит успешно зачислен!' : 'Депозит успішно зараховано!'))
                     : step === 'dispatching'
-                    ? 'Бот формує персональний трейд...'
-                    : 'Трейд надіслано ботом у Steam Guard'}
+                    ? (language === 'EN' ? 'Bot is preparing personal trade...' : (language === 'RU' ? 'Бот формирует персональный трейд...' : 'Бот формує персональний трейд...'))
+                    : (language === 'EN' ? 'Trade dispatched to your Steam Guard' : (language === 'RU' ? 'Трейд отправлен ботом в Steam Guard' : 'Трейд надіслано ботом у Steam Guard'))}
                 </h3>
                 <span className="text-[11px] font-['JetBrains_Mono'] text-emerald-400 font-semibold">
-                  Транзакція: {session.txId}
+                  {language === 'EN' ? 'Transaction:' : (language === 'RU' ? 'Транзакция:' : 'Транзакція:')} {session.txId}
                 </span>
               </div>
             </div>
@@ -222,16 +222,20 @@ export const TradeOfferModal: React.FC<TradeOfferModalProps> = ({
 
               <div className="space-y-1">
                 <h4 className="text-lg font-bold text-white font-['Space_Grotesk']">
-                  Відправка обміну від офіційного бота...
+                  {language === 'EN' ? 'Dispatching trade offer from official bot...' : (language === 'RU' ? 'Отправка трейда от официального бота...' : 'Відправка обміну від офіційного бота...')}
                 </h4>
                 <p className="text-xs text-slate-400 max-w-sm mx-auto">
-                  Бот <strong>{OFFICIAL_STEAM_BOT.personaName}</strong> (Регіон: {OFFICIAL_STEAM_BOT.country} 🇷🇺) надсилає пропозицію обміну на ваш акаунт Steam.
+                  {language === 'EN' 
+                    ? <>Bot <strong>{OFFICIAL_STEAM_BOT.personaName}</strong> (Region: {OFFICIAL_STEAM_BOT.country} 🇷🇺) is sending a direct offer to your Steam Trade URL.</>
+                    : language === 'RU'
+                    ? <>Бот <strong>{OFFICIAL_STEAM_BOT.personaName}</strong> (Регион: {OFFICIAL_STEAM_BOT.country} 🇷🇺) отправляет прямое предложение обмена на ваш аккаунт Steam.</>
+                    : <>Бот <strong>{OFFICIAL_STEAM_BOT.personaName}</strong> (Регіон: {OFFICIAL_STEAM_BOT.country} 🇷🇺) надсилає пропозицію обміну на ваш акаунт Steam.</>}
                 </p>
               </div>
 
               <div className="flex items-center justify-center gap-2 text-xs font-['JetBrains_Mono'] text-emerald-400">
                 <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                <span>Генерація захищеного токена безпеки...</span>
+                <span>{language === 'EN' ? 'Generating secure handshake token...' : (language === 'RU' ? 'Генерация защитного токена безопасности...' : 'Генерація захищеного токена безпеки...')}</span>
               </div>
             </div>
           ) : step !== 'completed' ? (
@@ -246,11 +250,11 @@ export const TradeOfferModal: React.FC<TradeOfferModalProps> = ({
                   </div>
                   <div>
                     <h4 className="text-xs sm:text-sm font-bold text-white font-['Space_Grotesk'] flex items-center gap-2">
-                      <span>Трейд доставлено у ваш Steam!</span>
+                      <span>{language === 'EN' ? 'Trade delivered to your Steam!' : (language === 'RU' ? 'Трейд доставлен в ваш Steam!' : 'Трейд доставлено у ваш Steam!')}</span>
                       <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
                     </h4>
                     <p className="text-[11px] text-emerald-300/80">
-                      Перевірте сповіщення на телефоні у додатку Steam Guard
+                      {language === 'EN' ? 'Check notifications on your mobile Steam Guard app' : (language === 'RU' ? 'Проверьте уведомления на телефоне в приложении Steam Guard' : 'Перевірте сповіщення на телефоні у додатку Steam Guard')}
                     </p>
                   </div>
                 </div>
@@ -260,10 +264,10 @@ export const TradeOfferModal: React.FC<TradeOfferModalProps> = ({
                   <div className="space-y-0.5">
                     <div className="flex items-center gap-1.5 text-[10px] font-bold text-emerald-300 font-['Space_Grotesk'] uppercase tracking-wider">
                       <ShieldCheck className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                      <span>Код перевірки безпеки:</span>
+                      <span>{language === 'EN' ? 'Security Handshake Code:' : (language === 'RU' ? 'Код проверки безопасности:' : 'Код перевірки безпеки:')}</span>
                     </div>
                     <div className="text-[10px] text-slate-400">
-                      Має збігатися у повідомленні трейду
+                      {language === 'EN' ? 'Must match message inside Steam trade offer' : (language === 'RU' ? 'Должен совпадать в сообщении к обмену' : 'Має збігатися у повідомленні трейду')}
                     </div>
                   </div>
                   
@@ -278,7 +282,12 @@ export const TradeOfferModal: React.FC<TradeOfferModalProps> = ({
 
                 <div className="flex items-start gap-1.5 text-[11px] text-amber-300/90 leading-tight">
                   <AlertTriangle className="w-3.5 h-3.5 shrink-0 text-amber-400 mt-0.5" />
-                  <span>Якщо в отриманому обміні код <strong>відрізняється</strong> — відхиліть обмін, це може бути сторонній API-перехоплювач!</span>
+                  <span>{language === 'EN' 
+                    ? <>If the code in received trade <strong>differs</strong>, decline immediately to prevent API scam!</>
+                    : language === 'RU'
+                    ? <>Если в полученном обмене код <strong>отличается</strong> — отклоните обмен, это может быть фишинг!</>
+                    : <>Якщо в отриманому обміні код <strong>відрізняється</strong> — відхиліть обмін, це може бути сторонній API-перехоплювач!</>}
+                  </span>
                 </div>
               </div>
 
@@ -302,7 +311,7 @@ export const TradeOfferModal: React.FC<TradeOfferModalProps> = ({
                           VERIFIED BOT
                         </span>
                         <span className="px-1.5 py-0.2 rounded bg-slate-800 text-[9px] font-['JetBrains_Mono'] text-slate-300 border border-white/10">
-                          Регіон: {OFFICIAL_STEAM_BOT.country} 🇷🇺
+                          {language === 'EN' ? 'Region' : (language === 'RU' ? 'Регион' : 'Регіон')}: {OFFICIAL_STEAM_BOT.country} 🇷🇺
                         </span>
                       </div>
                       <div className="text-[10px] font-['JetBrains_Mono'] text-slate-400 mt-0.5">
@@ -323,7 +332,7 @@ export const TradeOfferModal: React.FC<TradeOfferModalProps> = ({
                 {/* Steam Message Preview Box */}
                 <div className="p-2.5 rounded-xl bg-slate-950/80 border border-white/[0.06] text-[11px] font-['JetBrains_Mono'] text-slate-300">
                   <span className="text-slate-500 block text-[10px] uppercase mb-0.5">
-                    Повідомлення у трейді від бота:
+                    {language === 'EN' ? 'Message from bot inside trade offer:' : (language === 'RU' ? 'Сообщение к обмену от бота:' : 'Повідомлення у трейді від бота:')}
                   </span>
                   <span className="text-emerald-300/90 break-words">
                     {session.tradeMessage}
@@ -336,7 +345,7 @@ export const TradeOfferModal: React.FC<TradeOfferModalProps> = ({
                 <div className="flex items-center justify-between text-[11px] font-['Space_Grotesk'] uppercase tracking-wider text-slate-400 mb-2 font-semibold">
                   <span>{t('trade.itemsInTx')} ({selectedSkins.length})</span>
                   <span className="text-emerald-400 font-['JetBrains_Mono']">
-                    Сума: {formatPrice(totalPayout)}
+                    {language === 'EN' ? 'Total:' : (language === 'RU' ? 'Сумма:' : 'Сума:')} {formatPrice(totalPayout)}
                   </span>
                 </div>
 
@@ -367,10 +376,10 @@ export const TradeOfferModal: React.FC<TradeOfferModalProps> = ({
               <div className="p-3.5 rounded-xl bg-white/[0.02] border border-white/[0.07] flex items-center justify-between text-xs">
                 <div>
                   <span className="text-slate-400 block text-[10px] uppercase font-['JetBrains_Mono']">
-                    Куди надходять кошти ({paymentMethod?.name || 'Баланс'}):
+                    {language === 'EN' ? 'Destination' : (language === 'RU' ? 'Куда поступают средства' : 'Куди надходять кошти')} ({paymentMethod?.name || 'Баланс'}):
                   </span>
                   <span className="text-white font-['JetBrains_Mono'] font-medium truncate max-w-[260px] inline-block">
-                    {destinationAddress || 'Внутрішній баланс кабінету'}
+                    {destinationAddress || (language === 'EN' ? 'SkinToCash Internal Balance' : (language === 'RU' ? 'Внутренний баланс аккаунта' : 'Внутрішній баланс кабінету'))}
                   </span>
                 </div>
                 <div className="text-right">
@@ -393,7 +402,7 @@ export const TradeOfferModal: React.FC<TradeOfferModalProps> = ({
                   className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-emerald-500 via-emerald-400 to-teal-400 hover:from-emerald-400 hover:to-teal-300 text-slate-950 font-['Space_Grotesk'] font-bold text-sm tracking-wide shadow-[0_0_25px_rgba(16,185,129,0.35)] flex items-center justify-center gap-2 cursor-pointer transition-all"
                 >
                   <ExternalLink className="w-4 h-4 stroke-[2.5]" />
-                  <span>Відкрити отриманий обмін у Steam</span>
+                  <span>{language === 'EN' ? 'Open Received Trade in Steam' : (language === 'RU' ? 'Открыть полученный обмен в Steam' : 'Відкрити отриманий обмін у Steam')}</span>
                 </a>
 
                 {/* 2. Confirm Action Button */}
@@ -405,12 +414,12 @@ export const TradeOfferModal: React.FC<TradeOfferModalProps> = ({
                   {step === 'confirming' ? (
                     <>
                       <RefreshCw className="w-3.5 h-3.5 animate-spin text-emerald-400" />
-                      <span>Перевірка Steam Guard та зарахування коштів...</span>
+                      <span>{language === 'EN' ? 'Verifying Steam Guard & sending payout...' : (language === 'RU' ? 'Проверка Steam Guard и отправка средств...' : 'Перевірка Steam Guard та зарахування коштів...')}</span>
                     </>
                   ) : (
                     <>
                       <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                      <span>Я прийняв трейд у Steam Guard (Отримати кошти)</span>
+                      <span>{language === 'EN' ? 'I accepted trade in Steam Guard (Get Funds)' : (language === 'RU' ? 'Я принял трейд в Steam Guard (Получить деньги)' : 'Я прийняв трейд у Steam Guard (Отримати кошти)')}</span>
                     </>
                   )}
                 </button>
@@ -426,33 +435,37 @@ export const TradeOfferModal: React.FC<TradeOfferModalProps> = ({
 
               <div className="space-y-1">
                 <h4 className="text-2xl font-black text-white font-['Space_Grotesk']">
-                  Скіни прийнято, кошти виплачено!
+                  {language === 'EN' ? 'Skins Accepted, Funds Dispatched!' : (language === 'RU' ? 'Скины приняты, средства выплачены!' : 'Скіни прийнято, кошти виплачено!')}
                 </h4>
                 <p className="text-xs text-slate-300 max-w-md mx-auto leading-relaxed">
-                  Офіційний бот <strong>{OFFICIAL_STEAM_BOT.personaName}</strong> успішно прийняв ваші предмети CS2. Виплата надіслана на ваш рахунок.
+                  {language === 'EN' 
+                    ? <>Official bot <strong>{OFFICIAL_STEAM_BOT.personaName}</strong> has accepted your CS2 items. Instant payout has been dispatched.</>
+                    : language === 'RU'
+                    ? <>Официальный бот <strong>{OFFICIAL_STEAM_BOT.personaName}</strong> успешно принял ваши скины CS2. Выплата отправлена на ваш счет.</>
+                    : <>Офіційний бот <strong>{OFFICIAL_STEAM_BOT.personaName}</strong> успішно прийняв ваші предмети CS2. Виплата надіслана на ваш рахунок.</>}
                 </p>
               </div>
 
               {/* Receipt Capsule */}
               <div className="p-4 rounded-2xl bg-white/[0.02] border border-white/[0.08] text-xs font-['JetBrains_Mono'] space-y-1.5 text-slate-300 max-w-md mx-auto text-left">
                 <div className="flex justify-between">
-                  <span className="text-slate-400">Транзакція:</span>
+                  <span className="text-slate-400">{language === 'EN' ? 'Transaction:' : (language === 'RU' ? 'Транзакция:' : 'Транзакція:')}</span>
                   <span className="text-white font-bold">{session.txId}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-400">Сума виплати:</span>
+                  <span className="text-slate-400">{language === 'EN' ? 'Payout Amount:' : (language === 'RU' ? 'Сумма выплаты:' : 'Сума виплати:')}</span>
                   <span className="text-emerald-400 font-bold">{formatPrice(totalPayout)}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-400">Одержувач:</span>
-                  <span className="text-white">{destinationAddress || 'Баланс SkinToCash'}</span>
+                  <span className="text-slate-400">{language === 'EN' ? 'Recipient:' : (language === 'RU' ? 'Получатель:' : 'Одержувач:')}</span>
+                  <span className="text-white">{destinationAddress || 'SkinToCash'}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-400">Офіційний бот:</span>
-                  <span className="text-emerald-400 font-semibold">{OFFICIAL_STEAM_BOT.personaName} ({OFFICIAL_STEAM_BOT.steamId64})</span>
+                  <span className="text-slate-400">{language === 'EN' ? 'Official Bot:' : (language === 'RU' ? 'Официальный бот:' : 'Офіційний бот:')}</span>
+                  <span className="text-emerald-400 font-semibold">{OFFICIAL_STEAM_BOT.personaName}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-400">Регіон бота:</span>
+                  <span className="text-slate-400">{language === 'EN' ? 'Bot Region:' : (language === 'RU' ? 'Регион бота:' : 'Регіон бота:')}</span>
                   <span className="text-slate-300">{OFFICIAL_STEAM_BOT.country} 🇷🇺</span>
                 </div>
               </div>
@@ -461,7 +474,7 @@ export const TradeOfferModal: React.FC<TradeOfferModalProps> = ({
                 onClick={handleModalClose}
                 className="px-8 py-3 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs font-['Space_Grotesk'] cursor-pointer transition-all"
               >
-                Закрити вікно
+                {language === 'EN' ? 'Close Window' : (language === 'RU' ? 'Закрыть окно' : 'Закрити вікно')}
               </button>
             </div>
           )}

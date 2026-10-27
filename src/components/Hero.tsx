@@ -117,7 +117,7 @@ export const Hero: React.FC<HeroProps> = ({
   onOpenSteamModal,
   onTriggerSellModal 
 }) => {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [tradeUrl, setTradeUrl] = useState('');
   const [isScanning, setIsScanning] = useState(false);
 
@@ -286,7 +286,7 @@ export const Hero: React.FC<HeroProps> = ({
                 ) : (
                   <>
                     <span className="hidden sm:inline">{t('hero.getCashBtn')}</span>
-                    <span className="sm:hidden inline">Оцінити</span>
+                    <span className="sm:hidden inline">{language === 'EN' ? 'Evaluate' : (language === 'RU' ? 'Оценить' : 'Оцінити')}</span>
                     <ArrowRight className="w-3.5 h-3.5" />
                   </>
                 )}

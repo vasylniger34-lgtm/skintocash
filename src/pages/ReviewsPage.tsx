@@ -167,7 +167,7 @@ export const ReviewsPage: React.FC<ReviewsPageProps> = ({ onNavigateHome, onOpen
       profileUrl: `https://steamcommunity.com/profiles/${steamId}`,
       avatar: userAvatar,
       author: authorName,
-      date: 'Тільки що',
+      date: language === 'EN' ? 'Just now' : (language === 'RU' ? 'Только что' : 'Тільки що'),
       rating: newRating,
       text: newText.trim(),
       skinSold: newSkinSold || 'AK-47 | Ice Coaled (FN)',
@@ -227,7 +227,7 @@ export const ReviewsPage: React.FC<ReviewsPageProps> = ({ onNavigateHome, onOpen
             <div className="flex items-center gap-2">
               <span className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-xs font-['JetBrains_Mono'] font-bold">
                 <MessageSquare className="w-3.5 h-3.5" />
-                <span>Відгуки Steam</span>
+                <span>{language === 'EN' ? 'Steam Reviews' : (language === 'RU' ? 'Отзывы Steam' : 'Відгуки Steam')}</span>
               </span>
 
               <button
@@ -710,7 +710,7 @@ export const ReviewsPage: React.FC<ReviewsPageProps> = ({ onNavigateHome, onOpen
                             target="_blank"
                             rel="noopener noreferrer"
                             className="inline-flex items-center gap-1 text-[11px] font-['JetBrains_Mono'] text-slate-400 hover:text-emerald-400 transition-colors mt-0.5 group/link"
-                            title={`Відкрити профіль Steam ${rev.steamId}`}
+                            title={language === 'EN' ? `Open Steam profile ${rev.steamId}` : (language === 'RU' ? `Открыть профиль Steam ${rev.steamId}` : `Відкрити профіль Steam ${rev.steamId}`)}
                           >
                             <span>Steam ID: {rev.steamId.slice(-6)}</span>
                             <ExternalLink className="w-2.5 h-2.5 opacity-60 group-hover/link:opacity-100 group-hover/link:translate-x-0.5 transition-all" />

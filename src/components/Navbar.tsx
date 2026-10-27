@@ -146,7 +146,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onScrollToSection }) => {
               className="whitespace-nowrap px-2.5 xl:px-3 py-1.5 rounded-xl text-xs font-semibold text-white hover:text-emerald-300 bg-gradient-to-r from-emerald-500/15 to-cyan-500/15 border border-emerald-500/30 hover:border-emerald-500/60 shadow-[0_0_15px_rgba(16,185,129,0.15)] transition-all flex items-center gap-1.5 cursor-pointer"
             >
               <ArrowLeftRight className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-              <span>P2P Ринок</span>
+              <span>{language === 'EN' ? 'P2P Market' : (language === 'RU' ? 'P2P Рынок' : 'P2P Ринок')}</span>
               <span className="px-1.5 py-0.2 rounded-md bg-emerald-500 text-[9px] font-black text-slate-950 font-['JetBrains_Mono'] uppercase">
                 New
               </span>
@@ -252,7 +252,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onScrollToSection }) => {
                     ? 'bg-slate-800 text-white border-emerald-500/50'
                     : 'bg-slate-900/80 border-white/10 hover:border-emerald-500/40 text-slate-200'
                 }`}
-                title="Оберіть мову"
+                title={language === 'EN' ? 'Select language' : (language === 'RU' ? 'Выберите язык' : 'Оберіть мову')}
               >
                 <span>{currentOption.flag}</span>
                 <span className="font-semibold">{language}</span>
@@ -309,7 +309,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onScrollToSection }) => {
                     ? 'bg-slate-800 text-white border-emerald-500/50'
                     : 'bg-slate-900/80 border-white/10 hover:border-emerald-500/40 text-slate-200'
                 }`}
-                title="Оберіть валюту"
+                title={language === 'EN' ? 'Select currency' : (language === 'RU' ? 'Выберите валюту' : 'Оберіть валюту')}
               >
                 <Coins className="w-3.5 h-3.5 text-emerald-400" />
                 <span className="font-semibold">{currency}</span>
@@ -357,7 +357,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onScrollToSection }) => {
                 whileTap={{ scale: 0.98 }}
                 onClick={openCabinet}
                 className="flex items-center gap-2 sm:gap-2.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-slate-900/90 border border-emerald-500/40 hover:border-emerald-400 shadow-[0_0_20px_rgba(16,185,129,0.2)] transition-all cursor-pointer group shrink-0"
-                title="Відкрити Особистий кабінет"
+                title={language === 'EN' ? 'Open Cabinet' : (language === 'RU' ? 'Открыть Личный кабинет' : 'Відкрити Особистий кабінет')}
               >
                 <div className="relative shrink-0">
                   <img
@@ -384,7 +384,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onScrollToSection }) => {
                 whileTap={{ scale: 0.98 }}
                 onClick={loginWithSteam}
                 className="relative group overflow-hidden whitespace-nowrap px-3 sm:px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-400 text-slate-950 font-['Space_Grotesk'] font-bold text-xs tracking-wide shadow-[0_0_20px_rgba(16,185,129,0.3)] hover:shadow-[0_0_30px_rgba(16,185,129,0.5)] transition-all flex items-center gap-1.5 sm:gap-2 cursor-pointer shrink-0"
-                title="Увійти через Steam"
+                title={language === 'EN' ? 'Sign in with Steam' : (language === 'RU' ? 'Войти через Steam' : 'Увійти через Steam')}
               >
                 <span className="absolute inset-0 w-1/2 h-full bg-gradient-to-r from-transparent via-white/40 to-transparent skew-x-[-25deg] pointer-events-none -translate-x-[200%] animate-[shimmerSweep_3s_infinite_cubic-bezier(0.4,0,0.2,1)]" />
 

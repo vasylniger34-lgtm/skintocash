@@ -30,6 +30,7 @@ import { LogoIcon } from '../components/LogoIcon';
 import { SkinImage } from '../components/SkinImage';
 import { MOCK_CS2_INVENTORY } from '../data/skinsData';
 import { INITIAL_P2P_ORDERS, P2P_PAYMENT_METHODS } from '../data/p2pData';
+import { getP2PText } from '../data/pagesTranslations';
 import type { P2POrder, P2POrderType, P2PPaymentMethodId, P2PPaymentOption } from '../types/p2p';
 import type { Currency } from '../types';
 
@@ -42,6 +43,7 @@ export const P2PPage: React.FC<P2PPageProps> = ({ onNavigateHome, onOpenLogin })
   const { user } = useAuth();
   const { currency, setCurrency, formatPrice } = useCurrency();
   const { language, setLanguage, currentOption } = useLanguage();
+  const pt = (key: string) => getP2PText(language, key);
 
   // Orders State
   const [orders, setOrders] = useState<P2POrder[]>(INITIAL_P2P_ORDERS);
@@ -68,7 +70,7 @@ export const P2PPage: React.FC<P2PPageProps> = ({ onNavigateHome, onOpenLogin })
   const [newOrderPrice, setNewOrderPrice] = useState<string>('1200');
   const [newOrderPaymentMethods, setNewOrderPaymentMethods] = useState<P2PPaymentMethodId[]>(['monobank', 'privatbank']);
   const [newOrderRequisites, setNewOrderRequisites] = useState<string>('4441 1144 8829 3312');
-  const [newOrderNote, setNewOrderNote] = useState<string>('Швидкий трейд, онлайн 24/7');
+  const [newOrderNote, setNewOrderNote] = useState<string>('');
 
   // Dropdowns in Header
   const [currencyDropdownOpen, setCurrencyDropdownOpen] = useState(false);
@@ -147,7 +149,7 @@ export const P2PPage: React.FC<P2PPageProps> = ({ onNavigateHome, onOpenLogin })
       id: `p2p-user-${Date.now().toString().slice(-4)}`,
       type: newOrderType,
       creator: {
-        name: user?.personaname || 'Ви (Мій акаунт)',
+        name: user?.personaname || (language === 'EN' ? 'You (My account)' : (language === 'RU' ? 'Вы (Мой аккаунт)' : 'Ви (Мій акаунт)')),
         avatar: user?.avatarfull || 'https://avatars.akamai.steamstatic.com/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb_full.jpg',
         steamId64: user?.steamId64 || '76561198000000000',
         rating: 5.0,
@@ -163,8 +165,8 @@ export const P2PPage: React.FC<P2PPageProps> = ({ onNavigateHome, onOpenLogin })
       paymentDetailsSummary: newOrderRequisites,
       tradeHoldDays: 0,
       steamMarketDiffPercent: -Math.round(((skin.steamPrice - price) / skin.steamPrice) * 100),
-      note: newOrderNote || 'P2P угода через гарант SkinToCash',
-      createdAt: 'Щойно',
+      note: newOrderNote || (language === 'EN' ? 'P2P Escrow deal via SkinToCash' : (language === 'RU' ? 'P2P сделка через гарант SkinToCash' : 'P2P угода через гарант SkinToCash')),
+      createdAt: language === 'EN' ? 'Just now' : (language === 'RU' ? 'Только что' : 'Щойно'),
       status: 'active',
     };
 
@@ -238,7 +240,7 @@ export const P2PPage: React.FC<P2PPageProps> = ({ onNavigateHome, onOpenLogin })
             <div className="flex items-center gap-2 shrink-0">
               <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-gradient-to-r from-emerald-500/15 to-cyan-500/15 border border-emerald-500/30 text-xs font-['Space_Grotesk'] font-bold text-emerald-400">
                 <ArrowLeftRight className="w-3.5 h-3.5" />
-                <span>P2P Маркетплейс</span>
+                <span>{pt("p2p.title")}</span>
               </span>
 
               <button
@@ -246,7 +248,7 @@ export const P2PPage: React.FC<P2PPageProps> = ({ onNavigateHome, onOpenLogin })
                 className="hidden md:flex items-center gap-1.5 px-3 py-1 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] text-xs font-['Space_Grotesk'] font-semibold text-slate-300 hover:text-white transition-all cursor-pointer shrink-0"
               >
                 <ArrowLeft className="w-3.5 h-3.5 text-emerald-400" />
-                <span>На головну</span>
+                <span>{pt("p2p.home")}</span>
               </button>
             </div>
           </div>
@@ -355,7 +357,7 @@ export const P2PPage: React.FC<P2PPageProps> = ({ onNavigateHome, onOpenLogin })
               className="px-3.5 sm:px-4 py-1.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 text-slate-950 font-['Space_Grotesk'] font-bold text-xs flex items-center gap-1.5 shadow-[0_0_20px_rgba(16,185,129,0.3)] transition-all cursor-pointer whitespace-nowrap"
             >
               <Plus className="w-4 h-4 stroke-[2.5]" />
-              <span>Створити ордер</span>
+              <span>{pt("p2p.createOrder")}</span>
             </button>
           </div>
 
@@ -370,20 +372,18 @@ export const P2PPage: React.FC<P2PPageProps> = ({ onNavigateHome, onOpenLogin })
             <div className="max-w-3xl space-y-3">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-['JetBrains_Mono'] font-bold">
                 <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-                <span>SkinToCash P2P Escrow — 100% Захист кожної угоди</span>
+                <span>{pt("p2p.secureEscrow")}</span>
               </div>
 
               <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black font-['Space_Grotesk'] text-white tracking-tight">
-                P2P Ринок Скінів CS2 <br />
+                {pt("p2p.heroTitle1")} <br />
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-teal-300 to-cyan-400">
-                  Пряма оплата на Картку чи Криптою
+                  {pt("p2p.heroTitle2")}
                 </span>
               </h1>
 
               <p className="text-slate-300 text-sm sm:text-base leading-relaxed">
-                Купуйте та продавайте скіни напряму між гравцями без банківських посередників. 
-                Оплата йде безпосередньо на ваш <strong>Monobank</strong>, <strong>ПриватБанк</strong> чи <strong>USDT</strong>, 
-                а передача скіна гарантується смарт-ескроу сервісом.
+                {pt("p2p.heroDesc")}
               </p>
             </div>
 
@@ -392,7 +392,7 @@ export const P2PPage: React.FC<P2PPageProps> = ({ onNavigateHome, onOpenLogin })
               <div className="p-3.5 rounded-2xl bg-[#0B1017] border border-white/[0.08] text-center">
                 <div className="text-[11px] font-['JetBrains_Mono'] text-slate-400 flex items-center justify-center gap-1 mb-1">
                   <Flame className="w-3 h-3 text-emerald-400" />
-                  <span>Об'єм 24г</span>
+                  <span>{pt("p2p.statVol")}</span>
                 </div>
                 <div className="text-lg font-black font-['JetBrains_Mono'] text-emerald-400">
                   $142,850+
@@ -402,20 +402,20 @@ export const P2PPage: React.FC<P2PPageProps> = ({ onNavigateHome, onOpenLogin })
               <div className="p-3.5 rounded-2xl bg-[#0B1017] border border-white/[0.08] text-center">
                 <div className="text-[11px] font-['JetBrains_Mono'] text-slate-400 flex items-center justify-center gap-1 mb-1">
                   <Clock className="w-3 h-3 text-cyan-400" />
-                  <span>Час угоди</span>
+                  <span>{pt("p2p.statTime")}</span>
                 </div>
                 <div className="text-lg font-black font-['JetBrains_Mono'] text-cyan-400">
-                  ~85 сек
+                  ~85s
                 </div>
               </div>
 
               <div className="p-3.5 rounded-2xl bg-[#0B1017] border border-white/[0.08] text-center col-span-2 sm:col-span-1">
                 <div className="text-[11px] font-['JetBrains_Mono'] text-slate-400 flex items-center justify-center gap-1 mb-1">
                   <ShieldCheck className="w-3 h-3 text-teal-400" />
-                  <span>Комісія</span>
+                  <span>{pt("p2p.statFee")}</span>
                 </div>
                 <div className="text-lg font-black font-['JetBrains_Mono'] text-white">
-                  0% на картку
+                  {pt("p2p.statFeeVal")}
                 </div>
               </div>
             </div>
@@ -427,7 +427,7 @@ export const P2PPage: React.FC<P2PPageProps> = ({ onNavigateHome, onOpenLogin })
               onClick={() => setShowHowItWorks(!showHowItWorks)}
               className="text-xs font-['Space_Grotesk'] text-emerald-400 hover:text-emerald-300 flex items-center gap-1.5 cursor-pointer underline"
             >
-              <span>{showHowItWorks ? 'Сховати інструкцію' : 'Як працює P2P безпечна угода? (4 простих кроки) →'}</span>
+              <span>{showHowItWorks ? pt("p2p.hideHowItWorks") : pt("p2p.howItWorks")}</span>
             </button>
 
             <AnimatePresence>
@@ -443,10 +443,10 @@ export const P2PPage: React.FC<P2PPageProps> = ({ onNavigateHome, onOpenLogin })
                       1
                     </div>
                     <div className="text-xs font-bold text-white font-['Space_Grotesk']">
-                      Вибір ордера
+                      {pt("p2p.step1Title")}
                     </div>
                     <div className="text-[11px] text-slate-300">
-                      Оберіть потрібний скін або створіть власний запит на купівлю чи продаж за власною ціною.
+                      {pt("p2p.step1Desc")}
                     </div>
                   </div>
 
@@ -455,10 +455,10 @@ export const P2PPage: React.FC<P2PPageProps> = ({ onNavigateHome, onOpenLogin })
                       2
                     </div>
                     <div className="text-xs font-bold text-white font-['Space_Grotesk']">
-                      Блокування в Escrow
+                      {pt("p2p.step2Title")}
                     </div>
                     <div className="text-[11px] text-slate-300">
-                      Скін резервується системою гаранта. Продавець не може його передати нікому іншому на час угоди.
+                      {pt("p2p.step2Desc")}
                     </div>
                   </div>
 
@@ -467,10 +467,10 @@ export const P2PPage: React.FC<P2PPageProps> = ({ onNavigateHome, onOpenLogin })
                       3
                     </div>
                     <div className="text-xs font-bold text-white font-['Space_Grotesk']">
-                      Прямий переказ грошей
+                      {pt("p2p.step3Title")}
                     </div>
                     <div className="text-[11px] text-slate-300">
-                      Покупець переказує точну суму на картку Monobank / ПриватБанк або USDT гаманець продавця.
+                      {pt("p2p.step3Desc")}
                     </div>
                   </div>
 
@@ -479,10 +479,10 @@ export const P2PPage: React.FC<P2PPageProps> = ({ onNavigateHome, onOpenLogin })
                       4
                     </div>
                     <div className="text-xs font-bold text-white font-['Space_Grotesk']">
-                      Підтвердження трейду
+                      {pt("p2p.step4Title")}
                     </div>
                     <div className="text-[11px] text-slate-300">
-                      Отримавши гроші на рахунок, продавець підтверджує оплату, і скін миттєво зараховується покупцю!
+                      {pt("p2p.step4Desc")}
                     </div>
                   </div>
                 </motion.div>
@@ -507,7 +507,7 @@ export const P2PPage: React.FC<P2PPageProps> = ({ onNavigateHome, onOpenLogin })
                   : 'text-slate-400 hover:text-white hover:bg-white/[0.04]'
               }`}
             >
-              <span>Всі ордери</span>
+              <span>{pt("p2p.tabAll")}</span>
               <span className="px-2 py-0.5 rounded-full bg-white/10 text-[11px] font-['JetBrains_Mono']">
                 {orders.length}
               </span>
@@ -522,7 +522,7 @@ export const P2PPage: React.FC<P2PPageProps> = ({ onNavigateHome, onOpenLogin })
               }`}
             >
               <Zap className="w-3.5 h-3.5 text-emerald-400" />
-              <span>Купити скіни (Ордери на продаж)</span>
+              <span>{pt("p2p.tabBuy")}</span>
               <span className="px-2 py-0.5 rounded-full bg-white/10 text-[11px] font-['JetBrains_Mono']">
                 {orders.filter(o => o.type === 'sell').length}
               </span>
@@ -537,7 +537,7 @@ export const P2PPage: React.FC<P2PPageProps> = ({ onNavigateHome, onOpenLogin })
               }`}
             >
               <Users className="w-3.5 h-3.5 text-cyan-400" />
-              <span>Продати скіни (Ордери на купівлю)</span>
+              <span>{pt("p2p.tabSell")}</span>
               <span className="px-2 py-0.5 rounded-full bg-white/10 text-[11px] font-['JetBrains_Mono']">
                 {orders.filter(o => o.type === 'buy').length}
               </span>
@@ -552,7 +552,7 @@ export const P2PPage: React.FC<P2PPageProps> = ({ onNavigateHome, onOpenLogin })
               }`}
             >
               <Star className="w-3.5 h-3.5 text-amber-400" />
-              <span>Мої ордери ({myOrderIds.size})</span>
+              <span>{pt("p2p.tabMy")} ({myOrderIds.size})</span>
             </button>
           </div>
 
@@ -568,7 +568,7 @@ export const P2PPage: React.FC<P2PPageProps> = ({ onNavigateHome, onOpenLogin })
             className="px-4 py-2 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-emerald-300 text-xs font-['Space_Grotesk'] font-bold flex items-center gap-1.5 transition-all cursor-pointer shrink-0"
           >
             <Plus className="w-3.5 h-3.5" />
-            <span>Розмістити свій скін / ордер</span>
+            <span>{pt("p2p.createOrder")}</span>
           </button>
         </div>
 
@@ -585,7 +585,7 @@ export const P2PPage: React.FC<P2PPageProps> = ({ onNavigateHome, onOpenLogin })
                   : 'bg-white/[0.03] text-slate-400 hover:text-white'
               }`}
             >
-              Всі методи
+              {pt("p2p.allPayments")}
             </button>
 
             {P2P_PAYMENT_METHODS.map(method => (
@@ -612,7 +612,7 @@ export const P2PPage: React.FC<P2PPageProps> = ({ onNavigateHome, onOpenLogin })
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Пошук скіна чи трейдера..."
+                placeholder={pt("p2p.searchPlaceholder")}
                 className="w-full pl-9 pr-3 py-1.5 rounded-xl bg-slate-900 border border-white/10 text-white text-xs font-['JetBrains_Mono'] focus:border-emerald-500 outline-none"
               />
             </div>
@@ -622,10 +622,10 @@ export const P2PPage: React.FC<P2PPageProps> = ({ onNavigateHome, onOpenLogin })
               onChange={(e) => setSortBy(e.target.value as 'newest' | 'price-asc' | 'price-desc' | 'rating')}
               className="px-3 py-1.5 rounded-xl bg-slate-900 border border-white/10 text-slate-300 text-xs font-['Space_Grotesk'] outline-none cursor-pointer"
             >
-              <option value="newest">Найновіші</option>
-              <option value="price-asc">Ціна: від найдешевшої</option>
-              <option value="price-desc">Ціна: від найдорожчої</option>
-              <option value="rating">Топ рейтинг продавця</option>
+              <option value="newest">{pt("p2p.sortNewest")}</option>
+              <option value="price-asc">{pt("p2p.sortPriceAsc")}</option>
+              <option value="price-desc">{pt("p2p.sortPriceDesc")}</option>
+              <option value="rating">{pt("p2p.sortRating")}</option>
             </select>
           </div>
 
@@ -636,10 +636,10 @@ export const P2PPage: React.FC<P2PPageProps> = ({ onNavigateHome, onOpenLogin })
           <div className="p-12 text-center rounded-3xl bg-[#0B1017] border border-white/[0.08] space-y-4">
             <AlertCircle className="w-12 h-12 text-slate-600 mx-auto" />
             <h3 className="text-lg font-bold text-white font-['Space_Grotesk']">
-              Ордерів за вашими фільтрами не знайдено
+              {pt("p2p.emptyTitle")}
             </h3>
             <p className="text-xs text-slate-400 max-w-md mx-auto">
-              Спробуйте очистити пошуковий запит або обрати інший спосіб оплати чи категорію.
+              {pt("p2p.emptyDesc")}
             </p>
             <button
               onClick={() => {
@@ -650,7 +650,7 @@ export const P2PPage: React.FC<P2PPageProps> = ({ onNavigateHome, onOpenLogin })
               }}
               className="px-4 py-2 rounded-xl bg-emerald-500/20 text-emerald-400 font-bold text-xs font-['Space_Grotesk'] cursor-pointer"
             >
-              Скинути фільтри
+              {pt("p2p.resetFilters")}
             </button>
           </div>
         )}
@@ -678,15 +678,15 @@ export const P2PPage: React.FC<P2PPageProps> = ({ onNavigateHome, onOpenLogin })
                         : 'bg-cyan-500/15 border border-cyan-500/30 text-cyan-400'
                     }`}>
                       {isSell ? <Zap className="w-3 h-3" /> : <Users className="w-3 h-3" />}
-                      <span>{isSell ? 'Продаж скіна' : 'Шукаю купити'}</span>
+                      <span>{isSell ? pt("p2p.sellBadge") : pt("p2p.buyBadge")}</span>
                     </span>
 
                     <span className={`text-[11px] font-['JetBrains_Mono'] font-bold ${
                       order.steamMarketDiffPercent < 0 ? 'text-emerald-400' : 'text-amber-400'
                     }`}>
                       {order.steamMarketDiffPercent < 0 
-                        ? `${order.steamMarketDiffPercent}% дешевше Steam`
-                        : `+${order.steamMarketDiffPercent}% до ринку`}
+                        ? `${order.steamMarketDiffPercent}% ${pt("p2p.cheaper")}`
+                        : `+${order.steamMarketDiffPercent}% ${pt("p2p.above")}`}
                     </span>
                   </div>
 
@@ -728,7 +728,7 @@ export const P2PPage: React.FC<P2PPageProps> = ({ onNavigateHome, onOpenLogin })
                   <div className="mt-3 flex items-baseline justify-between">
                     <div>
                       <div className="text-[10px] font-['JetBrains_Mono'] text-slate-400 uppercase tracking-wider">
-                        {isSell ? 'Ціна продавця:' : 'Бюджет покупця:'}
+                        {isSell ? pt("p2p.sellerPrice") : pt("p2p.buyerBudget")}
                       </div>
                       <div className="text-xl font-extrabold font-['JetBrains_Mono'] text-white">
                         {formatPrice(order.priceUsd)}
@@ -787,7 +787,7 @@ export const P2PPage: React.FC<P2PPageProps> = ({ onNavigateHome, onOpenLogin })
                         <div className="text-[10px] font-['JetBrains_Mono'] text-slate-400 flex items-center gap-1">
                           <span className="text-amber-400">★ {order.creator.rating.toFixed(2)}</span>
                           <span>•</span>
-                          <span>{order.creator.totalTrades} угод</span>
+                          <span>{order.creator.totalTrades} {pt("p2p.tradesCount")}</span>
                         </div>
                       </div>
                     </div>
@@ -806,7 +806,7 @@ export const P2PPage: React.FC<P2PPageProps> = ({ onNavigateHome, onOpenLogin })
                         : 'bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 text-slate-950 shadow-[0_0_20px_rgba(6,182,212,0.25)]'
                     }`}
                   >
-                    <span>{isSell ? 'Купити через P2P' : 'Відгукнутися (Продати)'}</span>
+                    <span>{isSell ? pt("p2p.buyBtn") : pt("p2p.sellBtn")}</span>
                     <ArrowRight className="w-3.5 h-3.5 stroke-[2.5]" />
                   </button>
                 </div>
@@ -842,10 +842,10 @@ export const P2PPage: React.FC<P2PPageProps> = ({ onNavigateHome, onOpenLogin })
                   </div>
                   <div>
                     <h3 className="text-xl font-bold font-['Space_Grotesk'] text-white">
-                      Створити P2P Ордер
+                      {pt("p2p.createTitle")}
                     </h3>
                     <p className="text-xs text-slate-400">
-                      Розмістіть пропозицію продажу скіна або запит на купівлю
+                      {pt("p2p.createSubtitle")}
                     </p>
                   </div>
                 </div>
@@ -863,7 +863,7 @@ export const P2PPage: React.FC<P2PPageProps> = ({ onNavigateHome, onOpenLogin })
                 {/* 1. Order Type Switcher */}
                 <div>
                   <label className="text-xs font-bold font-['Space_Grotesk'] text-slate-300 mb-2 block">
-                    Тип операції:
+                    {pt("p2p.opType")}
                   </label>
                   <div className="grid grid-cols-2 gap-3">
                     <button
@@ -877,10 +877,10 @@ export const P2PPage: React.FC<P2PPageProps> = ({ onNavigateHome, onOpenLogin })
                     >
                       <div className="flex items-center gap-2 font-bold font-['Space_Grotesk'] text-sm text-emerald-400 mb-0.5">
                         <Zap className="w-4 h-4" />
-                        <span>Я продаю скін</span>
+                        <span>{pt("p2p.iSell")}</span>
                       </div>
                       <div className="text-[11px] text-slate-300">
-                        Отримайте гроші на картку або USDT
+                        {pt("p2p.iSellDesc")}
                       </div>
                     </button>
 
@@ -895,10 +895,10 @@ export const P2PPage: React.FC<P2PPageProps> = ({ onNavigateHome, onOpenLogin })
                     >
                       <div className="flex items-center gap-2 font-bold font-['Space_Grotesk'] text-sm text-cyan-400 mb-0.5">
                         <Users className="w-4 h-4" />
-                        <span>Я шукаю скін (Купівля)</span>
+                        <span>{pt("p2p.iBuy")}</span>
                       </div>
                       <div className="text-[11px] text-slate-300">
-                        Скину оплату продавцю на карту
+                        {pt("p2p.iBuyDesc")}
                       </div>
                     </button>
                   </div>
@@ -907,7 +907,7 @@ export const P2PPage: React.FC<P2PPageProps> = ({ onNavigateHome, onOpenLogin })
                 {/* 2. Select Skin */}
                 <div>
                   <label className="text-xs font-bold font-['Space_Grotesk'] text-slate-300 mb-2 block">
-                    Оберіть предмет CS2:
+                    {pt("p2p.chooseItem")}
                   </label>
                   <select
                     value={newOrderSkinId}
@@ -929,7 +929,7 @@ export const P2PPage: React.FC<P2PPageProps> = ({ onNavigateHome, onOpenLogin })
                 {/* 3. Desired Price */}
                 <div>
                   <label className="text-xs font-bold font-['Space_Grotesk'] text-slate-300 mb-2 block">
-                    Бажана ціна у валюті (USD $):
+                    {pt("p2p.desiredPrice")}
                   </label>
                   <div className="relative">
                     <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 font-['JetBrains_Mono']">
@@ -945,14 +945,14 @@ export const P2PPage: React.FC<P2PPageProps> = ({ onNavigateHome, onOpenLogin })
                     />
                   </div>
                   <div className="mt-1 text-[11px] text-emerald-400 font-['JetBrains_Mono']">
-                    ≈ {formatPrice(parseFloat(newOrderPrice) || 0)} у вибраній валюті
+                    ≈ {formatPrice(parseFloat(newOrderPrice) || 0)} {language === 'EN' ? 'in selected currency' : (language === 'RU' ? 'в выбранной валюте' : 'у вибраній валюті')}
                   </div>
                 </div>
 
                 {/* 4. Payment Methods */}
                 <div>
                   <label className="text-xs font-bold font-['Space_Grotesk'] text-slate-300 mb-2 block">
-                    {newOrderType === 'sell' ? 'Куди ви хочете отримати кошти:' : 'Якими методами готові оплатити:'}
+                    {newOrderType === 'sell' ? pt("p2p.destPayLabelSell") : pt("p2p.destPayLabelBuy")}
                   </label>
                   <div className="grid grid-cols-2 gap-2">
                     {P2P_PAYMENT_METHODS.slice(0, 4).map(method => {
@@ -986,7 +986,7 @@ export const P2PPage: React.FC<P2PPageProps> = ({ onNavigateHome, onOpenLogin })
                 {/* 5. Requisites / Card */}
                 <div>
                   <label className="text-xs font-bold font-['Space_Grotesk'] text-slate-300 mb-2 block">
-                    {newOrderType === 'sell' ? 'Реквізити для отримання виплати (номер картки / USDT гаманець):' : 'Контакт або банк для зв\'язку:'}
+                    {newOrderType === 'sell' ? pt("p2p.reqLabelSell") : pt("p2p.reqLabelBuy")}
                   </label>
                   <input
                     type="text"
@@ -1001,13 +1001,13 @@ export const P2PPage: React.FC<P2PPageProps> = ({ onNavigateHome, onOpenLogin })
                 {/* 6. Optional Note */}
                 <div>
                   <label className="text-xs font-bold font-['Space_Grotesk'] text-slate-300 mb-2 block">
-                    Коментар до ордера (опціонально):
+                    {pt("p2p.commentLabel")}
                   </label>
                   <input
                     type="text"
                     value={newOrderNote}
                     onChange={(e) => setNewOrderNote(e.target.value)}
-                    placeholder="Чистий флот, моментальна відправка в Steam"
+                    placeholder={pt("p2p.commentPlaceholder")}
                     className="w-full px-4 py-2.5 rounded-2xl bg-slate-900 border border-white/10 text-white text-xs font-['Space_Grotesk'] outline-none focus:border-emerald-500"
                   />
                 </div>
@@ -1018,7 +1018,7 @@ export const P2PPage: React.FC<P2PPageProps> = ({ onNavigateHome, onOpenLogin })
                   className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 text-slate-950 font-['Space_Grotesk'] font-bold text-sm shadow-[0_0_25px_rgba(16,185,129,0.35)] transition-all cursor-pointer flex items-center justify-center gap-2"
                 >
                   <Sparkles className="w-4 h-4" />
-                  <span>Опублікувати ордер на P2P ринку</span>
+                  <span>{pt("p2p.publishOrder")}</span>
                 </button>
 
               </form>
@@ -1053,10 +1053,10 @@ export const P2PPage: React.FC<P2PPageProps> = ({ onNavigateHome, onOpenLogin })
                   </div>
                   <div>
                     <div className="text-[11px] font-['JetBrains_Mono'] text-emerald-400 font-bold uppercase tracking-wider">
-                      Захищена Escrow Угода #{activeDealOrder.id}
+                      {pt("p2p.dealTitle")} #{activeDealOrder.id}
                     </div>
                     <h3 className="text-xl font-bold font-['Space_Grotesk'] text-white">
-                      {activeDealOrder.type === 'sell' ? 'Купівля скіна через P2P' : 'Продаж скіна через P2P'}
+                      {activeDealOrder.type === 'sell' ? pt("p2p.buyBtn") : pt("p2p.sellBtn")}
                     </h3>
                   </div>
                 </div>
@@ -1074,22 +1074,22 @@ export const P2PPage: React.FC<P2PPageProps> = ({ onNavigateHome, onOpenLogin })
                 <div className={`p-2 rounded-xl border ${
                   dealStep >= 1 ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-300 font-bold' : 'bg-white/[0.02] border-white/[0.06] text-slate-500'
                 }`}>
-                  1. Умови
+                  {pt("p2p.step1")}
                 </div>
                 <div className={`p-2 rounded-xl border ${
                   dealStep >= 2 ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-300 font-bold' : 'bg-white/[0.02] border-white/[0.06] text-slate-500'
                 }`}>
-                  2. Оплата
+                  {pt("p2p.step2")}
                 </div>
                 <div className={`p-2 rounded-xl border ${
                   dealStep >= 3 ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-300 font-bold' : 'bg-white/[0.02] border-white/[0.06] text-slate-500'
                 }`}>
-                  3. Трейд
+                  {pt("p2p.step3")}
                 </div>
                 <div className={`p-2 rounded-xl border ${
                   dealStep >= 4 ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-300 font-bold' : 'bg-white/[0.02] border-white/[0.06] text-slate-500'
                 }`}>
-                  4. Успіх
+                  {pt("p2p.step4")}
                 </div>
               </div>
 
@@ -1119,7 +1119,7 @@ export const P2PPage: React.FC<P2PPageProps> = ({ onNavigateHome, onOpenLogin })
                   {/* Payment method selection */}
                   <div>
                     <label className="text-xs font-bold font-['Space_Grotesk'] text-slate-300 mb-2 block">
-                      Оберіть спосіб переказу коштів:
+                      {pt("p2p.choosePayMethod")}
                     </label>
                     <div className="grid grid-cols-2 gap-2">
                       {P2P_PAYMENT_METHODS.filter(m => activeDealOrder.paymentMethods.includes(m.id)).map(method => (
@@ -1149,10 +1149,10 @@ export const P2PPage: React.FC<P2PPageProps> = ({ onNavigateHome, onOpenLogin })
                   <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-xs text-slate-300 space-y-1.5">
                     <div className="flex items-center gap-2 font-bold text-emerald-400 font-['Space_Grotesk']">
                       <Lock className="w-4 h-4" />
-                      <span>Скін заблоковано в SkinToCash Escrow</span>
+                      <span>{pt("p2p.escrowProtected")}</span>
                     </div>
                     <p className="leading-relaxed">
-                      Предмет знаходиться під захистом сервісу. Після переказу коштів на реквізити скін гарантовано буде доставлено до вашого Steam інвентаря.
+                      {pt("p2p.escrowProtectedDesc")}
                     </p>
                   </div>
 
@@ -1160,7 +1160,7 @@ export const P2PPage: React.FC<P2PPageProps> = ({ onNavigateHome, onOpenLogin })
                     onClick={handleProceedDealStep}
                     className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 text-slate-950 font-['Space_Grotesk'] font-bold text-sm shadow-[0_0_20px_rgba(16,185,129,0.3)] transition-all cursor-pointer flex items-center justify-center gap-2"
                   >
-                    <span>Відкрити угоду та перейти до оплати</span>
+                    <span>{pt("p2p.openDealBtn")}</span>
                     <ArrowRight className="w-4 h-4" />
                   </button>
                 </div>
@@ -1172,15 +1172,15 @@ export const P2PPage: React.FC<P2PPageProps> = ({ onNavigateHome, onOpenLogin })
                   <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-between text-xs text-amber-300 font-['JetBrains_Mono']">
                     <div className="flex items-center gap-2">
                       <Clock className="w-4 h-4 text-amber-400 animate-spin" />
-                      <span>Час на оплату:</span>
+                      <span>{pt("p2p.timeToPay")}</span>
                     </div>
-                    <span className="text-sm font-bold text-white">14:59 хв</span>
+                    <span className="text-sm font-bold text-white">{language === 'EN' ? '14:59 min' : '14:59 мин'}</span>
                   </div>
 
                   {/* Requisites Card */}
                   <div className="p-5 rounded-2xl bg-[#070A0E] border border-white/10 space-y-4">
                     <div className="flex items-center justify-between text-xs text-slate-400">
-                      <span>Метод:</span>
+                      <span>{pt("p2p.dealMethod")}</span>
                       <strong className="text-white flex items-center gap-1.5 font-['Space_Grotesk']">
                         <span>{dealSelectedPayment.icon}</span>
                         <span>{dealSelectedPayment.name}</span>
@@ -1188,14 +1188,14 @@ export const P2PPage: React.FC<P2PPageProps> = ({ onNavigateHome, onOpenLogin })
                     </div>
 
                     <div className="flex items-center justify-between text-xs text-slate-400">
-                      <span>Сума до переказу:</span>
+                      <span>{pt("p2p.sumToPay")}</span>
                       <strong className="text-lg text-emerald-400 font-['JetBrains_Mono']">
                         {formatPrice(activeDealOrder.priceUsd)}
                       </strong>
                     </div>
 
                     <div className="pt-2 border-t border-white/[0.08]">
-                      <div className="text-xs text-slate-400 mb-1.5">Реквізити отримувача:</div>
+                      <div className="text-xs text-slate-400 mb-1.5">{pt("p2p.destDetails")}</div>
                       <div className="p-3 rounded-xl bg-slate-900 border border-white/10 flex items-center justify-between gap-2">
                         <span className="text-sm font-bold font-['JetBrains_Mono'] text-white">
                           {activeDealOrder.paymentDetailsSummary}
@@ -1205,7 +1205,7 @@ export const P2PPage: React.FC<P2PPageProps> = ({ onNavigateHome, onOpenLogin })
                           className="px-2.5 py-1 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 text-xs font-['Space_Grotesk'] font-bold flex items-center gap-1 cursor-pointer transition-all"
                         >
                           {copiedField === 'req' ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-                          <span>{copiedField === 'req' ? 'Скопійовано' : 'Копіювати'}</span>
+                          <span>{copiedField === 'req' ? pt("p2p.copied") : pt("p2p.copy")}</span>
                         </button>
                       </div>
                     </div>
@@ -1219,12 +1219,12 @@ export const P2PPage: React.FC<P2PPageProps> = ({ onNavigateHome, onOpenLogin })
                     {isProcessingDeal ? (
                       <>
                         <Zap className="w-4 h-4 animate-spin text-slate-950" />
-                        <span>Підтвердження платежу в Escrow...</span>
+                        <span>{pt("p2p.verifyingEscrow")}</span>
                       </>
                     ) : (
                       <>
                         <CheckCircle2 className="w-4 h-4" />
-                        <span>Я переказав кошти на ці реквізити</span>
+                        <span>{pt("p2p.confirmPaid")}</span>
                       </>
                     )}
                   </button>
@@ -1238,13 +1238,13 @@ export const P2PPage: React.FC<P2PPageProps> = ({ onNavigateHome, onOpenLogin })
                     <ArrowLeftRight className="w-7 h-7" />
                   </div>
                   <h4 className="text-lg font-bold text-white font-['Space_Grotesk']">
-                    Генерація та відправка Steam Trade Offer
+                    {pt("p2p.tradeGen")}
                   </h4>
                   <p className="text-xs text-slate-300 max-w-md mx-auto leading-relaxed">
-                    Платіж зафіксовано. Сервіс надсилає обраний скін <strong>{activeDealOrder.skins[0].name}</strong> на ваш офіційний Steam Trade URL...
+                    <>{pt("p2p.tradeGenDesc")}</>
                   </p>
                   <div className="text-xs text-emerald-400 font-['JetBrains_Mono']">
-                    Очікування підтвердження Steam Guard ~ 15 сек...
+                    {pt("p2p.steamGuardWait")}
                   </div>
                 </div>
               )}
@@ -1256,15 +1256,15 @@ export const P2PPage: React.FC<P2PPageProps> = ({ onNavigateHome, onOpenLogin })
                     <CheckCircle2 className="w-9 h-9" />
                   </div>
                   <h4 className="text-2xl font-black text-white font-['Space_Grotesk']">
-                    P2P Угоду успішно завершено!
+                    {pt("p2p.dealDone")}
                   </h4>
                   <p className="text-xs text-slate-300 max-w-md mx-auto leading-relaxed">
-                    Скін <strong>{activeDealOrder.skins[0].name}</strong> успішно надіслано на ваш Steam акаунт. Гроші переказані продавцю.
+                    <>{pt("p2p.dealDoneDesc")}</>
                   </p>
 
                   <div className="p-4 rounded-2xl bg-white/[0.02] border border-white/[0.08] text-xs font-['JetBrains_Mono'] space-y-1 text-slate-400">
-                    <div>Сума угоди: <span className="text-emerald-400 font-bold">{formatPrice(activeDealOrder.priceUsd)}</span></div>
-                    <div>Метод: <span className="text-white">{dealSelectedPayment.name}</span></div>
+                    <div>{pt("p2p.dealAmount")} <span className="text-emerald-400 font-bold">{formatPrice(activeDealOrder.priceUsd)}</span></div>
+                    <div>{pt("p2p.dealMethod")} <span className="text-white">{dealSelectedPayment.name}</span></div>
                     <div>Escrow ID: <span className="text-slate-300">SC-{activeDealOrder.id.toUpperCase()}</span></div>
                   </div>
 
@@ -1272,7 +1272,7 @@ export const P2PPage: React.FC<P2PPageProps> = ({ onNavigateHome, onOpenLogin })
                     onClick={handleProceedDealStep}
                     className="px-8 py-3 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs font-['Space_Grotesk'] cursor-pointer transition-all"
                   >
-                    Повернутися до списку ордерів
+                    {pt("p2p.returnToList")}
                   </button>
                 </div>
               )}
