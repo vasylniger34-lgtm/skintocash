@@ -18,34 +18,30 @@ import {
   UserCheck
 } from 'lucide-react';
 import { MOCK_CS2_INVENTORY } from '../data/skinsData';
-import { FIAT_PAYMENT_METHODS, CRYPTO_PAYMENT_METHODS } from '../data/paymentMethods';
-import type { CS2Skin, PaymentOption } from '../types';
+import type { CS2Skin } from '../types';
 import { useCurrency } from '../context/CurrencyContext';
 import { useLanguage } from '../context/LanguageContext';
-import { getCabinetText } from '../data/pagesTranslations';
 import { SkinInspectModal } from './SkinInspectModal';
-import { TradeOfferModal } from './TradeOfferModal';
 import { SkinImage } from './SkinImage';
 import { fetchSteamInventory, parseSteamTradeUrl } from '../services/steamService';
 import { useAuth } from '../context/AuthContext';
-import { type DepositTradeSession } from '../data/steamBot';
 
 interface InventorySandboxProps {
   tradeUrl?: string;
-  isBonusApplied?: boolean;
-  onOpenBonusModal?: () => void;
+  onOpenSteamModal?: () => void;
+  onNavigateSell?: () => void;
   onTradeUrlChange?: (url: string) => void;
 }
 
 export const InventorySandbox: React.FC<InventorySandboxProps> = ({
   tradeUrl: initialTradeUrl,
-  isBonusApplied = false,
-  onOpenBonusModal,
+  onOpenSteamModal,
+  onNavigateSell,
   onTradeUrlChange,
 }) => {
   const { formatPrice } = useCurrency();
   const { t, language } = useLanguage();
-  const { user, openCabinet, updateBalance, addTransaction } = useAuth();
+  const { user, openCabinet, loginWithSteam } = useAuth();
 
   // Trade URL input state
   const [tradeUrlInput, setTradeUrlInput] = useState<string>(initialTradeUrl || '');
@@ -76,11 +72,8 @@ export const InventorySandbox: React.FC<InventorySandboxProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<'price-desc' | 'price-asc' | 'float-asc'>('price-desc');
 
-  // Modals & Payout Setup
+  // Modals
   const [inspectingSkin, setInspectingSkin] = useState<CS2Skin | null>(null);
-  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<PaymentOption>(CRYPTO_PAYMENT_METHODS[0]); // USDT TRC20 default
-  const [destinationInput, setDestinationInput] = useState('0x71C...b92F4 (TRC-20)');
-  const [isCashoutModalOpen, setIsCashoutModalOpen] = useState(false);
 
   // Fetch Inventory logic
   const loadInventory = useCallback(async (targetUrl: string, force = false) => {
@@ -217,42 +210,22 @@ export const InventorySandbox: React.FC<InventorySandboxProps> = ({
     return selectedSkinsList.reduce((acc, curr) => acc + curr.price, 0);
   }, [selectedSkinsList]);
 
-  const bonusAmount = useMemo(() => {
-    return isBonusApplied ? baseGrossValue * 0.08 : 0;
-  }, [baseGrossValue, isBonusApplied]);
-
-  const totalCashoutValue = useMemo(() => {
-    return baseGrossValue + bonusAmount;
-  }, [baseGrossValue, bonusAmount]);
-
-  const allAvailablePaymentMethods = useMemo(() => {
-    return [...CRYPTO_PAYMENT_METHODS.slice(0, 4), ...FIAT_PAYMENT_METHODS.slice(0, 4)];
-  }, []);
-
   const handleTriggerCashout = () => {
     if (selectedSkinsList.length === 0) return;
 
-    if (!isBonusApplied && onOpenBonusModal) {
-      onOpenBonusModal();
-    } else {
-      setIsCashoutModalOpen(true);
-    }
-  };
-
-  const handleTradeCompleted = (tradeSession: DepositTradeSession) => {
     if (user) {
-      updateBalance(tradeSession.totalValue);
-      addTransaction({
-        type: 'sale',
-        title: getCabinetText(language, 'cabinet.depositTitle', { count: tradeSession.skins.length, bot: tradeSession.bot.personaName }),
-        amount: tradeSession.totalValue,
-        status: 'completed',
-        method: selectedPaymentMethod.name,
-        destinationMasked: destinationInput || getCabinetText(language, 'cabinet.availableBalance'),
-        itemsCount: tradeSession.skins.length,
-        txHash: tradeSession.txId,
-        tradeOfferId: tradeSession.txId,
-      });
+      if (onNavigateSell) {
+        onNavigateSell();
+      } else {
+        window.history.pushState({}, '', '/sell');
+        window.dispatchEvent(new PopStateEvent('popstate'));
+      }
+    } else {
+      if (onOpenSteamModal) {
+        onOpenSteamModal();
+      } else {
+        loginWithSteam();
+      }
     }
   };
 
@@ -278,18 +251,6 @@ export const InventorySandbox: React.FC<InventorySandboxProps> = ({
           <p className="text-sm sm:text-base text-slate-300">
             {t('sandbox.subtitle')}
           </p>
-
-          {/* Newcomer Bonus Alert Banner (Strictly Emerald/Cyan Palette) */}
-          {isBonusApplied && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-500/15 border border-emerald-500/40 text-emerald-300 text-xs font-['JetBrains_Mono'] font-bold shadow-[0_0_20px_rgba(16,185,129,0.3)]"
-            >
-              <Gift className="w-4 h-4 text-emerald-400" />
-              <span>{t('bonus.bannerActive')}</span>
-            </motion.div>
-          )}
         </div>
 
         {/* 1. Interactive Trade URL Command Bar */}
@@ -739,7 +700,7 @@ export const InventorySandbox: React.FC<InventorySandboxProps> = ({
 
           </div>
 
-          {/* Sticky Interactive Payout Calculation Panel (4 cols) */}
+          {/* RIGHT COLUMN: EVALUATION SUMMARY & ACTION CTA */}
           <div className="lg:col-span-4 lg:sticky lg:top-24 space-y-4">
             
             <div className="rounded-3xl glass-panel p-6 shadow-[0_20px_50px_rgba(0,0,0,0.85)] border border-white/[0.08]">
@@ -751,140 +712,100 @@ export const InventorySandbox: React.FC<InventorySandboxProps> = ({
                     <Zap className="w-3.5 h-3.5 fill-emerald-400" />
                   </div>
                   <h3 className="font-['Space_Grotesk'] font-bold text-base text-white">
-                    {t('sandbox.payoutCalc')}
+                    Оцінка інвентаря
                   </h3>
                 </div>
 
                 <span className="text-xs font-['JetBrains_Mono'] text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20 font-bold">
-                  {t('sandbox.feePromo')}
+                  Buff163 + Steam
                 </span>
               </div>
 
               {/* Dynamic Animated Value Counter */}
               <div className="py-5 text-center bg-white/[0.02] rounded-2xl my-4 border border-white/[0.06]">
                 <span className="text-[11px] font-['Space_Grotesk'] uppercase tracking-wider text-slate-400 block mb-1">
-                  {t('sandbox.totalValuation')} ({selectedSkinsList.length} {t('sandbox.items')})
+                  Оціночна вартість ({selectedSkinsList.length} скінів)
                 </span>
                 
                 <div className="text-3xl sm:text-4xl font-extrabold font-['JetBrains_Mono'] text-emerald-400 tracking-tight drop-shadow-[0_0_15px_rgba(16,185,129,0.35)]">
-                  {formatPrice(totalCashoutValue)}
+                  {formatPrice(baseGrossValue)}
                 </div>
 
-                {isBonusApplied && (
-                  <div className="mt-1 text-xs font-['JetBrains_Mono'] font-bold text-emerald-300">
-                    Includes +8% Bonus: +{formatPrice(bonusAmount)}
-                  </div>
-                )}
-
                 <div className="mt-2 text-xs text-slate-400 font-['JetBrains_Mono'] flex items-center justify-center gap-2">
-                  <span>{t('sandbox.steamEquiv')}</span>
+                  <span>У Steam Community:</span>
                   <span className="text-slate-500 line-through">
-                    {formatPrice(totalCashoutValue * 1.14)}
+                    {formatPrice(baseGrossValue * 1.15)}
                   </span>
                 </div>
               </div>
 
-              {/* Payout Method Selector */}
-              <div className="space-y-2 mb-4">
-                <label className="text-xs font-['Space_Grotesk'] uppercase tracking-wider text-slate-300 font-bold block">
-                  {t('sandbox.selectMethod')}
-                </label>
-
-                <div className="grid grid-cols-2 gap-2">
-                  {allAvailablePaymentMethods.map(method => (
-                    <button
-                      key={method.id}
-                      onClick={() => setSelectedPaymentMethod(method)}
-                      className={`p-2.5 rounded-xl text-left border transition-all text-xs flex items-center gap-2 cursor-pointer ${
-                        selectedPaymentMethod.id === method.id
-                          ? 'bg-emerald-500/15 border-emerald-400 text-white shadow-[0_0_12px_rgba(16,185,129,0.2)]'
-                          : 'bg-white/[0.02] border-white/[0.06] text-slate-300 hover:border-white/20'
-                      }`}
-                    >
-                      <div className="w-5 h-5 rounded-md bg-white/[0.05] flex items-center justify-center text-[10px] font-bold text-emerald-400 shrink-0">
-                        {method.category === 'crypto' ? '₮' : '💳'}
-                      </div>
-                      <div className="overflow-hidden">
-                        <div className="font-bold font-['Space_Grotesk'] truncate text-[11px]">{method.name}</div>
-                        <div className="text-[9px] text-emerald-400 font-['JetBrains_Mono']">{method.badge}</div>
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Destination Address / Account Input */}
-              <div className="mb-4">
-                <label className="text-xs font-['Space_Grotesk'] uppercase tracking-wider text-slate-300 font-bold block mb-1.5">
-                  {selectedPaymentMethod.category === 'crypto' ? t('sandbox.yourCryptoAddress') : t('sandbox.yourCardIban')}
-                </label>
-                <div className="relative">
-                  <input
-                    type="text"
-                    value={destinationInput}
-                    onChange={(e) => setDestinationInput(e.target.value)}
-                    placeholder={
-                      selectedPaymentMethod.category === 'crypto'
-                        ? 'Enter TRC-20 / ERC-20 / Solana Address'
-                        : 'Enter 16-digit Card number or IBAN'
-                    }
-                    className="w-full px-3 py-2.5 rounded-xl bg-white/[0.03] border border-white/10 text-white font-['JetBrains_Mono'] text-xs focus:outline-none focus:border-emerald-400"
-                  />
-                  <div className="absolute right-2.5 top-1/2 -translate-y-1/2">
-                    <ShieldCheck className="w-4 h-4 text-emerald-400" />
-                  </div>
-                </div>
-              </div>
-
-              {/* Fee Breakdown Table */}
+              {/* Live Market Breakdown */}
               <div className="space-y-2 py-3 border-y border-white/[0.06] text-xs font-['JetBrains_Mono']">
                 <div className="flex justify-between text-slate-400">
-                  <span>{t('sandbox.grossVal')}</span>
-                  <span className="text-slate-200">{formatPrice(baseGrossValue)}</span>
-                </div>
-                {isBonusApplied && (
-                  <div className="flex justify-between text-emerald-400 font-bold">
-                    <span>+8% Новичок Bonus:</span>
-                    <span>+{formatPrice(bonusAmount)}</span>
-                  </div>
-                )}
-                <div className="flex justify-between text-slate-400">
-                  <span>{t('sandbox.platformComm')}</span>
-                  <span className="text-emerald-400 font-bold">0.00% ($0.00)</span>
+                  <span>Обрано скінів:</span>
+                  <span className="text-slate-200">{selectedSkinsList.length} з {skins.length}</span>
                 </div>
                 <div className="flex justify-between text-slate-400">
-                  <span>{t('sandbox.gasFee')}</span>
-                  <span className="text-emerald-400 font-bold">{t('sandbox.free')}</span>
+                  <span>Оцінка за Buff163:</span>
+                  <span className="text-slate-200">{formatPrice(baseGrossValue * 0.98)}</span>
+                </div>
+                <div className="flex justify-between text-slate-400">
+                  <span>Комісія сервісу:</span>
+                  <span className="text-emerald-400 font-bold">0.00% (Без комісії)</span>
                 </div>
                 <div className="flex justify-between text-white font-bold pt-1 border-t border-white/[0.06]">
-                  <span>{t('sandbox.finalNetPayout')}</span>
-                  <span className="text-emerald-400 text-sm">{formatPrice(totalCashoutValue)}</span>
+                  <span>Миттєва виплата:</span>
+                  <span className="text-emerald-400 text-sm font-extrabold">{formatPrice(baseGrossValue)}</span>
                 </div>
               </div>
 
-              {/* Glowing Cashout Action Button */}
-              <div className="pt-4">
+              {/* Security & Benefits Pills */}
+              <div className="py-2 space-y-1.5 text-[11px] font-['Space_Grotesk'] text-slate-300">
+                <div className="flex items-center gap-2 text-emerald-400">
+                  <ShieldCheck className="w-3.5 h-3.5 shrink-0" />
+                  <span>Миттєвий переказ на картки (МИР, Visa/MC, СБП) та крипту</span>
+                </div>
+                <div className="flex items-center gap-2 text-slate-400">
+                  <Gift className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                  <span>Плашка з промокодом +8% на сторінці продажу</span>
+                </div>
+              </div>
+
+              {/* Action Button: Login with Steam OR Go to /sell */}
+              <div className="pt-2">
                 <motion.button
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   disabled={selectedSkinsList.length === 0}
                   onClick={handleTriggerCashout}
-                  className={`w-full py-4 rounded-xl font-['Space_Grotesk'] font-bold text-sm tracking-wide shadow-lg flex items-center justify-center gap-2 cursor-pointer transition-all ${
+                  className={`w-full py-4 rounded-xl font-['Space_Grotesk'] font-bold text-sm tracking-wide shadow-lg flex items-center justify-center gap-2.5 cursor-pointer transition-all ${
                     selectedSkinsList.length > 0
-                      ? 'bg-gradient-to-r from-emerald-500 via-emerald-400 to-teal-400 text-slate-950 shadow-[0_0_30px_rgba(16,185,129,0.45)] hover:shadow-[0_0_40px_rgba(16,185,129,0.65)] animate-shimmer'
+                      ? 'bg-gradient-to-r from-emerald-500 via-teal-400 to-emerald-400 text-slate-950 shadow-[0_0_30px_rgba(16,185,129,0.45)] hover:shadow-[0_0_40px_rgba(16,185,129,0.65)]'
                       : 'bg-slate-800 text-slate-500 cursor-not-allowed'
                   }`}
                 >
-                  <Zap className="w-4 h-4 fill-slate-950" />
-                  <span>
-                    {t('sandbox.cashoutNow', { amount: formatPrice(totalCashoutValue) })}
-                  </span>
-                  <ArrowRight className="w-4 h-4" />
+                  {user ? (
+                    <>
+                      <Zap className="w-4 h-4 fill-slate-950" />
+                      <span>Продати скіни ({formatPrice(baseGrossValue)})</span>
+                      <ArrowRight className="w-4 h-4" />
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-4 h-4 fill-slate-950 shrink-0" viewBox="0 0 24 24">
+                        <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.44 9.82 8.24 11.44l3.19-4.38a4.48 4.48 0 0 1-.93-.84l-4.52 1.87a9.6 9.6 0 0 1-1.07-5.09c0-5.3 4.3-9.6 9.6-9.6s9.6 4.3 9.6 9.6c0 5.28-4.28 9.57-9.56 9.6l-3.32 4.56c.49.03.98.05 1.48.05 6.63 0 12-5.37 12-12S18.63 0 12 0z" />
+                      </svg>
+                      <span>Увійти через Steam для продажу</span>
+                      <ArrowRight className="w-4 h-4" />
+                    </>
+                  )}
                 </motion.button>
 
                 <div className="mt-3 flex items-center justify-center gap-2 text-[11px] text-slate-400">
                   <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-                  <span>{t('sandbox.verifiedDelivery')}</span>
+                  <span>
+                    {user ? 'Перехід на захищену сторінку виплати' : 'Авторизація через офіційний Steam OpenID'}
+                  </span>
                 </div>
               </div>
 
@@ -896,9 +817,9 @@ export const InventorySandbox: React.FC<InventorySandboxProps> = ({
 
       </div>
 
-      {/* Mobile Sticky Cashout Action Bar (Visible on mobile when skins are selected) */}
+      {/* Mobile Sticky Action Bar */}
       <AnimatePresence>
-        {selectedSkinsList.length > 0 && !isCashoutModalOpen && (
+        {selectedSkinsList.length > 0 && (
           <motion.div
             initial={{ opacity: 0, y: 30, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -911,7 +832,7 @@ export const InventorySandbox: React.FC<InventorySandboxProps> = ({
                 Обрано: {selectedSkinsList.length} скінів
               </span>
               <span className="text-base font-extrabold font-['JetBrains_Mono'] text-emerald-400">
-                {formatPrice(totalCashoutValue)}
+                {formatPrice(baseGrossValue)}
               </span>
             </div>
 
@@ -920,9 +841,18 @@ export const InventorySandbox: React.FC<InventorySandboxProps> = ({
               onClick={handleTriggerCashout}
               className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-400 text-slate-950 font-['Space_Grotesk'] font-bold text-xs flex items-center gap-1.5 shadow-[0_0_15px_rgba(16,185,129,0.4)] cursor-pointer"
             >
-              <Zap className="w-3.5 h-3.5 fill-slate-950" />
-              <span>Продати</span>
-              <ArrowRight className="w-3.5 h-3.5" />
+              {user ? (
+                <>
+                  <Zap className="w-3.5 h-3.5 fill-slate-950" />
+                  <span>Продати</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </>
+              ) : (
+                <>
+                  <span>Увійти для продажу</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </>
+              )}
             </motion.button>
           </motion.div>
         )}
@@ -937,18 +867,6 @@ export const InventorySandbox: React.FC<InventorySandboxProps> = ({
           toggleSelect(skin.id);
           setInspectingSkin(null);
         }}
-      />
-
-      {/* Cashout Trade Offer Simulation Modal */}
-      <TradeOfferModal
-        isOpen={isCashoutModalOpen}
-        onClose={() => setIsCashoutModalOpen(false)}
-        selectedSkins={selectedSkinsList}
-        totalPayout={totalCashoutValue}
-        paymentMethod={selectedPaymentMethod}
-        destinationAddress={destinationInput}
-        userTradeUrl={tradeUrlInput}
-        onTradeCompleted={handleTradeCompleted}
       />
 
     </section>

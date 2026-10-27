@@ -22,9 +22,14 @@ import type { Currency } from '../types';
 interface NavbarProps {
   onOpenSteamModal?: () => void;
   onScrollToSection: (id: string) => void;
+  onNavigateSell?: () => void;
 }
 
-export const Navbar: React.FC<NavbarProps> = ({ onScrollToSection }) => {
+export const Navbar: React.FC<NavbarProps> = ({ 
+  onOpenSteamModal, 
+  onScrollToSection,
+  onNavigateSell 
+}) => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [currencyDropdownOpen, setCurrencyDropdownOpen] = useState(false);
@@ -83,6 +88,25 @@ export const Navbar: React.FC<NavbarProps> = ({ onScrollToSection }) => {
 
   const handleNavClick = (sectionId: string) => {
     onScrollToSection(sectionId);
+    setMobileMenuOpen(false);
+    setInfoDropdownOpen(false);
+  };
+
+  const handleSellClick = () => {
+    if (user) {
+      if (onNavigateSell) {
+        onNavigateSell();
+      } else {
+        window.history.pushState({}, '', '/sell');
+        window.dispatchEvent(new PopStateEvent('popstate'));
+      }
+    } else {
+      if (onOpenSteamModal) {
+        onOpenSteamModal();
+      } else {
+        loginWithSteam();
+      }
+    }
     setMobileMenuOpen(false);
     setInfoDropdownOpen(false);
   };
@@ -151,7 +175,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onScrollToSection }) => {
           >
             {/* 1. Instant Sell */}
             <button
-              onClick={() => handleNavClick('inventory-sandbox')}
+              onClick={handleSellClick}
               className="whitespace-nowrap px-2.5 xl:px-3 py-1.5 rounded-xl text-xs font-semibold text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10 transition-all flex items-center gap-1.5 cursor-pointer"
             >
               <Zap className="w-3.5 h-3.5 fill-emerald-400 shrink-0" />
@@ -533,7 +557,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onScrollToSection }) => {
               <div className="space-y-2">
                 {/* 1. Instant Sell */}
                 <button
-                  onClick={() => handleNavClick('inventory-sandbox')}
+                  onClick={handleSellClick}
                   className="w-full py-3 px-4 rounded-2xl bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-emerald-300 font-bold text-sm flex items-center justify-between cursor-pointer transition-all"
                 >
                   <span className="flex items-center gap-2.5">

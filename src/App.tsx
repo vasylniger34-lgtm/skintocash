@@ -15,10 +15,10 @@ import { TrustpilotReviews } from './components/TrustpilotReviews';
 import { FAQSection } from './components/FAQSection';
 import { Footer } from './components/Footer';
 import { SteamModal } from './components/SteamModal';
-import { BonusPromoModal } from './components/BonusPromoModal';
 import { MobileBottomNav } from './components/MobileBottomNav';
 import { CabinetPage } from './pages/CabinetPage';
 import { ReviewsPage } from './pages/ReviewsPage';
+import { SellPage } from './pages/SellPage';
 
 function MainContent() {
   const { user, closeCabinet } = useAuth();
@@ -33,8 +33,6 @@ function MainContent() {
     return '/';
   });
   const [isSteamModalOpen, setIsSteamModalOpen] = useState(false);
-  const [isBonusModalOpen, setIsBonusModalOpen] = useState(false);
-  const [isBonusApplied, setIsBonusApplied] = useState(false);
   const [activeTradeUrl, setActiveTradeUrl] = useState<string>('demo');
 
   useEffect(() => {
@@ -94,8 +92,56 @@ function MainContent() {
   };
 
   const handleOpenSellFlow = () => {
-    setIsSteamModalOpen(true);
+    if (user) {
+      window.history.pushState({}, '', '/sell');
+      setCurrentPath('/sell');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else {
+      setIsSteamModalOpen(true);
+    }
   };
+
+  const handleNavigateSell = () => {
+    if (user) {
+      window.history.pushState({}, '', '/sell');
+      setCurrentPath('/sell');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else {
+      setIsSteamModalOpen(true);
+    }
+  };
+
+  // If on /sell path: render dedicated Sell Page (similar to skins-mvp.com/ru/sell)
+  if (currentPath === '/sell') {
+    return (
+      <div className="min-h-screen bg-[#070A0E] pb-16 md:pb-0">
+        <SellPage
+          onNavigateHome={() => {
+            window.history.pushState({}, '', '/');
+            setCurrentPath('/');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }}
+          onOpenSteamModal={() => setIsSteamModalOpen(true)}
+        />
+        <MobileBottomNav
+          currentPath={currentPath}
+          onNavigateHome={() => {
+            window.history.pushState({}, '', '/');
+            setCurrentPath('/');
+          }}
+          onNavigateSell={handleNavigateSell}
+          onScrollToInventory={() => {
+            window.history.pushState({}, '', '/');
+            setCurrentPath('/');
+            setTimeout(() => {
+              const el = document.getElementById('inventory-sandbox');
+              if (el) el.scrollIntoView({ behavior: 'smooth' });
+            }, 100);
+          }}
+        />
+      </div>
+    );
+  }
 
   // If on /cabinet or /profile path: render standalone dedicated Cabinet page!
   if (currentPath === '/cabinet' || currentPath === '/profile') {
@@ -119,6 +165,7 @@ function MainContent() {
             window.history.pushState({}, '', '/');
             setCurrentPath('/');
           }}
+          onNavigateSell={handleNavigateSell}
           onScrollToInventory={() => {
             closeCabinet();
             window.history.pushState({}, '', '/');
@@ -151,6 +198,7 @@ function MainContent() {
             window.history.pushState({}, '', '/');
             setCurrentPath('/');
           }}
+          onNavigateSell={handleNavigateSell}
           onScrollToInventory={() => {
             window.history.pushState({}, '', '/');
             setCurrentPath('/');
@@ -173,25 +221,24 @@ function MainContent() {
       {/* Sticky Glassmorphic Navbar with Custom SVG Emblem */}
       <Navbar
         onScrollToSection={scrollToSection}
+        onOpenSteamModal={() => setIsSteamModalOpen(true)}
+        onNavigateSell={handleNavigateSell}
       />
 
       {/* Hero Section with 3D Tilting Rotating Showcase Card */}
       <Hero
         onScanInventory={handleScanInventory}
         onOpenSteamModal={handleOpenSellFlow}
-        onTriggerSellModal={() => {
-          if (!isBonusApplied) setIsBonusModalOpen(true);
-        }}
       />
 
       {/* Live Real-Time Payouts Feed */}
       <LivePayoutsFeed />
 
-      {/* Core Interactive Inventory Valuation & Cashout Sandbox with Real Steam Sync */}
+      {/* Core Interactive Inventory Valuation Sandbox with Real Steam Sync */}
       <InventorySandbox 
         tradeUrl={activeTradeUrl}
-        isBonusApplied={isBonusApplied}
-        onOpenBonusModal={() => setIsBonusModalOpen(true)}
+        onOpenSteamModal={() => setIsSteamModalOpen(true)}
+        onNavigateSell={handleNavigateSell}
         onTradeUrlChange={(url) => setActiveTradeUrl(url)}
       />
 
@@ -230,22 +277,13 @@ function MainContent() {
         onSuccess={handleScanInventory}
       />
 
-      {/* Newcomer +8% Bonus Promo Modal (Faithful to User Screenshot) */}
-      <BonusPromoModal
-        isOpen={isBonusModalOpen}
-        onClose={() => setIsBonusModalOpen(false)}
-        onApplyBonus={() => {
-          setIsBonusApplied(true);
-          scrollToSection('inventory-sandbox');
-        }}
-      />
-
       {/* Mobile Sticky Bottom Navigation Bar */}
       <MobileBottomNav
         currentPath={currentPath}
         onNavigateHome={() => {
           window.scrollTo({ top: 0, behavior: 'smooth' });
         }}
+        onNavigateSell={handleNavigateSell}
         onScrollToInventory={() => scrollToSection('inventory-sandbox')}
       />
 
