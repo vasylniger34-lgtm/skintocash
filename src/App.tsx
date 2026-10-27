@@ -229,6 +229,8 @@ function MainContent() {
       <Hero
         onScanInventory={handleScanInventory}
         onOpenSteamModal={handleOpenSellFlow}
+        onNavigateSell={handleNavigateSell}
+        onScrollToSandbox={() => scrollToSection('inventory-sandbox')}
       />
 
       {/* Live Real-Time Payouts Feed */}

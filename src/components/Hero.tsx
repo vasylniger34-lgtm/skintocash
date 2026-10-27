@@ -3,8 +3,8 @@ import { motion, AnimatePresence, useMotionValue, useSpring, useTransform, type 
 import { 
   ArrowRight, 
   Star, 
-  Link as LinkIcon, 
-  RefreshCw,
+  Zap,
+  Calculator,
   ChevronLeft,
   ChevronRight,
   Sparkles
@@ -12,11 +12,14 @@ import {
 import { useLanguage } from '../context/LanguageContext';
 import { useCurrency } from '../context/CurrencyContext';
 import { useIntro } from '../context/IntroContext';
+import { useAuth } from '../context/AuthContext';
 import { SkinImage } from './SkinImage';
 
 interface HeroProps {
-  onScanInventory: (tradeUrl: string) => void;
+  onScanInventory?: (tradeUrl: string) => void;
   onOpenSteamModal: () => void;
+  onNavigateSell?: () => void;
+  onScrollToSandbox?: () => void;
   onTriggerSellModal?: () => void;
 }
 
@@ -146,14 +149,15 @@ const weaponVariants: Variants = {
 export const Hero: React.FC<HeroProps> = ({ 
   onScanInventory, 
   onOpenSteamModal,
+  onNavigateSell,
+  onScrollToSandbox,
   onTriggerSellModal 
 }) => {
-  const { t, language } = useLanguage();
+  const { t } = useLanguage();
   const { currency, formatPrice } = useCurrency();
   const { phase } = useIntro();
+  const { user } = useAuth();
   const isRevealed = phase === 'revealing' || phase === 'completed';
-  const [tradeUrl, setTradeUrl] = useState('');
-  const [isScanning, setIsScanning] = useState(false);
 
   // Showcase Active Skin Index, Direction & Timer
   const [activeSkinIndex, setActiveSkinIndex] = useState(0);
@@ -229,20 +233,30 @@ export const Hero: React.FC<HeroProps> = ({
     y.set(0);
   };
 
-  const handleDemoClick = () => {
-    onScanInventory('demo');
+  const handleSellClick = () => {
+    if (onNavigateSell) {
+      onNavigateSell();
+    } else if (onTriggerSellModal) {
+      onTriggerSellModal();
+    } else if (user) {
+      window.history.pushState({}, '', '/sell');
+      window.dispatchEvent(new PopStateEvent('popstate'));
+    } else {
+      onOpenSteamModal();
+    }
   };
 
-  const handleScanSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (onTriggerSellModal) {
-      onTriggerSellModal();
+  const handleEvaluateClick = () => {
+    if (onScrollToSandbox) {
+      onScrollToSandbox();
+    } else if (onScanInventory) {
+      onScanInventory('demo');
+    } else {
+      const el = document.getElementById('inventory-sandbox');
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth' });
+      }
     }
-    setIsScanning(true);
-    setTimeout(() => {
-      setIsScanning(false);
-      onScanInventory(tradeUrl || 'demo');
-    }, 1000);
   };
 
   return (
@@ -321,48 +335,40 @@ export const Hero: React.FC<HeroProps> = ({
               {t('hero.subheadline')}
             </motion.p>
 
-            {/* Sleek Single-Line Command Bar (h-14, glassmorphic, nested button) */}
-            <motion.form
-              onSubmit={handleScanSubmit}
+            {/* CTA Action Area: Primary "Sell CS2 Skins" & Secondary "Evaluate Inventory" */}
+            <motion.div
               initial={{ opacity: 0, y: 18 }}
               animate={{ 
                 opacity: isRevealed ? 1 : 0, 
                 y: isRevealed ? 0 : 18 
               }}
               transition={{ duration: 0.9, delay: 0.24, ease: [0.22, 1, 0.36, 1] }}
-              className="w-full max-w-xl relative flex items-center h-14 pl-4 pr-1.5 rounded-2xl bg-slate-900/80 border border-white/10 hover:border-emerald-500/40 focus-within:border-emerald-400 focus-within:ring-1 focus-within:ring-emerald-400/50 backdrop-blur-xl shadow-[0_10px_35px_rgba(0,0,0,0.6)] transition-all mb-3.5"
+              className="w-full max-w-xl flex flex-col sm:flex-row items-stretch sm:items-center gap-3.5 mb-5"
             >
-              <LinkIcon className="w-4 h-4 text-emerald-400 shrink-0 mr-3" />
-              
-              <input
-                type="text"
-                value={tradeUrl}
-                onChange={(e) => setTradeUrl(e.target.value)}
-                placeholder={t('hero.inputPlaceholder')}
-                className="w-full bg-transparent text-white placeholder-slate-500 text-xs sm:text-sm font-['JetBrains_Mono'] focus:outline-none"
-              />
-
+              {/* Primary CTA Button: Sell CS2 Skins */}
               <button
-                type="submit"
-                disabled={isScanning}
-                className="h-11 px-3 sm:px-5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 text-slate-950 font-['Space_Grotesk'] font-bold text-xs sm:text-sm tracking-wide shadow-[0_0_20px_rgba(16,185,129,0.35)] flex items-center gap-1.5 cursor-pointer whitespace-nowrap shrink-0 transition-all"
+                type="button"
+                onClick={handleSellClick}
+                className="group relative flex-1 h-14 sm:h-15 px-7 rounded-2xl bg-gradient-to-r from-emerald-500 via-emerald-400 to-teal-400 hover:from-emerald-400 hover:to-teal-300 text-slate-950 font-['Space_Grotesk'] font-bold text-base sm:text-lg tracking-wide shadow-[0_0_30px_rgba(16,185,129,0.35)] hover:shadow-[0_0_45px_rgba(16,185,129,0.55)] hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-3 cursor-pointer overflow-hidden"
               >
-                {isScanning ? (
-                  <>
-                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                    <span>Loading...</span>
-                  </>
-                ) : (
-                  <>
-                    <span className="hidden sm:inline">{t('hero.getCashBtn')}</span>
-                    <span className="sm:hidden inline">{t('hero.evaluateCompact')}</span>
-                    <ArrowRight className="w-3.5 h-3.5" />
-                  </>
-                )}
+                <div className="absolute inset-0 bg-white/20 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 ease-in-out pointer-events-none" />
+                <Zap className="w-5 h-5 fill-slate-950 text-slate-950 group-hover:rotate-12 transition-transform duration-300 shrink-0" />
+                <span>{t('hero.sellSkinsBtn')}</span>
+                <ArrowRight className="w-5 h-5 group-hover:translate-x-1.5 transition-transform duration-200 shrink-0" />
               </button>
-            </motion.form>
 
-            {/* Minimalist Sub-Bar: Demo Trigger & Clean Payment Badges */}
+              {/* Secondary CTA Button: Evaluate Inventory */}
+              <button
+                type="button"
+                onClick={handleEvaluateClick}
+                className="h-14 sm:h-15 px-6 rounded-2xl bg-slate-900/80 hover:bg-slate-800/90 border border-white/10 hover:border-emerald-500/40 text-slate-200 hover:text-white font-['Space_Grotesk'] font-semibold text-sm sm:text-base backdrop-blur-xl transition-all duration-200 flex items-center justify-center gap-2.5 cursor-pointer shadow-[0_4px_20px_rgba(0,0,0,0.35)] shrink-0"
+              >
+                <Calculator className="w-4 h-4 text-emerald-400 shrink-0" />
+                <span>{t('hero.evaluateInventoryBtn')}</span>
+              </button>
+            </motion.div>
+
+            {/* Sleek Sub-Bar: Instant Payout Speed & Payment Rails */}
             <motion.div
               initial={{ opacity: 0, y: 18 }}
               animate={{ 
@@ -373,21 +379,21 @@ export const Hero: React.FC<HeroProps> = ({
               className="w-full max-w-xl flex flex-wrap items-center justify-between gap-3 text-xs text-slate-400"
             >
               <div className="flex items-center gap-2">
-                <span className="text-slate-500">{t('hero.noUrlHandy')}</span>
-                <button
-                  type="button"
-                  onClick={handleDemoClick}
-                  className="text-emerald-400 hover:text-emerald-300 font-medium underline underline-offset-2 transition-colors cursor-pointer"
-                >
-                  {t('hero.tryDemo')}
-                </button>
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse inline-block" />
+                <span className="text-emerald-400 font-medium font-['JetBrains_Mono'] text-xs">
+                  {t('hero.speedTrust')}
+                </span>
               </div>
 
-              {/* Minimalist Monochrome Payment Logos */}
-              <div className="flex items-center gap-3 text-slate-500 text-[11px] font-['Space_Grotesk']">
+              {/* Minimalist Payment Badges */}
+              <div className="flex items-center gap-2 text-slate-500 text-[11px] font-['Space_Grotesk']">
                 <span className="hover:text-slate-300 transition-colors">VISA</span>
                 <span>•</span>
-                <span className="hover:text-slate-300 transition-colors">MC</span>
+                <span className="hover:text-slate-300 transition-colors">Mastercard</span>
+                <span>•</span>
+                <span className="hover:text-slate-300 transition-colors">МИР</span>
+                <span>•</span>
+                <span className="hover:text-slate-300 transition-colors">СБП</span>
                 <span>•</span>
                 <span className="hover:text-slate-300 transition-colors">USDT</span>
                 <span>•</span>
