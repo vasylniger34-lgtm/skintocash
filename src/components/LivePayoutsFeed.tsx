@@ -141,7 +141,7 @@ export const LivePayoutsFeed: React.FC = () => {
                 <div className="flex items-center justify-between text-[11px] mb-2 font-['JetBrains_Mono']">
                   <span className="px-2 py-0.5 rounded-md bg-slate-800/90 text-slate-300 border border-white/[0.07] flex items-center gap-1.5 shadow-sm">
                     <PaymentMethodIcon id={item.methodIcon} size={14} className="rounded-sm" />
-                    <span className="truncate max-w-[110px]">{item.method}</span>
+                    <span className="truncate max-w-[110px]">{item.method === 'Карта МИР' ? 'МИР' : item.method}</span>
                   </span>
 
                   <span className="text-slate-400 flex items-center gap-1 font-medium">

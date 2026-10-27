@@ -1661,7 +1661,7 @@ export const DIVERSE_SKINS_CATALOG: CatalogSkinItem[] = [
 
 export const PAYMENT_METHODS_OPTIONS = [
   { name: 'Visa / Mastercard', icon: 'card' },
-  { name: 'Карта МИР', icon: 'mir' },
+  { name: 'МИР', icon: 'mir' },
   { name: 'СБП', icon: 'sbp' },
   { name: 'USDT TRC20', icon: 'usdt' },
   { name: 'USDT BEP20', icon: 'usdt' },
@@ -1670,7 +1670,7 @@ export const PAYMENT_METHODS_OPTIONS = [
   { name: 'Revolut Pay', icon: 'revolut' },
 ];
 
-export const STORAGE_KEY_PAYOUTS = 'skintocash_live_payouts_v5';
+export const STORAGE_KEY_PAYOUTS = 'skintocash_live_payouts_v6';
 
 /**
  * Weighted random picker from catalog:
