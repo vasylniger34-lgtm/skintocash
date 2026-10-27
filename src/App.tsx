@@ -16,6 +16,7 @@ import { BonusPromoModal } from './components/BonusPromoModal';
 import { MobileBottomNav } from './components/MobileBottomNav';
 import { CabinetPage } from './pages/CabinetPage';
 import { P2PPage } from './pages/P2PPage';
+import { ReviewsPage } from './pages/ReviewsPage';
 
 function MainContent() {
   const { user, closeCabinet } = useAuth();
@@ -155,6 +156,41 @@ function MainContent() {
     );
   }
 
+  // If on /reviews path: render standalone dedicated Steam Reviews page!
+  if (currentPath === '/reviews') {
+    return (
+      <div className="min-h-screen bg-[#070A0E] pb-16 md:pb-0">
+        <ReviewsPage
+          onNavigateHome={() => {
+            window.history.pushState({}, '', '/');
+            setCurrentPath('/');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }}
+          onOpenLogin={() => setIsSteamModalOpen(true)}
+        />
+        <MobileBottomNav
+          currentPath={currentPath}
+          onNavigateHome={() => {
+            window.history.pushState({}, '', '/');
+            setCurrentPath('/');
+          }}
+          onNavigateP2P={() => {
+            window.history.pushState({}, '', '/p2p');
+            setCurrentPath('/p2p');
+          }}
+          onScrollToInventory={() => {
+            window.history.pushState({}, '', '/');
+            setCurrentPath('/');
+            setTimeout(() => {
+              const el = document.getElementById('inventory-sandbox');
+              if (el) el.scrollIntoView({ behavior: 'smooth' });
+            }, 100);
+          }}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-[#070A0E] text-[#E5E7EB] font-sans antialiased overflow-x-hidden selection:bg-emerald-500/30 selection:text-emerald-300 pb-20 md:pb-0">
       
@@ -190,13 +226,26 @@ function MainContent() {
       <HowItWorks onScrollToSandbox={() => scrollToSection('inventory-sandbox')} />
 
       {/* Trustpilot Social Proof & Reviews */}
-      <TrustpilotReviews />
+      <TrustpilotReviews 
+        onNavigateReviews={() => {
+          window.history.pushState({}, '', '/reviews');
+          setCurrentPath('/reviews');
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }}
+      />
 
       {/* Modern Expandable FAQ Accordion */}
       <FAQSection />
 
       {/* High-Trust Fintech Footer */}
-      <Footer onScrollToSection={scrollToSection} />
+      <Footer 
+        onScrollToSection={scrollToSection} 
+        onNavigateReviews={() => {
+          window.history.pushState({}, '', '/reviews');
+          setCurrentPath('/reviews');
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }}
+      />
 
       {/* Steam Trade URL / Sign In Dialog */}
       <SteamModal

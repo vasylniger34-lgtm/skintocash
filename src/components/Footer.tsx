@@ -10,10 +10,20 @@ import { useLanguage } from '../context/LanguageContext';
 
 interface FooterProps {
   onScrollToSection: (id: string) => void;
+  onNavigateReviews?: () => void;
 }
 
-export const Footer: React.FC<FooterProps> = ({ onScrollToSection }) => {
-  const { t } = useLanguage();
+export const Footer: React.FC<FooterProps> = ({ onScrollToSection, onNavigateReviews }) => {
+  const { t, language } = useLanguage();
+
+  const handleReviewsClick = () => {
+    if (onNavigateReviews) {
+      onNavigateReviews();
+    } else {
+      window.history.pushState({}, '', '/reviews');
+      window.dispatchEvent(new PopStateEvent('popstate'));
+    }
+  };
 
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -111,9 +121,13 @@ export const Footer: React.FC<FooterProps> = ({ onScrollToSection }) => {
                 </button>
               </li>
               <li>
-                <a href="#reviews-section" className="hover:text-emerald-400 transition-colors">
-                  Trustpilot Reviews
-                </a>
+                <button 
+                  onClick={handleReviewsClick} 
+                  className="hover:text-emerald-400 transition-colors cursor-pointer text-left flex items-center gap-1.5"
+                >
+                  <span>{language === 'EN' ? 'Steam Reviews' : (language === 'RU' ? 'Отзывы Steam' : 'Відгуки Steam')}</span>
+                  <span className="px-1.5 py-0.2 rounded bg-emerald-500/15 text-emerald-400 text-[10px] font-['JetBrains_Mono'] font-bold">299+</span>
+                </button>
               </li>
             </ul>
           </div>

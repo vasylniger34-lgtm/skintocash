@@ -11,7 +11,8 @@ import {
   ArrowLeftRight,
   ShieldCheck,
   HelpCircle,
-  Coins
+  Coins,
+  MessageSquare
 } from 'lucide-react';
 import { LogoIcon } from './LogoIcon';
 import { useCurrency } from '../context/CurrencyContext';
@@ -87,6 +88,13 @@ export const Navbar: React.FC<NavbarProps> = ({ onScrollToSection }) => {
 
   const handleNavigateP2P = () => {
     window.history.pushState({}, '', '/p2p');
+    window.dispatchEvent(new PopStateEvent('popstate'));
+    setMobileMenuOpen(false);
+    setInfoDropdownOpen(false);
+  };
+
+  const handleNavigateReviews = () => {
+    window.history.pushState({}, '', '/reviews');
     window.dispatchEvent(new PopStateEvent('popstate'));
     setMobileMenuOpen(false);
     setInfoDropdownOpen(false);
@@ -182,6 +190,18 @@ export const Navbar: React.FC<NavbarProps> = ({ onScrollToSection }) => {
                     transition={{ duration: 0.15 }}
                     className="absolute left-0 mt-2 w-52 rounded-2xl bg-[#0B1017] border border-white/10 shadow-[0_15px_40px_rgba(0,0,0,0.95)] p-1.5 z-50 backdrop-blur-2xl"
                   >
+                    <button
+                      onClick={handleNavigateReviews}
+                      className="w-full flex items-center justify-between px-3 py-2 text-xs font-['Space_Grotesk'] text-slate-300 hover:text-white hover:bg-white/[0.06] rounded-xl transition-colors cursor-pointer"
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <MessageSquare className="w-3.5 h-3.5 text-emerald-400" />
+                        <span>{language === 'EN' ? 'Reviews' : (language === 'RU' ? 'Отзывы' : 'Відгуки')}</span>
+                      </div>
+                      <span className="px-1.5 py-0.2 rounded bg-emerald-500/15 text-emerald-400 text-[10px] font-bold font-['JetBrains_Mono']">
+                        299+
+                      </span>
+                    </button>
                     <button
                       onClick={() => handleNavClick('live-payouts')}
                       className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-['Space_Grotesk'] text-slate-300 hover:text-white hover:bg-white/[0.06] rounded-xl transition-colors cursor-pointer"
@@ -529,6 +549,20 @@ export const Navbar: React.FC<NavbarProps> = ({ onScrollToSection }) => {
                   </span>
                   <span className="text-[9px] font-black font-['JetBrains_Mono'] bg-emerald-500 text-slate-950 px-2 py-0.5 rounded-md uppercase">
                     New
+                  </span>
+                </button>
+
+                {/* 2.5 Steam Reviews (299+) */}
+                <button
+                  onClick={handleNavigateReviews}
+                  className="w-full py-2.5 px-4 rounded-xl text-left text-slate-300 hover:text-white hover:bg-white/[0.04] text-xs font-semibold font-['Space_Grotesk'] flex items-center justify-between cursor-pointer"
+                >
+                  <span className="flex items-center gap-2.5">
+                    <MessageSquare className="w-4 h-4 text-emerald-400" />
+                    <span>{language === 'EN' ? 'Steam Reviews' : (language === 'RU' ? 'Отзывы Steam' : 'Відгуки Steam')}</span>
+                  </span>
+                  <span className="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 text-[10px] font-bold font-['JetBrains_Mono']">
+                    299+
                   </span>
                 </button>
 
