@@ -10,6 +10,7 @@ import {
   Sparkles
 } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
+import { useIntro } from '../context/IntroContext';
 import { SkinImage } from './SkinImage';
 
 interface HeroProps {
@@ -118,6 +119,8 @@ export const Hero: React.FC<HeroProps> = ({
   onTriggerSellModal 
 }) => {
   const { t, language } = useLanguage();
+  const { phase } = useIntro();
+  const isRevealed = phase === 'revealing' || phase === 'completed';
   const [tradeUrl, setTradeUrl] = useState('');
   const [isScanning, setIsScanning] = useState(false);
 
@@ -204,9 +207,13 @@ export const Hero: React.FC<HeroProps> = ({
             
             {/* Minimal Trust Badge Pill */}
             <motion.div
-              initial={{ opacity: 0, y: -12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4 }}
+              initial={{ opacity: 0, y: 25, filter: 'blur(8px)' }}
+              animate={{ 
+                opacity: isRevealed ? 1 : 0, 
+                y: isRevealed ? 0 : 25, 
+                filter: isRevealed ? 'blur(0px)' : 'blur(8px)' 
+              }}
+              transition={{ duration: 0.55, delay: 0.0, ease: [0.16, 1, 0.3, 1] }}
               className="inline-flex items-center gap-2.5 px-3 py-1.5 rounded-full bg-slate-900/70 border border-white/10 shadow-[0_2px_15px_rgba(0,0,0,0.4)] mb-6 cursor-pointer hover:border-emerald-500/40 transition-colors backdrop-blur-md"
               onClick={() => {
                 const el = document.getElementById('reviews-section');
@@ -234,9 +241,13 @@ export const Hero: React.FC<HeroProps> = ({
 
             {/* Main Headline: Exactly 2 lines max, tight tracking */}
             <motion.h1
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.1 }}
+              initial={{ opacity: 0, y: 25, filter: 'blur(8px)' }}
+              animate={{ 
+                opacity: isRevealed ? 1 : 0, 
+                y: isRevealed ? 0 : 25, 
+                filter: isRevealed ? 'blur(0px)' : 'blur(8px)' 
+              }}
+              transition={{ duration: 0.55, delay: 0.08, ease: [0.16, 1, 0.3, 1] }}
               className="font-['Space_Grotesk'] text-4xl sm:text-5xl xl:text-6xl font-extrabold tracking-[-0.03em] text-white leading-[1.08] mb-5"
             >
               <span>{t('hero.headlinePart1')} </span>
@@ -247,9 +258,13 @@ export const Hero: React.FC<HeroProps> = ({
 
             {/* Subheading: Exactly one high-impact sentence */}
             <motion.p
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.2 }}
+              initial={{ opacity: 0, y: 25, filter: 'blur(8px)' }}
+              animate={{ 
+                opacity: isRevealed ? 1 : 0, 
+                y: isRevealed ? 0 : 25, 
+                filter: isRevealed ? 'blur(0px)' : 'blur(8px)' 
+              }}
+              transition={{ duration: 0.55, delay: 0.16, ease: [0.16, 1, 0.3, 1] }}
               className="text-base sm:text-lg text-slate-300/90 leading-relaxed max-w-xl mb-8 font-normal"
             >
               {t('hero.subheadline')}
@@ -258,9 +273,13 @@ export const Hero: React.FC<HeroProps> = ({
             {/* Sleek Single-Line Command Bar (h-14, glassmorphic, nested button) */}
             <motion.form
               onSubmit={handleScanSubmit}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.3 }}
+              initial={{ opacity: 0, y: 25, filter: 'blur(8px)' }}
+              animate={{ 
+                opacity: isRevealed ? 1 : 0, 
+                y: isRevealed ? 0 : 25, 
+                filter: isRevealed ? 'blur(0px)' : 'blur(8px)' 
+              }}
+              transition={{ duration: 0.55, delay: 0.24, ease: [0.16, 1, 0.3, 1] }}
               className="w-full max-w-xl relative flex items-center h-14 pl-4 pr-1.5 rounded-2xl bg-slate-900/80 border border-white/10 hover:border-emerald-500/40 focus-within:border-emerald-400 focus-within:ring-1 focus-within:ring-emerald-400/50 backdrop-blur-xl shadow-[0_10px_35px_rgba(0,0,0,0.6)] transition-all mb-3.5"
             >
               <LinkIcon className="w-4 h-4 text-emerald-400 shrink-0 mr-3" />
@@ -295,9 +314,13 @@ export const Hero: React.FC<HeroProps> = ({
 
             {/* Minimalist Sub-Bar: Demo Trigger & Clean Payment Badges */}
             <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.5, delay: 0.4 }}
+              initial={{ opacity: 0, y: 25, filter: 'blur(8px)' }}
+              animate={{ 
+                opacity: isRevealed ? 1 : 0, 
+                y: isRevealed ? 0 : 25, 
+                filter: isRevealed ? 'blur(0px)' : 'blur(8px)' 
+              }}
+              transition={{ duration: 0.55, delay: 0.32, ease: [0.16, 1, 0.3, 1] }}
               className="w-full max-w-xl flex flex-wrap items-center justify-between gap-3 text-xs text-slate-400"
             >
               <div className="flex items-center gap-2">
@@ -328,7 +351,25 @@ export const Hero: React.FC<HeroProps> = ({
           </div>
 
           {/* Right Column: 3D Tilting Glass Card with Smooth Rotating Weapons */}
-          <div className="lg:col-span-5 relative flex items-center justify-center perspective-[1200px] min-h-[440px]">
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.92, rotateY: 8 }}
+            animate={{ 
+              opacity: isRevealed ? 1 : 0, 
+              scale: isRevealed ? 1 : 0.92, 
+              rotateY: isRevealed ? 0 : 8 
+            }}
+            transition={{ duration: 0.75, delay: 0.18, ease: [0.16, 1, 0.3, 1] }}
+            className="lg:col-span-5 relative flex items-center justify-center perspective-[1200px] min-h-[440px]"
+          >
+            {/* Emerald Backlight Flare during reveal */}
+            {isRevealed && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.7 }}
+                animate={{ opacity: [0, 0.65, 0.25], scale: [0.7, 1.25, 1] }}
+                transition={{ duration: 1.1, ease: 'easeOut' }}
+                className="absolute inset-0 rounded-3xl bg-emerald-500/25 blur-3xl pointer-events-none -z-10"
+              />
+            )}
             
             <motion.div
               ref={cardRef}
@@ -471,7 +512,7 @@ export const Hero: React.FC<HeroProps> = ({
 
             </motion.div>
 
-          </div>
+          </motion.div>
 
         </div>
       </div>

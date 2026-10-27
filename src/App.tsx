@@ -1,7 +1,11 @@
 import { useState, useEffect } from 'react';
+import { LayoutGroup } from 'framer-motion';
 import { CurrencyProvider } from './context/CurrencyContext';
 import { LanguageProvider } from './context/LanguageContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { IntroProvider } from './context/IntroContext';
+import { IntroPreloader } from './components/IntroPreloader';
+import { ReplayIntroButton } from './components/ReplayIntroButton';
 import { Navbar } from './components/Navbar';
 import { Hero } from './components/Hero';
 import { LivePayoutsFeed } from './components/LivePayoutsFeed';
@@ -194,6 +198,12 @@ function MainContent() {
   return (
     <div className="min-h-screen bg-[#070A0E] text-[#E5E7EB] font-sans antialiased overflow-x-hidden selection:bg-emerald-500/30 selection:text-emerald-300 pb-20 md:pb-0">
       
+      {/* Cinematic Awwwards Intro Preloader with Shared Layout Logo Flight */}
+      <IntroPreloader />
+
+      {/* Tiny unobtrusive Replay Intro button for client presentation */}
+      <ReplayIntroButton />
+
       {/* Sticky Glassmorphic Navbar with Custom SVG Emblem */}
       <Navbar
         onScrollToSection={scrollToSection}
@@ -286,7 +296,11 @@ export function App() {
     <LanguageProvider>
       <CurrencyProvider>
         <AuthProvider>
-          <MainContent />
+          <IntroProvider>
+            <LayoutGroup id="skintocash-brand">
+              <MainContent />
+            </LayoutGroup>
+          </IntroProvider>
         </AuthProvider>
       </CurrencyProvider>
     </LanguageProvider>

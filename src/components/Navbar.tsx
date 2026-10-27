@@ -17,6 +17,7 @@ import { LogoIcon } from './LogoIcon';
 import { useCurrency } from '../context/CurrencyContext';
 import { useLanguage, LANGUAGES } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
+import { useIntro } from '../context/IntroContext';
 import type { Currency } from '../types';
 
 interface NavbarProps {
@@ -36,6 +37,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onScrollToSection }) => {
   const { currency, setCurrency, formatPrice } = useCurrency();
   const { language, setLanguage, t, currentOption } = useLanguage();
   const { user, openCabinet, loginWithSteam } = useAuth();
+  const { phase } = useIntro();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -112,25 +114,49 @@ export const Navbar: React.FC<NavbarProps> = ({ onScrollToSection }) => {
       <div className="w-full max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between gap-2 sm:gap-4 flex-nowrap w-full">
           
-          {/* Brand Logo - Never shrinks, pinned to left */}
-          <div 
-            className="flex items-center gap-2 sm:gap-2.5 cursor-pointer select-none group shrink-0" 
-            onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+          {/* Brand Logo - Shared Layout FLIP Target with Framer Motion layoutId */}
+          {phase === 'loading' ? (
+            <div className="w-[125px] sm:w-[155px] h-9 shrink-0 opacity-0 pointer-events-none" />
+          ) : (
+            <motion.div 
+              layoutId="skintocash-brand-logo"
+              transition={{ type: "spring", stiffness: 65, damping: 16, mass: 1 }}
+              className="flex items-center gap-2 sm:gap-2.5 cursor-pointer select-none group shrink-0 relative" 
+              onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+            >
+              {/* Mid-flight emerald motion glow aura */}
+              {phase === 'flying' && (
+                <motion.div
+                  initial={{ opacity: 0.9, scale: 1.5 }}
+                  animate={{ opacity: 0, scale: 1 }}
+                  transition={{ duration: 0.7, ease: 'easeOut' }}
+                  className="absolute -inset-3 rounded-2xl bg-emerald-400/30 blur-xl pointer-events-none -z-10"
+                />
+              )}
+
+              <div className="relative flex items-center justify-center transition-transform group-hover:scale-105 filter drop-shadow-[0_0_12px_rgba(16,185,129,0.35)] shrink-0">
+                <LogoIcon size={30} />
+              </div>
+
+              <div className="font-['Space_Grotesk'] font-bold text-lg sm:text-xl tracking-tight text-white flex items-center shrink-0">
+                <span>SkinTo</span>
+                <span className="text-emerald-400 drop-shadow-[0_0_12px_rgba(16,185,129,0.5)]">
+                  Cash
+                </span>
+              </div>
+            </motion.div>
+          )}
+
+          {/* Desktop Navigation: Staggered reveal in Phase 3 */}
+          <motion.nav 
+            initial={{ opacity: 0, y: -12 }}
+            animate={{ 
+              opacity: phase === 'loading' ? 0 : 1, 
+              y: phase === 'loading' ? -12 : 0 
+            }}
+            transition={{ duration: 0.45, delay: 0.05, ease: [0.16, 1, 0.3, 1] }}
+            className="hidden lg:flex items-center gap-1 xl:gap-2 min-w-0"
           >
-            <div className="relative flex items-center justify-center transition-transform group-hover:scale-105 filter drop-shadow-[0_0_12px_rgba(16,185,129,0.35)] shrink-0">
-              <LogoIcon size={30} />
-            </div>
-
-            <div className="font-['Space_Grotesk'] font-bold text-lg sm:text-xl tracking-tight text-white flex items-center shrink-0">
-              <span>SkinTo</span>
-              <span className="text-emerald-400 drop-shadow-[0_0_12px_rgba(16,185,129,0.5)]">
-                Cash
-              </span>
-            </div>
-          </div>
-
-          {/* Desktop Navigation: Compact, non-overflowing core links (fits all 1024px-1600px screens without clipping right side) */}
-          <nav className="hidden lg:flex items-center gap-1 xl:gap-2 min-w-0">
             {/* 1. Instant Sell */}
             <button
               onClick={() => handleNavClick('inventory-sandbox')}
@@ -227,10 +253,18 @@ export const Navbar: React.FC<NavbarProps> = ({ onScrollToSection }) => {
                 )}
               </AnimatePresence>
             </div>
-          </nav>
+          </motion.nav>
 
-          {/* Right Action Tools - STRICTLY SHRINK-0 (Always 100% visible, never pushed offscreen!) */}
-          <div className="flex items-center gap-2 sm:gap-2.5 shrink-0">
+          {/* Right Action Tools - Staggered reveal in Phase 3 */}
+          <motion.div 
+            initial={{ opacity: 0, y: -12 }}
+            animate={{ 
+              opacity: phase === 'loading' ? 0 : 1, 
+              y: phase === 'loading' ? -12 : 0 
+            }}
+            transition={{ duration: 0.45, delay: 0.12, ease: [0.16, 1, 0.3, 1] }}
+            className="flex items-center gap-2 sm:gap-2.5 shrink-0"
+          >
             
             {/* Language Switcher */}
             <div className="relative hidden md:block">
@@ -402,7 +436,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onScrollToSection }) => {
             >
               {mobileMenuOpen ? <X className="w-5 h-5 text-emerald-400" /> : <Menu className="w-5 h-5" />}
             </button>
-          </div>
+          </motion.div>
 
         </div>
       </div>
