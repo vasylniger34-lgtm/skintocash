@@ -103,13 +103,15 @@ export const InventorySandbox: React.FC<InventorySandboxProps> = ({
         setSelectedIds(new Set(res.items.slice(0, 3).map(s => s.id)));
         setSyncStatusMessage(`${res.items.length} ${t('sandbox.items')} synchronized`);
       } else if (res.status === 'rate_limited') {
-        // When Steam rate limits, load verified items and activate 30s backoff cooldown
         if (res.items && res.items.length > 0) {
           setSkins(res.items);
           setSelectedIds(new Set(res.items.slice(0, 3).map(s => s.id)));
+        } else {
+          setSkins([]);
+          setSelectedIds(new Set());
         }
         setCooldown(30);
-        setSyncStatusMessage(res.message || 'Steam rate limit active. Valuation mode enabled.');
+        setSyncStatusMessage(res.message || 'Steam rate limit active. Please retry in 15 seconds.');
       } else if (res.status === 'private') {
         setSkins([]);
         setSelectedIds(new Set());
@@ -123,6 +125,8 @@ export const InventorySandbox: React.FC<InventorySandboxProps> = ({
         setSelectedIds(new Set(['skin-karambit-gamma-emerald', 'skin-m4a1-printstream', 'skin-butterfly-fade']));
         setSyncStatusMessage(`${MOCK_CS2_INVENTORY.length} ${t('sandbox.items')} synchronized`);
       } else {
+        setSkins([]);
+        setSelectedIds(new Set());
         setSyncStatusMessage(res.message || 'Error connecting to Steam');
       }
     } catch (err: any) {

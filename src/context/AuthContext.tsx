@@ -12,6 +12,7 @@ interface AuthContextType {
   loginWithSteamId: (steamIdOrUrl: string) => Promise<{ success: boolean; message?: string }>;
   logout: () => void;
   updateTradeUrl: (url: string) => void;
+  syncUserWithTradeUrl: (url: string) => Promise<SteamUser | null>;
   updateBalance: (delta: number) => void;
   transactions: UserTransaction[];
   addTransaction: (tx: Omit<UserTransaction, 'id' | 'date'>) => void;
@@ -213,11 +214,72 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const updateTradeUrl = useCallback((url: string) => {
     setUser((prev) => {
       if (!prev) return null;
-      const updated = { ...prev, tradeUrl: url };
+      const parsed = parseSteamTradeUrl(url);
+      const newSteamId = parsed.steamId64 || prev.steamId64;
+      const updated = { ...prev, tradeUrl: url, steamId64: newSteamId };
       localStorage.setItem(STORAGE_USER_KEY, JSON.stringify(updated));
       return updated;
     });
   }, []);
+
+  const syncUserWithTradeUrl = useCallback(async (url: string): Promise<SteamUser | null> => {
+    const parsed = parseSteamTradeUrl(url);
+    const steamId64 = parsed.steamId64;
+
+    if (!steamId64) {
+      updateTradeUrl(url);
+      return null;
+    }
+
+    try {
+      const res = await fetch(`/api/auth/steam/user?steamId64=${steamId64}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data?.success && data?.user) {
+          const freshUser: SteamUser = {
+            ...data.user,
+            tradeUrl: url,
+            steamId64,
+          };
+          setUser(freshUser);
+          localStorage.setItem(STORAGE_USER_KEY, JSON.stringify(freshUser));
+          return freshUser;
+        }
+      }
+    } catch (e) {
+      console.warn('Error fetching Steam profile in syncUserWithTradeUrl:', e);
+    }
+
+    let fallbackUser: SteamUser | null = null;
+    setUser((prev) => {
+      const base: SteamUser = prev || {
+        steamId64,
+        personaname: `Player_${steamId64.slice(-4)}`,
+        avatar: 'https://avatars.steamstatic.com/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb.jpg',
+        avatarmedium: 'https://avatars.steamstatic.com/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb.jpg',
+        avatarfull: 'https://avatars.steamstatic.com/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb_full.jpg',
+        profileurl: `https://steamcommunity.com/profiles/${steamId64}`,
+        loccountrycode: 'UA',
+        personastate: 1,
+        timecreated: Math.floor(Date.now() / 1000) - 86400 * 365 * 3,
+        steamLevel: 1,
+        tradeBanned: false,
+        balance: 0,
+        totalWithdrawn: 0,
+        totalSales: 0,
+        joinedAt: '2024',
+      };
+      fallbackUser = {
+        ...base,
+        tradeUrl: url,
+        steamId64,
+      };
+      localStorage.setItem(STORAGE_USER_KEY, JSON.stringify(fallbackUser));
+      return fallbackUser;
+    });
+
+    return fallbackUser;
+  }, [updateTradeUrl]);
 
   const updateBalance = useCallback((delta: number) => {
     setUser((prev) => {
@@ -274,6 +336,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         loginWithSteamId,
         logout,
         updateTradeUrl,
+        syncUserWithTradeUrl,
         updateBalance,
         transactions,
         addTransaction,

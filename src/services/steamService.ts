@@ -387,8 +387,9 @@ export function mapSteamItemsToCS2Skins(assets: any[], descriptions: any[]): CS2
 
     if (!desc || !desc.market_hash_name) return;
 
-    // Filter out untradable items if specified
-    if (desc.tradable === 0) return;
+    // Skip items that are strictly non-tradable AND non-marketable (like medals, pins or non-inventory items)
+    if (desc.tradable === 0 && desc.marketable === 0) return;
+    const isTradeLocked = desc.tradable === 0;
 
     const marketName = desc.market_hash_name || desc.name;
     const isStatTrak = marketName.includes('StatTrak™');
@@ -429,6 +430,7 @@ export function mapSteamItemsToCS2Skins(assets: any[], descriptions: any[]): CS2
       image: imageUrl,
       fallbackImage: 'https://community.akamai.steamstatic.com/economy/image/i0CoZ81Ui0m-9KwlBY1L_18myuGuq1wfhWSaZgMttyVfPaERSR0Wqmu7LAocGIGz3UqlXOLrxM-vMGmW8VNxu5Dx60noTyL6kJ_m-B1Q7uCvZaZkNM-SA1iVzOtkse1tcCSyhx8rtjSfn4vGLSLANkI-X8MjTLFYskTsw9bnZOuwsgSIj4sTniz-2i5A7yY6tbwGV6Nx-qGEjxaBb-MuPavopw',
       isStatTrak,
+      tradeLockDays: isTradeLocked ? 7 : 0,
     });
   });
 
@@ -564,18 +566,15 @@ export async function fetchSteamInventory(input: string, forceRefresh = false): 
           // ignore
         }
 
-        // Fallback: Provide verified CS2 valuation items so the user is never stuck with an empty broken screen!
+        // Do NOT return mock items for a real user's inventory
         return {
-          success: true,
+          success: false,
           status: 'rate_limited',
-          items: MOCK_CS2_INVENTORY,
-          totalCount: MOCK_CS2_INVENTORY.length,
-          player: data.player || {
-            personaname: 'Steam Trader',
-            avatar: 'https://avatars.steamstatic.com/b5bd56c1aa99e440b0b12e1a6ae410290fec5b12_full.jpg',
-          },
+          items: [],
+          totalCount: 0,
+          player: data.player || null,
           steamId64,
-          message: 'Steam rate limit active. Valuation mode enabled with verified items.',
+          message: 'Steam rate limit active. Please try again in 15 seconds.',
         };
       }
 

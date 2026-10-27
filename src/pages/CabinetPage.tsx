@@ -27,7 +27,8 @@ import {
   Lock,
   Layers,
   ArrowUpDown,
-  ArrowLeftRight
+  ArrowLeftRight,
+  PackageOpen
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { useAuth } from '../context/AuthContext';
@@ -56,7 +57,7 @@ export const CabinetPage: React.FC<CabinetPageProps> = ({
   onNavigateHome, 
   onLoadInventoryAndGoHome 
 }) => {
-  const { user, loginWithSteam, logout, updateTradeUrl, updateBalance, transactions, addTransaction } = useAuth();
+  const { user, loginWithSteam, logout, updateTradeUrl, syncUserWithTradeUrl, updateBalance, transactions, addTransaction } = useAuth();
   const { currency, setCurrency, formatPrice } = useCurrency();
   const { language, setLanguage, currentOption } = useLanguage();
   const tc = (key: string, params?: Record<string, string | number>) => getCabinetText(language, key, params);
@@ -70,10 +71,10 @@ export const CabinetPage: React.FC<CabinetPageProps> = ({
   const [tradeUrlError, setTradeUrlError] = useState<string | null>(null);
   const [tradeUrlSuccess, setTradeUrlSuccess] = useState<string | null>(null);
 
-  // User CS2 Inventory State
-  const [skins, setSkins] = useState<CS2Skin[]>(MOCK_CS2_INVENTORY);
+  // User CS2 Inventory State - starts empty until loaded, never shows fake demo skins
+  const [skins, setSkins] = useState<CS2Skin[]>([]);
   const [isLoadingInventory, setIsLoadingInventory] = useState(false);
-  const [inventoryStatus, setInventoryStatus] = useState<'success' | 'private' | 'rate_limited' | 'error' | 'demo' | 'empty'>('demo');
+  const [inventoryStatus, setInventoryStatus] = useState<'success' | 'private' | 'rate_limited' | 'error' | 'demo' | 'empty'>('empty');
   const [selectedSkinIds, setSelectedSkinIds] = useState<Set<string>>(new Set());
   const [activeCategory, setActiveCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -123,15 +124,21 @@ export const CabinetPage: React.FC<CabinetPageProps> = ({
 
       if (res.status === 'success' && res.items.length > 0) {
         setSkins(res.items);
-        // Pre-select first 2 skins for immediate convenience
         setSelectedSkinIds(new Set(res.items.slice(0, 2).map(s => s.id)));
-      } else if (res.status === 'demo' || (res.items && res.items.length > 0)) {
+      } else if (res.status === 'demo') {
         setSkins(res.items);
         setSelectedSkinIds(new Set(res.items.slice(0, 2).map(s => s.id)));
+      } else {
+        // empty, private, rate_limited, error: never show demo skins
+        setSkins([]);
+        setSelectedSkinIds(new Set());
       }
     } catch (err) {
       console.warn('Failed to load user inventory in cabinet:', err);
       setIsLoadingInventory(false);
+      setInventoryStatus('error');
+      setSkins([]);
+      setSelectedSkinIds(new Set());
     }
   }, []);
 
@@ -156,31 +163,42 @@ export const CabinetPage: React.FC<CabinetPageProps> = ({
   };
 
   /**
-   * Strictly verifies whether the trade URL belongs to THIS logged-in user.
-   * If someone tries to paste another account's trade URL, it is blocked with an explicit error!
+   * Saves and verifies Trade URL, connects it to the user account, and fetches real Steam items.
    */
-  const handleSaveTradeUrl = () => {
+  const handleSaveTradeUrl = async () => {
     setTradeUrlError(null);
     setTradeUrlSuccess(null);
 
     if (!user) return;
 
-    if (!tradeUrlInput.trim()) {
+    const trimmed = tradeUrlInput.trim();
+    if (!trimmed) {
       setTradeUrlError(tc('cabinet.errEnterTradeUrl'));
       return;
     }
 
-    const verification = verifyUserTradeUrl(tradeUrlInput, user.steamId64);
-
-    if (!verification.belongsToUser) {
-      setTradeUrlError(verification.error || tc('cabinet.errDifferentAccount'));
+    const parsed = parseSteamTradeUrl(trimmed);
+    if (!parsed.isValid || !parsed.steamId64) {
+      setTradeUrlError('Некоректний формат Trade URL. Посилання має містити partner=... та token=...');
       return;
     }
 
-    // Success: URL is strictly verified to match user's steamId64
-    updateTradeUrl(tradeUrlInput);
-    setTradeUrlSuccess(tc('cabinet.successTradeUrl'));
-    loadUserInventory(tradeUrlInput, true);
+    setIsLoadingInventory(true);
+
+    try {
+      if (syncUserWithTradeUrl) {
+        await syncUserWithTradeUrl(trimmed);
+      } else {
+        updateTradeUrl(trimmed);
+      }
+
+      setTradeUrlSuccess(tc('cabinet.successTradeUrl'));
+      await loadUserInventory(trimmed, true);
+    } catch (err: any) {
+      console.warn('Error saving trade url:', err);
+      setTradeUrlError(err?.message || 'Помилка оновлення Trade URL');
+      setIsLoadingInventory(false);
+    }
 
     setTimeout(() => {
       setTradeUrlSuccess(null);
@@ -988,9 +1006,17 @@ export const CabinetPage: React.FC<CabinetPageProps> = ({
               </div>
             </div>
 
-            {/* Private Inventory Notice */}
-            {inventoryStatus === 'private' && (
-              <div className="p-6 rounded-3xl bg-amber-500/10 border border-amber-500/30 text-center space-y-3">
+            {/* Loading Indicator */}
+            {isLoadingInventory ? (
+              <div className="py-20 text-center space-y-3 bg-[#0B1017] rounded-3xl border border-white/[0.05]">
+                <RefreshCw className="w-8 h-8 text-emerald-400 animate-spin mx-auto" />
+                <div className="text-sm font-['Space_Grotesk'] text-slate-300">
+                  {tc('steamModal.loading')}
+                </div>
+              </div>
+            ) : inventoryStatus === 'private' ? (
+              /* Private Inventory Notice */
+              <div className="p-8 rounded-3xl bg-amber-500/10 border border-amber-500/30 text-center space-y-3">
                 <Lock className="w-10 h-10 text-amber-400 mx-auto" />
                 <h3 className="text-lg font-bold text-white font-['Space_Grotesk']">
                   {tc('sandbox.privateTitle')}
@@ -998,29 +1024,72 @@ export const CabinetPage: React.FC<CabinetPageProps> = ({
                 <p className="text-xs text-slate-300 max-w-lg mx-auto leading-relaxed">
                   {tc('sandbox.privateDesc')}
                 </p>
-                <a
-                  href="https://steamcommunity.com/id/me/edit/settings"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs font-['Space_Grotesk']"
-                >
-                  <span>{tc('sandbox.openPrivacyBtn')}</span>
-                  <ExternalLink className="w-3.5 h-3.5" />
-                </a>
+                <div className="pt-2">
+                  <a
+                    href="https://steamcommunity.com/id/me/edit/settings"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs font-['Space_Grotesk']"
+                  >
+                    <span>{tc('sandbox.openPrivacyBtn')}</span>
+                    <ExternalLink className="w-3.5 h-3.5" />
+                  </a>
+                </div>
               </div>
-            )}
-
-            {/* Skins Grid */}
-            {isLoadingInventory ? (
-              <div className="py-20 text-center space-y-3">
-                <RefreshCw className="w-8 h-8 text-emerald-400 animate-spin mx-auto" />
-                <div className="text-sm font-['Space_Grotesk'] text-slate-300">
-                  {tc('steamModal.loading')}
+            ) : inventoryStatus === 'rate_limited' ? (
+              /* Rate Limited Notice */
+              <div className="p-8 rounded-3xl bg-cyan-950/20 border border-cyan-500/30 text-center space-y-3">
+                <Clock className="w-10 h-10 text-cyan-400 mx-auto animate-pulse" />
+                <h3 className="text-lg font-bold text-white font-['Space_Grotesk']">
+                  Steam API Rate Limit
+                </h3>
+                <p className="text-xs text-slate-300 max-w-lg mx-auto leading-relaxed">
+                  Сервери Steam тимчасово обмежили запити до інвентарю. Спробуйте оновити ще раз через кілька секунд.
+                </p>
+                <div className="pt-2">
+                  <button
+                    onClick={() => {
+                      const target = user?.tradeUrl || user?.steamId64;
+                      if (target) loadUserInventory(target, true);
+                    }}
+                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs font-['Space_Grotesk'] cursor-pointer"
+                  >
+                    <RefreshCw className="w-3.5 h-3.5" />
+                    <span>Повторити спробу</span>
+                  </button>
                 </div>
               </div>
             ) : filteredSkins.length === 0 ? (
-              <div className="py-16 text-center text-slate-500 text-xs font-['JetBrains_Mono'] bg-[#0B1017] rounded-3xl border border-white/[0.05]">
-                {tc('inv.empty')}
+              /* Empty Inventory State */
+              <div className="py-16 px-6 text-center space-y-3.5 bg-[#0B1017] rounded-3xl border border-white/[0.05]">
+                <PackageOpen className="w-12 h-12 text-slate-600 mx-auto" />
+                <h3 className="text-lg font-bold text-white font-['Space_Grotesk']">
+                  {tc('inv.empty')}
+                </h3>
+                <p className="text-xs text-slate-400 max-w-md mx-auto leading-relaxed font-['Space_Grotesk']">
+                  У вашому CS2 інвентарі наразі немає скінів або вони знаходяться на 7-денному трейд-холді Steam.
+                </p>
+                <div className="flex items-center justify-center gap-3 pt-2">
+                  <button
+                    onClick={() => {
+                      const target = user?.tradeUrl || user?.steamId64;
+                      if (target) loadUserInventory(target, true);
+                    }}
+                    className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-xs font-semibold text-emerald-400 border border-white/10 transition-colors cursor-pointer"
+                  >
+                    <RefreshCw className="w-3.5 h-3.5" />
+                    <span>Повторити сканування</span>
+                  </button>
+                  <a
+                    href={user?.profileurl ? `${user.profileurl}/inventory/#730` : `https://steamcommunity.com/profiles/${user?.steamId64}/inventory/#730`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-xs text-slate-300 border border-white/10 transition-colors"
+                  >
+                    <span>Відкрити інвентар у Steam</span>
+                    <ExternalLink className="w-3.5 h-3.5" />
+                  </a>
+                </div>
               </div>
             ) : (
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3.5 sm:gap-4">
