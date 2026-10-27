@@ -6,7 +6,6 @@ import {
   X, 
   ChevronDown, 
   ArrowRight, 
-  Flame, 
   Globe,
   ArrowLeftRight,
   ShieldCheck,
@@ -202,13 +201,6 @@ export const Navbar: React.FC<NavbarProps> = ({ onScrollToSection }) => {
                       <span className="px-1.5 py-0.2 rounded bg-emerald-500/15 text-emerald-400 text-[10px] font-bold font-['JetBrains_Mono']">
                         299+
                       </span>
-                    </button>
-                    <button
-                      onClick={() => handleNavClick('live-payouts')}
-                      className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-['Space_Grotesk'] text-slate-300 hover:text-white hover:bg-white/[0.06] rounded-xl transition-colors cursor-pointer"
-                    >
-                      <Flame className="w-3.5 h-3.5 text-cyan-400" />
-                      <span>{t('nav.liveDeals')}</span>
                     </button>
                     <button
                       onClick={() => handleNavClick('how-it-works')}
@@ -567,16 +559,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onScrollToSection }) => {
                   </span>
                 </button>
 
-                {/* 3. Live Deals */}
-                <button
-                  onClick={() => handleNavClick('live-payouts')}
-                  className="w-full py-2.5 px-4 rounded-xl text-left text-slate-300 hover:text-white hover:bg-white/[0.04] text-xs font-semibold font-['Space_Grotesk'] flex items-center gap-2.5 cursor-pointer"
-                >
-                  <Flame className="w-4 h-4 text-cyan-400" />
-                  <span>{t('nav.liveDeals')}</span>
-                </button>
-
-                {/* 4. How it works */}
+                {/* 3. How it works */}
                 <button
                   onClick={() => handleNavClick('how-it-works')}
                   className="w-full py-2.5 px-4 rounded-xl text-left text-slate-300 hover:text-white hover:bg-white/[0.04] text-xs font-semibold font-['Space_Grotesk'] flex items-center gap-2.5 cursor-pointer"
