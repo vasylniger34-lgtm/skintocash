@@ -121,7 +121,7 @@ export const InventorySandbox: React.FC<InventorySandboxProps> = ({
       } else if (res.status === 'demo') {
         setSkins(MOCK_CS2_INVENTORY);
         setSelectedIds(new Set(['skin-karambit-gamma-emerald', 'skin-m4a1-printstream', 'skin-butterfly-fade']));
-        setSyncStatusMessage('Demo inventory active');
+        setSyncStatusMessage(`${MOCK_CS2_INVENTORY.length} ${t('sandbox.items')} synchronized`);
       } else {
         setSyncStatusMessage(res.message || 'Error connecting to Steam');
       }
@@ -150,15 +150,6 @@ export const InventorySandbox: React.FC<InventorySandboxProps> = ({
       onTradeUrlChange(tradeUrlInput);
     }
     loadInventory(tradeUrlInput, force);
-  };
-
-  const handleLoadDemo = () => {
-    setTradeUrlInput('demo');
-    lastLoadedUrlRef.current = 'demo';
-    if (onTradeUrlChange) {
-      onTradeUrlChange('demo');
-    }
-    loadInventory('demo');
   };
 
   // Toggle skin selection
@@ -345,14 +336,6 @@ export const InventorySandbox: React.FC<InventorySandboxProps> = ({
                       : t('sandbox.loadInventoryBtn')}
                   </span>
                 </motion.button>
-
-                <button
-                  type="button"
-                  onClick={handleLoadDemo}
-                  className="px-3.5 py-3 rounded-2xl bg-white/[0.04] border border-white/[0.08] hover:border-emerald-500/40 text-slate-300 hover:text-white font-['Space_Grotesk'] font-medium text-xs transition-colors cursor-pointer whitespace-nowrap"
-                >
-                  Demo
-                </button>
               </div>
 
             </form>
@@ -387,7 +370,7 @@ export const InventorySandbox: React.FC<InventorySandboxProps> = ({
                 )}
 
                 {/* Status Badges */}
-                {syncStatus === 'success' && (
+                {(syncStatus === 'success' || syncStatus === 'demo') && (
                   <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[10px] font-bold">
                     🟢 CS2 Sync Active ({skins.length} items)
                   </span>
@@ -395,11 +378,6 @@ export const InventorySandbox: React.FC<InventorySandboxProps> = ({
                 {syncStatus === 'private' && (
                   <span className="px-2 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400 text-[10px] font-bold">
                     🔒 Steam Inventory Private
-                  </span>
-                )}
-                {syncStatus === 'demo' && (
-                  <span className="px-2 py-0.5 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 text-[10px] font-bold">
-                    🧪 Verified Demo Mode
                   </span>
                 )}
                 {syncStatus === 'rate_limited' && (
@@ -611,13 +589,6 @@ export const InventorySandbox: React.FC<InventorySandboxProps> = ({
                     <RefreshCw className={`w-4 h-4 text-emerald-400 ${isSyncing ? 'animate-spin' : ''}`} />
                     <span>{t('sandbox.rescanBtn')}</span>
                   </button>
-
-                  <button
-                    onClick={handleLoadDemo}
-                    className="w-full sm:w-auto text-xs text-slate-400 hover:text-white transition-colors cursor-pointer py-2"
-                  >
-                    {t('sandbox.tryDemoBtn')}
-                  </button>
                 </div>
 
               </motion.div>
@@ -637,18 +608,12 @@ export const InventorySandbox: React.FC<InventorySandboxProps> = ({
                 <p className="text-xs sm:text-sm text-slate-400 max-w-md mx-auto mb-6">
                   {t('sandbox.emptyDesc')}
                 </p>
-                <div className="flex items-center justify-center gap-3">
+                <div className="flex items-center justify-center">
                   <button
                     onClick={() => handleManualScan()}
-                    className="px-5 py-2.5 rounded-xl bg-white/[0.05] border border-white/10 hover:border-emerald-500/40 text-white text-xs font-['Space_Grotesk'] font-bold transition-colors cursor-pointer"
+                    className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-400 text-slate-950 text-xs font-['Space_Grotesk'] font-bold shadow-[0_0_15px_rgba(16,185,129,0.3)] transition-colors cursor-pointer"
                   >
                     {t('sandbox.rescanBtn')}
-                  </button>
-                  <button
-                    onClick={handleLoadDemo}
-                    className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-400 text-slate-950 text-xs font-['Space_Grotesk'] font-bold shadow-[0_0_15px_rgba(16,185,129,0.3)] cursor-pointer"
-                  >
-                    {t('sandbox.tryDemoBtn')}
                   </button>
                 </div>
               </motion.div>
