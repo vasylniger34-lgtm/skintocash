@@ -96,15 +96,11 @@ export const InventorySandbox: React.FC<InventorySandboxProps> = ({
         setSelectedIds(new Set(res.items.slice(0, 3).map(s => s.id)));
         setSyncStatusMessage(`${res.items.length} ${t('sandbox.items')} synchronized`);
       } else if (res.status === 'rate_limited') {
-        if (res.items && res.items.length > 0) {
-          setSkins(res.items);
-          setSelectedIds(new Set(res.items.slice(0, 3).map(s => s.id)));
-        } else {
-          setSkins([]);
-          setSelectedIds(new Set());
-        }
-        setCooldown(30);
-        setSyncStatusMessage(res.message || 'Steam rate limit active. Please retry in 15 seconds.');
+        const fallbackItems = res.items && res.items.length > 0 ? res.items : MOCK_CS2_INVENTORY;
+        setSkins(fallbackItems);
+        setSelectedIds(new Set(fallbackItems.slice(0, 3).map(s => s.id)));
+        setCooldown(15);
+        setSyncStatusMessage(res.message || t('sandbox.rateLimitNotice'));
       } else if (res.status === 'private') {
         setSkins([]);
         setSelectedIds(new Set());
@@ -402,14 +398,23 @@ export const InventorySandbox: React.FC<InventorySandboxProps> = ({
                     {t('sandbox.rateLimitNotice')}
                   </span>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => handleManualScan(undefined, true)}
-                  disabled={cooldown > 0 || isSyncing}
-                  className="px-3.5 py-1.5 rounded-xl bg-amber-400/20 hover:bg-amber-400/30 border border-amber-400/40 text-amber-200 text-xs font-bold transition-all disabled:opacity-40 cursor-pointer disabled:cursor-not-allowed whitespace-nowrap self-end sm:self-auto"
-                >
-                  {cooldown > 0 ? t('sandbox.cooldownWait', { seconds: cooldown }) : t('sandbox.retryNow')}
-                </button>
+                <div className="flex items-center gap-2 shrink-0 self-end sm:self-auto">
+                  <button
+                    type="button"
+                    onClick={() => loadInventory('demo')}
+                    className="px-3 py-1.5 rounded-xl bg-white/[0.06] hover:bg-white/10 text-white text-xs font-['Space_Grotesk'] font-medium transition-colors cursor-pointer"
+                  >
+                    {t('sandbox.tryDemoBtn')}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleManualScan(undefined, true)}
+                    disabled={cooldown > 0 || isSyncing}
+                    className="px-3.5 py-1.5 rounded-xl bg-amber-400/20 hover:bg-amber-400/30 border border-amber-400/40 text-amber-200 text-xs font-bold transition-all disabled:opacity-40 cursor-pointer disabled:cursor-not-allowed whitespace-nowrap"
+                  >
+                    {cooldown > 0 ? t('sandbox.cooldownWait', { seconds: cooldown }) : t('sandbox.retryNow')}
+                  </button>
+                </div>
               </motion.div>
             )}
 

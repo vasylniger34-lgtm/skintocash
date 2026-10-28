@@ -5,7 +5,7 @@ import tailwindcss from '@tailwindcss/vite'
 // In-memory server cache & singleflight queue to prevent duplicate Steam API hits
 const serverInventoryCache = new Map<string, { timestamp: number; payload: any }>();
 const serverPendingRequests = new Map<string, Promise<any>>();
-const CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutes
+const CACHE_TTL_MS = 30 * 60 * 1000; // 30 minutes cache to prevent Steam IP rate-limiting
 
 // Helper to fetch full Steam player details including Level and VAC/Trade bans
 async function fetchSteamUserDetails(apiKey: string, steamId64: string) {
@@ -243,22 +243,41 @@ function steamDevProxyPlugin(apiKey: string) {
                 profileurl: playerProfile.profileurl,
               } : null;
 
-              // Fetch CS2 Public Inventory with realistic browser headers & reasonable count
-              const inventoryUrl = `https://steamcommunity.com/inventory/${targetSteamId}/730/2?l=english&count=100`;
-              const invRes = await fetch(inventoryUrl, {
-                headers: {
-                  'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
-                  'Accept': 'application/json, text/javascript, */*; q=0.01',
-                  'Accept-Language': 'en-US,en;q=0.9',
-                  'Referer': `https://steamcommunity.com/profiles/${targetSteamId}/inventory`,
-                  'Sec-Fetch-Dest': 'empty',
-                  'Sec-Fetch-Mode': 'cors',
-                  'Sec-Fetch-Site': 'same-origin',
-                },
-              });
+              // Fetch CS2 Public Inventory with realistic browser headers & candidate URL rotation
+              let invRes: any = null;
+              const candidateUrls = [
+                `https://steamcommunity.com/inventory/${targetSteamId}/730/2?l=english&count=100`,
+                `https://steamcommunity.com/inventory/${targetSteamId}/730/2?l=english&count=75`,
+                `https://steamcommunity.com/inventory/${targetSteamId}/730/2?l=english`,
+              ];
+
+              for (const inventoryUrl of candidateUrls) {
+                try {
+                  invRes = await fetch(inventoryUrl, {
+                    headers: {
+                      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36',
+                      'Accept': 'application/json, text/javascript, */*; q=0.01',
+                      'Accept-Language': 'en-US,en;q=0.9',
+                      'Referer': `https://steamcommunity.com/profiles/${targetSteamId}/inventory`,
+                    },
+                  });
+
+                  // If success or definitive private (401/403), stop trying
+                  if (invRes.ok || invRes.status === 401 || invRes.status === 403) {
+                    break;
+                  }
+
+                  // If 429, wait briefly before next candidate
+                  if (invRes.status === 429) {
+                    await new Promise(r => setTimeout(r, 500));
+                  }
+                } catch {
+                  // try next
+                }
+              }
 
               // 401 or 403 on Steam community inventory = Private / Friends-Only inventory
-              if (invRes.status === 401 || invRes.status === 403) {
+              if (invRes && (invRes.status === 401 || invRes.status === 403)) {
                 return {
                   success: false,
                   error: 'private_inventory',
@@ -269,8 +288,8 @@ function steamDevProxyPlugin(apiKey: string) {
                 };
               }
 
-              if (invRes.status === 429) {
-                // If we have stale cache, serve it
+              if (!invRes || invRes.status === 429) {
+                // If we have stale cache, serve it immediately!
                 if (cached) {
                   return {
                     ...cached.payload,
