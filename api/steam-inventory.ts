@@ -50,7 +50,7 @@ export default async function handler(req: any, res: any) {
   let fetchPromise = serverPendingRequests.get(targetSteamId);
   if (!fetchPromise) {
     fetchPromise = (async () => {
-      const apiKey = process.env.STEAM_API_KEY || process.env.VITE_STEAM_API_KEY || 'DB6A39A369C636E1C5F5719F226C8357';
+      const apiKey = process.env.STEAM_API_KEY || process.env.VITE_STEAM_API_KEY || '';
 
       // Fetch Player Profile info via Steam Web API Key
       let playerProfile: any = null;

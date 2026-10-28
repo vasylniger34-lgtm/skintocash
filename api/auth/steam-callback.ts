@@ -15,7 +15,7 @@ export default async function handler(req: any, res: any) {
       return;
     }
 
-    const apiKey = process.env.STEAM_API_KEY || process.env.VITE_STEAM_API_KEY || 'DB6A39A369C636E1C5F5719F226C8357';
+    const apiKey = process.env.STEAM_API_KEY || process.env.VITE_STEAM_API_KEY || '';
 
     // Fetch user profile, level, bans
     let playerProfile: any = null;
