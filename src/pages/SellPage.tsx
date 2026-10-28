@@ -276,7 +276,7 @@ export const SellPage: React.FC<SellPageProps> = ({ onNavigateHome, onOpenSteamM
                 <option value="EUR" className="bg-[#0B1017] text-white">EUR (€)</option>
                 <option value="UAH" className="bg-[#0B1017] text-white">UAH (₴)</option>
                 <option value="RUB" className="bg-[#0B1017] text-white">RUB (₽)</option>
-                <option value="CRYPTO" className="bg-[#0B1017] text-white">USDT (₮)</option>
+                <option value="KZT" className="bg-[#0B1017] text-white">KZT (₸)</option>
               </select>
               <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
             </div>

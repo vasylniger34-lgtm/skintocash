@@ -80,7 +80,7 @@ export const Navbar: React.FC<NavbarProps> = ({
     { code: 'EUR', label: 'EUR (€)', icon: '€' },
     { code: 'UAH', label: 'UAH (₴)', icon: '₴' },
     { code: 'RUB', label: 'RUB (₽)', icon: '₽' },
-    { code: 'CRYPTO', label: 'USDT (₮)', icon: '₮' },
+    { code: 'KZT', label: 'KZT (₸)', icon: '₸' },
   ];
 
   const handleNavClick = (sectionId: string) => {

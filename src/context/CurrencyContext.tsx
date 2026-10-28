@@ -37,6 +37,13 @@ const CURRENCY_CONFIGS: Record<Currency, CurrencyConfig> = {
     prefix: '',
     suffix: ' ₽',
   },
+  KZT: {
+    code: 'KZT',
+    symbol: '₸',
+    rate: 510.0,
+    prefix: '',
+    suffix: ' ₸',
+  },
   CRYPTO: {
     code: 'CRYPTO',
     symbol: '₮',

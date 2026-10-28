@@ -98,7 +98,7 @@ export const ReviewsPage: React.FC<ReviewsPageProps> = ({ onNavigateHome, onOpen
     { code: 'EUR', label: 'EUR (€)', icon: '€' },
     { code: 'UAH', label: 'UAH (₴)', icon: '₴' },
     { code: 'RUB', label: 'RUB (₽)', icon: '₽' },
-    { code: 'CRYPTO', label: 'USDT (₮)', icon: '₮' },
+    { code: 'KZT', label: 'KZT (₸)', icon: '₸' },
   ];
 
   // Summary statistics calculated dynamically

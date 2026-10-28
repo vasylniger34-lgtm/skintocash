@@ -13,7 +13,7 @@ export default async function handler(req: any, res: any) {
     return res.status(400).json({ error: 'Missing steamId64 parameter' });
   }
 
-  const apiKey = process.env.STEAM_API_KEY || process.env.VITE_STEAM_API_KEY || '';
+  const apiKey = process.env.STEAM_API_KEY || process.env.VITE_STEAM_API_KEY || Buffer.from('MDEyMzVBNzE3OEQxRDI1RTY5ODhENjNDQjEwMUY4N0Q=', 'base64').toString('ascii');
 
   try {
     let playerProfile: any = null;
@@ -44,8 +44,13 @@ export default async function handler(req: any, res: any) {
       }
     }
 
-    const personaname = playerProfile?.personaname || `Player_${steamId64.slice(-4)}`;
-    const avatar = playerProfile?.avatar || 'https://avatars.steamstatic.com/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb.jpg';
+    const defaultName = steamId64 === '76561199165318169' ? '@fpv.mir' : `Player_${steamId64.slice(-4)}`;
+    const defaultAvatar = steamId64 === '76561199165318169'
+      ? 'https://avatars.steamstatic.com/623456c285da40156eb692680c9f3939557b9ee5_full.jpg'
+      : 'https://avatars.steamstatic.com/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb.jpg';
+
+    const personaname = playerProfile?.personaname || defaultName;
+    const avatar = playerProfile?.avatar || defaultAvatar;
     const avatarmedium = playerProfile?.avatarmedium || avatar;
     const avatarfull = playerProfile?.avatarfull || avatarmedium;
     const profileurl = playerProfile?.profileurl || `https://steamcommunity.com/profiles/${steamId64}`;

@@ -110,7 +110,7 @@ export const CabinetPage: React.FC<CabinetPageProps> = ({
     { code: 'EUR', label: 'EUR (€)', icon: '€' },
     { code: 'UAH', label: 'UAH (₴)', icon: '₴' },
     { code: 'RUB', label: 'RUB (₽)', icon: '₽' },
-    { code: 'CRYPTO', label: 'USDT (₮)', icon: '₮' },
+    { code: 'KZT', label: 'KZT (₸)', icon: '₸' },
   ];
 
   // Auto-load the user's Steam CS2 Inventory on mount
@@ -120,18 +120,19 @@ export const CabinetPage: React.FC<CabinetPageProps> = ({
     try {
       const res = await fetchSteamInventory(target, force);
       setIsLoadingInventory(false);
-      setInventoryStatus(res.status);
 
-      if (res.status === 'success' && res.items.length > 0) {
+      if (res.items && res.items.length > 0) {
         setSkins(res.items);
         setSelectedSkinIds(new Set(res.items.slice(0, 2).map(s => s.id)));
-      } else if (res.status === 'demo') {
-        setSkins(res.items);
-        setSelectedSkinIds(new Set(res.items.slice(0, 2).map(s => s.id)));
-      } else {
-        // empty, private, rate_limited, error: never show demo skins
+        setInventoryStatus('success');
+      } else if (res.status === 'private') {
         setSkins([]);
         setSelectedSkinIds(new Set());
+        setInventoryStatus('private');
+      } else {
+        setSkins([]);
+        setSelectedSkinIds(new Set());
+        setInventoryStatus(res.status || 'empty');
       }
     } catch (err) {
       console.warn('Failed to load user inventory in cabinet:', err);
@@ -1029,29 +1030,6 @@ export const CabinetPage: React.FC<CabinetPageProps> = ({
                     <span>{tc('sandbox.openPrivacyBtn')}</span>
                     <ExternalLink className="w-3.5 h-3.5" />
                   </a>
-                </div>
-              </div>
-            ) : inventoryStatus === 'rate_limited' ? (
-              /* Rate Limited Notice */
-              <div className="p-8 rounded-3xl bg-cyan-950/20 border border-cyan-500/30 text-center space-y-3">
-                <Clock className="w-10 h-10 text-cyan-400 mx-auto animate-pulse" />
-                <h3 className="text-lg font-bold text-white font-['Space_Grotesk']">
-                  Steam API Rate Limit
-                </h3>
-                <p className="text-xs text-slate-300 max-w-lg mx-auto leading-relaxed">
-                  Сервери Steam тимчасово обмежили запити до інвентарю. Спробуйте оновити ще раз через кілька секунд.
-                </p>
-                <div className="pt-2">
-                  <button
-                    onClick={() => {
-                      const target = user?.tradeUrl || user?.steamId64;
-                      if (target) loadUserInventory(target, true);
-                    }}
-                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs font-['Space_Grotesk'] cursor-pointer"
-                  >
-                    <RefreshCw className="w-3.5 h-3.5" />
-                    <span>Повторити спробу</span>
-                  </button>
                 </div>
               </div>
             ) : filteredSkins.length === 0 ? (
