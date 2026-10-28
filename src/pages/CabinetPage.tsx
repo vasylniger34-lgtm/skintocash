@@ -635,11 +635,6 @@ export const CabinetPage: React.FC<CabinetPageProps> = ({
                     <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
                     Steam Verified
                   </span>
-                  {user.loccountrycode && (
-                    <span className="text-[11px] px-2 py-0.5 rounded-md bg-white/[0.06] border border-white/[0.08] font-['JetBrains_Mono'] text-slate-300 uppercase">
-                      🇺🇦 {user.loccountrycode}
-                    </span>
-                  )}
                 </div>
 
                 {/* SteamID and Profile URL */}
