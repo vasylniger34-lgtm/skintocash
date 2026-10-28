@@ -6,26 +6,64 @@ const serverPendingRequests = new Map<string, Promise<any>>();
 const CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutes cache
 
 async function fetchSteamCommunityInventory(steamId: string) {
-  const url = `https://steamcommunity.com/inventory/${steamId}/730/2?l=english&count=75`;
+  const profileUrl = `https://steamcommunity.com/profiles/${steamId}/inventory/`;
+  const defaultHeaders = {
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36',
+    'Accept-Language': 'en-US,en;q=0.9',
+  };
 
+  let sessionCookies = '';
   try {
-    const res = await fetch(url, {
+    const profRes = await fetch(profileUrl, {
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36',
-        'Accept': 'application/json, text/javascript, */*; q=0.01',
-        'Accept-Language': 'en-US,en;q=0.9',
-        'Referer': `https://steamcommunity.com/profiles/${steamId}/inventory/`,
-        'Sec-Fetch-Dest': 'empty',
-        'Sec-Fetch-Mode': 'cors',
-        'Sec-Fetch-Site': 'same-origin',
+        ...defaultHeaders,
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
       },
       signal: AbortSignal.timeout(4000),
     });
 
-    return res;
-  } catch (err: any) {
-    return null;
+    if (profRes.ok) {
+      const getSet = profRes.headers.getSetCookie ? profRes.headers.getSetCookie() : [profRes.headers.get('set-cookie')];
+      sessionCookies = (getSet || []).filter((c: any): c is string => typeof c === 'string').map((c: string) => c.split(';')[0]).join('; ');
+    }
+  } catch {
+    // Continue even if profile cookie fetch fails
   }
+
+  const candidateUrls = [
+    `https://steamcommunity.com/inventory/${steamId}/730/2?l=english&count=75`,
+    `https://steamcommunity.com/inventory/${steamId}/730/2?l=english&count=100`,
+    `https://steamcommunity.com/inventory/${steamId}/730/2?l=english`,
+  ];
+
+  for (const url of candidateUrls) {
+    try {
+      const res = await fetch(url, {
+        headers: {
+          ...defaultHeaders,
+          'Accept': 'application/json, text/javascript, */*; q=0.01',
+          'Referer': profileUrl,
+          'Sec-Fetch-Dest': 'empty',
+          'Sec-Fetch-Mode': 'cors',
+          'Sec-Fetch-Site': 'same-origin',
+          ...(sessionCookies ? { 'Cookie': sessionCookies } : {}),
+        },
+        signal: AbortSignal.timeout(5000),
+      });
+
+      if (res.ok || res.status === 401 || res.status === 403) {
+        return res;
+      }
+
+      if (res.status === 429) {
+        await new Promise(r => setTimeout(r, 1000));
+      }
+    } catch {
+      // try next candidate
+    }
+  }
+
+  return null;
 }
 
 export default async function handler(req: any, res: any) {

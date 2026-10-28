@@ -17,7 +17,6 @@ import {
   AlertCircle,
   UserCheck
 } from 'lucide-react';
-import { MOCK_CS2_INVENTORY } from '../data/skinsData';
 import type { CS2Skin } from '../types';
 import { useCurrency } from '../context/CurrencyContext';
 import { useLanguage } from '../context/LanguageContext';
@@ -45,14 +44,12 @@ export const InventorySandbox: React.FC<InventorySandboxProps> = ({
 
   // Trade URL input state
   const [tradeUrlInput, setTradeUrlInput] = useState<string>(initialTradeUrl || '');
-  const [skins, setSkins] = useState<CS2Skin[]>(MOCK_CS2_INVENTORY);
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(
-    new Set(['skin-karambit-gamma-emerald', 'skin-m4a1-printstream', 'skin-butterfly-fade'])
-  );
+  const [skins, setSkins] = useState<CS2Skin[]>([]);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   // Steam API Sync Status & Player Info
   const [isSyncing, setIsSyncing] = useState(false);
-  const [syncStatus, setSyncStatus] = useState<'success' | 'private' | 'rate_limited' | 'error' | 'demo' | 'empty'>('demo');
+  const [syncStatus, setSyncStatus] = useState<'success' | 'private' | 'rate_limited' | 'error' | 'empty'>('empty');
   const [playerInfo, setPlayerInfo] = useState<{ personaname: string; avatar: string; profileurl?: string } | null>(null);
   const [syncStatusMessage, setSyncStatusMessage] = useState<string | null>(null);
   const [cooldown, setCooldown] = useState(0);
@@ -96,10 +93,14 @@ export const InventorySandbox: React.FC<InventorySandboxProps> = ({
         setSelectedIds(new Set(res.items.slice(0, 3).map(s => s.id)));
         setSyncStatusMessage(`${res.items.length} ${t('sandbox.items')} synchronized`);
       } else if (res.status === 'rate_limited') {
-        const fallbackItems = res.items && res.items.length > 0 ? res.items : MOCK_CS2_INVENTORY;
-        setSkins(fallbackItems);
-        setSelectedIds(new Set(fallbackItems.slice(0, 3).map(s => s.id)));
-        setCooldown(15);
+        if (res.items && res.items.length > 0) {
+          setSkins(res.items);
+          setSelectedIds(new Set(res.items.slice(0, 3).map(s => s.id)));
+        } else {
+          setSkins([]);
+          setSelectedIds(new Set());
+        }
+        setCooldown(10);
         setSyncStatusMessage(res.message || t('sandbox.rateLimitNotice'));
       } else if (res.status === 'private') {
         setSkins([]);
@@ -109,10 +110,6 @@ export const InventorySandbox: React.FC<InventorySandboxProps> = ({
         setSkins([]);
         setSelectedIds(new Set());
         setSyncStatusMessage('No tradable CS2 skins found');
-      } else if (res.status === 'demo') {
-        setSkins(MOCK_CS2_INVENTORY);
-        setSelectedIds(new Set(['skin-karambit-gamma-emerald', 'skin-m4a1-printstream', 'skin-butterfly-fade']));
-        setSyncStatusMessage(`${MOCK_CS2_INVENTORY.length} ${t('sandbox.items')} synchronized`);
       } else {
         setSkins([]);
         setSelectedIds(new Set());
@@ -331,7 +328,7 @@ export const InventorySandbox: React.FC<InventorySandboxProps> = ({
                 )}
 
                 {/* Status Badges */}
-                {(syncStatus === 'success' || syncStatus === 'demo') && (
+                {syncStatus === 'success' && (
                   <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[10px] font-bold">
                     🟢 {t('sandbox.statusActive', { count: skins.length })}
                   </span>
@@ -399,13 +396,6 @@ export const InventorySandbox: React.FC<InventorySandboxProps> = ({
                   </span>
                 </div>
                 <div className="flex items-center gap-2 shrink-0 self-end sm:self-auto">
-                  <button
-                    type="button"
-                    onClick={() => loadInventory('demo')}
-                    className="px-3 py-1.5 rounded-xl bg-white/[0.06] hover:bg-white/10 text-white text-xs font-['Space_Grotesk'] font-medium transition-colors cursor-pointer"
-                  >
-                    {t('sandbox.tryDemoBtn')}
-                  </button>
                   <button
                     type="button"
                     onClick={() => handleManualScan(undefined, true)}
@@ -588,7 +578,7 @@ export const InventorySandbox: React.FC<InventorySandboxProps> = ({
                 </div>
               </motion.div>
             ) : (
-              /* CONDITION 3: Live / Demo Skin Grid */
+              /* CONDITION 3: Live Skin Grid */
               <>
                 {/* Quick Action Bar (Select All / Item Count) */}
                 <div className="flex items-center justify-between text-xs px-2 text-slate-400 font-['JetBrains_Mono']">

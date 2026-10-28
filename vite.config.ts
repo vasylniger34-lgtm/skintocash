@@ -246,12 +246,34 @@ function steamDevProxyPlugin(apiKey: string) {
                 profileurl: playerProfile.profileurl,
               } : null;
 
-              // Fetch CS2 Public Inventory with realistic browser headers & candidate URL rotation
+              // Fetch CS2 Public Inventory with realistic browser headers & session cookies
               let invRes: any = null;
+              const profileUrl = `https://steamcommunity.com/profiles/${targetSteamId}/inventory/`;
+              const defaultHeaders = {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36',
+                'Accept-Language': 'en-US,en;q=0.9',
+              };
+
+              let sessionCookies = '';
+              try {
+                const profRes = await fetch(profileUrl, {
+                  headers: {
+                    ...defaultHeaders,
+                    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+                  },
+                  signal: AbortSignal.timeout(4000),
+                });
+                if (profRes.ok) {
+                  const getSet = profRes.headers.getSetCookie ? profRes.headers.getSetCookie() : [profRes.headers.get('set-cookie')];
+                  sessionCookies = (getSet || []).filter((c): c is string => typeof c === 'string').map(c => c.split(';')[0]).join('; ');
+                }
+              } catch {
+                // Ignore profile cookie fetch error
+              }
+
               const candidateUrls = [
-                `https://steamcommunity.com/inventory/${targetSteamId}/730/2?l=english&count=100`,
                 `https://steamcommunity.com/inventory/${targetSteamId}/730/2?l=english&count=75`,
-                `https://steamcommunity.com/inventory/${targetSteamId}/730/2?l=english&count=50`,
+                `https://steamcommunity.com/inventory/${targetSteamId}/730/2?l=english&count=100`,
                 `https://steamcommunity.com/inventory/${targetSteamId}/730/2?l=english`,
               ];
 
@@ -259,14 +281,15 @@ function steamDevProxyPlugin(apiKey: string) {
                 try {
                   invRes = await fetch(inventoryUrl, {
                     headers: {
-                      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36',
+                      ...defaultHeaders,
                       'Accept': 'application/json, text/javascript, */*; q=0.01',
-                      'Accept-Language': 'en-US,en;q=0.9',
-                      'Referer': `https://steamcommunity.com/profiles/${targetSteamId}/inventory/`,
+                      'Referer': profileUrl,
                       'Sec-Fetch-Dest': 'empty',
                       'Sec-Fetch-Mode': 'cors',
                       'Sec-Fetch-Site': 'same-origin',
+                      ...(sessionCookies ? { 'Cookie': sessionCookies } : {}),
                     },
+                    signal: AbortSignal.timeout(5000),
                   });
 
                   // If success or definitive private (401/403), stop trying
@@ -274,10 +297,9 @@ function steamDevProxyPlugin(apiKey: string) {
                     break;
                   }
 
-                  // If 429, wait with backoff + jitter before next candidate
+                  // If 429, wait with backoff before next candidate
                   if (invRes.status === 429) {
-                    const jitter = Math.floor(Math.random() * 800);
-                    await new Promise(r => setTimeout(r, 1200 + jitter));
+                    await new Promise(r => setTimeout(r, 1000));
                   }
                 } catch {
                   // try next

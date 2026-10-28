@@ -27,25 +27,24 @@ export const SteamModal: React.FC<SteamModalProps> = ({ isOpen, onClose, onSucce
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage(null);
+
+    const target = tradeUrl.trim();
+    if (!target) {
+      setErrorMessage(t('steamModal.tradeUrlPlaceholder') || 'Please enter your Steam Trade URL');
+      return;
+    }
+
     setIsLoading(true);
 
-    const target = tradeUrl.trim() || 'demo';
-
-    if (target !== 'demo') {
-      const res = await loginWithSteamId(target);
-      if (!res.success) {
-        // If profile fetch fails, still allow sandbox valuation
-        console.warn('Could not authenticate SteamID profile, continuing to sandbox:', res.message);
-      }
+    const res = await loginWithSteamId(target);
+    if (!res.success) {
+      // If profile fetch fails, still allow sandbox valuation
+      console.warn('Could not authenticate SteamID profile, continuing to sandbox:', res.message);
     }
 
     setIsLoading(false);
     onSuccess(target);
     onClose();
-  };
-
-  const handleUseDemo = () => {
-    setTradeUrl('https://steamcommunity.com/tradeoffer/new/?partner=184920412&token=9X4bK2sM');
   };
 
   return (
@@ -130,13 +129,6 @@ export const SteamModal: React.FC<SteamModalProps> = ({ isOpen, onClose, onSucce
             <div>
               <div className="flex justify-between items-center text-xs mb-1.5 font-['JetBrains_Mono']">
                 <label className="text-slate-300 font-bold">{t('steamModal.tradeUrlLabel')}</label>
-                <button
-                  type="button"
-                  onClick={handleUseDemo}
-                  className="text-emerald-400 hover:text-emerald-300 underline cursor-pointer"
-                >
-                  {t('steamModal.useDemo')}
-                </button>
               </div>
 
               <input

@@ -29,7 +29,6 @@ import { SkinInspectModal } from '../components/SkinInspectModal';
 import { TradeOfferModal } from '../components/TradeOfferModal';
 import { PaymentMethodIcon } from '../components/PaymentMethodIcon';
 import { FIAT_PAYMENT_METHODS, CRYPTO_PAYMENT_METHODS } from '../data/paymentMethods';
-import { MOCK_CS2_INVENTORY } from '../data/skinsData';
 import { fetchSteamInventory, parseSteamTradeUrl } from '../services/steamService';
 import type { CS2Skin, PaymentOption } from '../types';
 import type { DepositTradeSession } from '../data/steamBot';
@@ -46,10 +45,10 @@ export const SellPage: React.FC<SellPageProps> = ({ onNavigateHome, onOpenSteamM
   const { t, language } = useLanguage();
 
   // User skins loaded from Steam inventory
-  const [skins, setSkins] = useState<CS2Skin[]>(MOCK_CS2_INVENTORY);
+  const [skins, setSkins] = useState<CS2Skin[]>([]);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [isSyncing, setIsSyncing] = useState(false);
-  const [syncStatus, setSyncStatus] = useState<'success' | 'private' | 'rate_limited' | 'error' | 'demo' | 'empty'>('demo');
+  const [syncStatus, setSyncStatus] = useState<'success' | 'private' | 'rate_limited' | 'error' | 'empty'>('empty');
   const [syncMessage, setSyncMessage] = useState<string | null>(null);
   const [cooldown, setCooldown] = useState(0);
 
@@ -83,7 +82,15 @@ export const SellPage: React.FC<SellPageProps> = ({ onNavigateHome, onOpenSteamM
 
   // Load user inventory when user or their trade URL changes
   const loadInventory = useCallback(async (force = false) => {
-    const targetUrl = user?.tradeUrl || user?.steamId64 || 'demo';
+    const targetUrl = user?.tradeUrl || user?.steamId64;
+    if (!targetUrl) {
+      setSkins([]);
+      setSelectedIds(new Set());
+      setSyncStatus('empty');
+      setIsSyncing(false);
+      return;
+    }
+
     setIsSyncing(true);
     setSyncMessage(null);
 

@@ -249,8 +249,6 @@ export const Hero: React.FC<HeroProps> = ({
   const handleEvaluateClick = () => {
     if (onScrollToSandbox) {
       onScrollToSandbox();
-    } else if (onScanInventory) {
-      onScanInventory('demo');
     } else {
       const el = document.getElementById('inventory-sandbox');
       if (el) {

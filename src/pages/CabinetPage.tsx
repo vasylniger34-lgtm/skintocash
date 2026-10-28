@@ -40,7 +40,6 @@ import { PaymentMethodIcon } from '../components/PaymentMethodIcon';
 import { PayoutTimerModal, type PayoutSession } from '../components/PayoutTimerModal';
 import { FIAT_PAYMENT_METHODS, CRYPTO_PAYMENT_METHODS } from '../data/paymentMethods';
 import { getCabinetText } from '../data/pagesTranslations';
-import { MOCK_CS2_INVENTORY } from '../data/skinsData';
 import { fetchSteamInventory, verifyUserTradeUrl, parseSteamTradeUrl } from '../services/steamService';
 import { TradeOfferModal } from '../components/TradeOfferModal';
 import { OFFICIAL_STEAM_BOT, type DepositTradeSession } from '../data/steamBot';
@@ -74,7 +73,7 @@ export const CabinetPage: React.FC<CabinetPageProps> = ({
   // User CS2 Inventory State - starts empty until loaded, never shows fake demo skins
   const [skins, setSkins] = useState<CS2Skin[]>([]);
   const [isLoadingInventory, setIsLoadingInventory] = useState(false);
-  const [inventoryStatus, setInventoryStatus] = useState<'success' | 'private' | 'rate_limited' | 'error' | 'demo' | 'empty'>('empty');
+  const [inventoryStatus, setInventoryStatus] = useState<'success' | 'private' | 'rate_limited' | 'error' | 'empty'>('empty');
   const [selectedSkinIds, setSelectedSkinIds] = useState<Set<string>>(new Set());
   const [activeCategory, setActiveCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -123,9 +122,6 @@ export const CabinetPage: React.FC<CabinetPageProps> = ({
       setInventoryStatus(res.status);
 
       if (res.status === 'success' && res.items.length > 0) {
-        setSkins(res.items);
-        setSelectedSkinIds(new Set(res.items.slice(0, 2).map(s => s.id)));
-      } else if (res.status === 'demo') {
         setSkins(res.items);
         setSelectedSkinIds(new Set(res.items.slice(0, 2).map(s => s.id)));
       } else {
@@ -1023,18 +1019,11 @@ export const CabinetPage: React.FC<CabinetPageProps> = ({
                     href="https://steamcommunity.com/id/me/edit/settings"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs font-['Space_Grotesk']"
+                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs font-['Space_Grotesk'] cursor-pointer"
                   >
                     <span>{tc('sandbox.openPrivacyBtn')}</span>
                     <ExternalLink className="w-3.5 h-3.5" />
                   </a>
-                  <button
-                    onClick={() => loadUserInventory('demo')}
-                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white/[0.06] hover:bg-white/[0.12] text-white font-bold text-xs font-['Space_Grotesk'] cursor-pointer transition-all border border-white/10"
-                  >
-                    <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-                    <span>Спробувати демо-інвентар ($15,000+)</span>
-                  </button>
                 </div>
               </div>
             ) : inventoryStatus === 'rate_limited' ? (
@@ -1045,7 +1034,7 @@ export const CabinetPage: React.FC<CabinetPageProps> = ({
                   Steam API Rate Limit
                 </h3>
                 <p className="text-xs text-slate-300 max-w-lg mx-auto leading-relaxed">
-                  Сервери Steam тимчасово обмежили запити до інвентарю. Спробуйте оновити ще раз через кілька секунд або протестуйте платформу в демо-режимі.
+                  Сервери Steam тимчасово обмежили запити до інвентарю. Спробуйте оновити ще раз через кілька секунд.
                 </p>
                 <div className="flex items-center justify-center gap-3 pt-2 flex-wrap">
                   <button
@@ -1058,13 +1047,6 @@ export const CabinetPage: React.FC<CabinetPageProps> = ({
                   >
                     <RefreshCw className={`w-3.5 h-3.5 ${isLoadingInventory ? 'animate-spin' : ''}`} />
                     <span>{isLoadingInventory ? 'Завантаження...' : 'Повторити спробу'}</span>
-                  </button>
-                  <button
-                    onClick={() => loadUserInventory('demo')}
-                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white/[0.06] hover:bg-white/[0.12] text-white font-bold text-xs font-['Space_Grotesk'] cursor-pointer transition-all border border-white/10"
-                  >
-                    <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-                    <span>Спробувати демо-інвентар ($15,000+)</span>
                   </button>
                 </div>
               </div>
@@ -1088,13 +1070,6 @@ export const CabinetPage: React.FC<CabinetPageProps> = ({
                   >
                     <RefreshCw className="w-3.5 h-3.5" />
                     <span>Повторити сканування</span>
-                  </button>
-                  <button
-                    onClick={() => loadUserInventory('demo')}
-                    className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 text-xs font-bold text-emerald-300 border border-emerald-500/30 transition-colors cursor-pointer"
-                  >
-                    <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
-                    <span>Спробувати демо-інвентар ($15,000+)</span>
                   </button>
                   <a
                     href={user?.profileurl ? `${user.profileurl}/inventory/#730` : `https://steamcommunity.com/profiles/${user?.steamId64}/inventory/#730`}

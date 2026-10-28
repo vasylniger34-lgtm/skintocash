@@ -33,7 +33,7 @@ function MainContent() {
     return '/';
   });
   const [isSteamModalOpen, setIsSteamModalOpen] = useState(false);
-  const [activeTradeUrl, setActiveTradeUrl] = useState<string>('demo');
+  const [activeTradeUrl, setActiveTradeUrl] = useState<string>('');
 
   useEffect(() => {
     const handlePopState = () => {
@@ -51,7 +51,7 @@ function MainContent() {
 
   // When user logs in with Steam, automatically load their real inventory
   useEffect(() => {
-    if (user && activeTradeUrl === 'demo') {
+    if (user && !activeTradeUrl) {
       const target = user.tradeUrl || user.steamId64;
       if (target) {
         setActiveTradeUrl(target);
