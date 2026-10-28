@@ -337,23 +337,23 @@ export const InventorySandbox: React.FC<InventorySandboxProps> = ({
                 {/* Status Badges */}
                 {(syncStatus === 'success' || syncStatus === 'demo') && (
                   <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[10px] font-bold">
-                    🟢 CS2 Sync Active ({skins.length} items)
+                    🟢 {t('sandbox.statusActive', { count: skins.length })}
                   </span>
                 )}
                 {syncStatus === 'private' && (
                   <span className="px-2 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400 text-[10px] font-bold">
-                    🔒 Steam Inventory Private
+                    🔒 {t('sandbox.statusPrivate')}
                   </span>
                 )}
                 {syncStatus === 'rate_limited' && (
                   <span className="px-2 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400 text-[10px] font-bold flex items-center gap-1">
-                    <span>⚡ Steam Rate Limit (429)</span>
+                    <span>⚡ {t('sandbox.statusRateLimit')}</span>
                     {cooldown > 0 && <span>({cooldown}s)</span>}
                   </span>
                 )}
                 {syncStatus === 'empty' && (
                   <span className="px-2 py-0.5 rounded-full bg-slate-500/10 border border-slate-500/30 text-slate-400 text-[10px] font-bold">
-                    ⚠️ 0 Tradable Skins Found
+                    ⚠️ {t('sandbox.statusEmpty')}
                   </span>
                 )}
 
@@ -712,7 +712,7 @@ export const InventorySandbox: React.FC<InventorySandboxProps> = ({
                     <Zap className="w-3.5 h-3.5 fill-emerald-400" />
                   </div>
                   <h3 className="font-['Space_Grotesk'] font-bold text-base text-white">
-                    Оцінка інвентаря
+                    {t('sandbox.inventoryValuation')}
                   </h3>
                 </div>
 
@@ -724,7 +724,7 @@ export const InventorySandbox: React.FC<InventorySandboxProps> = ({
               {/* Dynamic Animated Value Counter */}
               <div className="py-5 text-center bg-white/[0.02] rounded-2xl my-4 border border-white/[0.06]">
                 <span className="text-[11px] font-['Space_Grotesk'] uppercase tracking-wider text-slate-400 block mb-1">
-                  Оціночна вартість ({selectedSkinsList.length} скінів)
+                  {t('sandbox.estimatedValue', { count: selectedSkinsList.length })}
                 </span>
                 
                 <div className="text-3xl sm:text-4xl font-extrabold font-['JetBrains_Mono'] text-emerald-400 tracking-tight drop-shadow-[0_0_15px_rgba(16,185,129,0.35)]">
@@ -732,7 +732,7 @@ export const InventorySandbox: React.FC<InventorySandboxProps> = ({
                 </div>
 
                 <div className="mt-2 text-xs text-slate-400 font-['JetBrains_Mono'] flex items-center justify-center gap-2">
-                  <span>У Steam Community:</span>
+                  <span>{t('sandbox.steamCommunityEquiv')}</span>
                   <span className="text-slate-500 line-through">
                     {formatPrice(baseGrossValue * 1.15)}
                   </span>
@@ -742,19 +742,19 @@ export const InventorySandbox: React.FC<InventorySandboxProps> = ({
               {/* Live Market Breakdown */}
               <div className="space-y-2 py-3 border-y border-white/[0.06] text-xs font-['JetBrains_Mono']">
                 <div className="flex justify-between text-slate-400">
-                  <span>Обрано скінів:</span>
-                  <span className="text-slate-200">{selectedSkinsList.length} з {skins.length}</span>
+                  <span>{t('sandbox.selectedCountLabel')}</span>
+                  <span className="text-slate-200">{selectedSkinsList.length} {t('sandbox.of')} {skins.length}</span>
                 </div>
                 <div className="flex justify-between text-slate-400">
-                  <span>Оцінка за Buff163:</span>
+                  <span>{t('sandbox.buff163Valuation')}</span>
                   <span className="text-slate-200">{formatPrice(baseGrossValue * 0.98)}</span>
                 </div>
                 <div className="flex justify-between text-slate-400">
-                  <span>Комісія сервісу:</span>
-                  <span className="text-emerald-400 font-bold">0.00% (Без комісії)</span>
+                  <span>{t('sandbox.serviceFee')}</span>
+                  <span className="text-emerald-400 font-bold">{t('sandbox.noFeePromo')}</span>
                 </div>
                 <div className="flex justify-between text-white font-bold pt-1 border-t border-white/[0.06]">
-                  <span>Миттєва виплата:</span>
+                  <span>{t('sandbox.instantPayout')}</span>
                   <span className="text-emerald-400 text-sm font-extrabold">{formatPrice(baseGrossValue)}</span>
                 </div>
               </div>
@@ -763,11 +763,11 @@ export const InventorySandbox: React.FC<InventorySandboxProps> = ({
               <div className="py-2 space-y-1.5 text-[11px] font-['Space_Grotesk'] text-slate-300">
                 <div className="flex items-center gap-2 text-emerald-400">
                   <ShieldCheck className="w-3.5 h-3.5 shrink-0" />
-                  <span>Миттєвий переказ на картки (МИР, Visa/MC, СБП) та крипту</span>
+                  <span>{t('sandbox.payoutMethodsBenefit')}</span>
                 </div>
                 <div className="flex items-center gap-2 text-slate-400">
                   <Gift className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                  <span>Плашка з промокодом +8% на сторінці продажу</span>
+                  <span>{t('sandbox.promoBenefit')}</span>
                 </div>
               </div>
 
@@ -787,7 +787,7 @@ export const InventorySandbox: React.FC<InventorySandboxProps> = ({
                   {user ? (
                     <>
                       <Zap className="w-4 h-4 fill-slate-950" />
-                      <span>Продати скіни ({formatPrice(baseGrossValue)})</span>
+                      <span>{t('sandbox.sellSkinsAction', { amount: formatPrice(baseGrossValue) })}</span>
                       <ArrowRight className="w-4 h-4" />
                     </>
                   ) : (
@@ -795,7 +795,7 @@ export const InventorySandbox: React.FC<InventorySandboxProps> = ({
                       <svg className="w-4 h-4 fill-slate-950 shrink-0" viewBox="0 0 24 24">
                         <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.44 9.82 8.24 11.44l3.19-4.38a4.48 4.48 0 0 1-.93-.84l-4.52 1.87a9.6 9.6 0 0 1-1.07-5.09c0-5.3 4.3-9.6 9.6-9.6s9.6 4.3 9.6 9.6c0 5.28-4.28 9.57-9.56 9.6l-3.32 4.56c.49.03.98.05 1.48.05 6.63 0 12-5.37 12-12S18.63 0 12 0z" />
                       </svg>
-                      <span>Увійти через Steam для продажу</span>
+                      <span>{t('sandbox.loginWithSteamToSell')}</span>
                       <ArrowRight className="w-4 h-4" />
                     </>
                   )}
@@ -804,7 +804,7 @@ export const InventorySandbox: React.FC<InventorySandboxProps> = ({
                 <div className="mt-3 flex items-center justify-center gap-2 text-[11px] text-slate-400">
                   <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
                   <span>
-                    {user ? 'Перехід на захищену сторінку виплати' : 'Авторизація через офіційний Steam OpenID'}
+                    {user ? t('sandbox.secureRedirectNotice') : t('sandbox.officialOpenIdNotice')}
                   </span>
                 </div>
               </div>
@@ -829,7 +829,7 @@ export const InventorySandbox: React.FC<InventorySandboxProps> = ({
           >
             <div className="flex flex-col">
               <span className="text-[10px] text-slate-400 font-['Space_Grotesk'] uppercase tracking-wider font-semibold">
-                Обрано: {selectedSkinsList.length} скінів
+                {t('sandbox.selectedCountShort', { count: selectedSkinsList.length })}
               </span>
               <span className="text-base font-extrabold font-['JetBrains_Mono'] text-emerald-400">
                 {formatPrice(baseGrossValue)}
@@ -844,12 +844,12 @@ export const InventorySandbox: React.FC<InventorySandboxProps> = ({
               {user ? (
                 <>
                   <Zap className="w-3.5 h-3.5 fill-slate-950" />
-                  <span>Продати</span>
+                  <span>{t('sandbox.sellShort')}</span>
                   <ArrowRight className="w-3.5 h-3.5" />
                 </>
               ) : (
                 <>
-                  <span>Увійти для продажу</span>
+                  <span>{t('sandbox.loginToSellShort')}</span>
                   <ArrowRight className="w-3.5 h-3.5" />
                 </>
               )}
