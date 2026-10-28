@@ -41,10 +41,8 @@ async function fetchSteamUserDetails(apiKey: string, steamId64: string) {
     }
   }
 
-  const defaultName = steamId64 === '76561199165318169' ? '@fpv.mir' : `Player_${steamId64.slice(-4)}`;
-  const defaultAvatar = steamId64 === '76561199165318169'
-    ? 'https://avatars.steamstatic.com/623456c285da40156eb692680c9f3939557b9ee5_full.jpg'
-    : 'https://avatars.steamstatic.com/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb.jpg';
+  const defaultName = `Player_${steamId64.slice(-4)}`;
+  const defaultAvatar = 'https://avatars.steamstatic.com/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb.jpg';
 
   const personaname = playerProfile?.personaname || defaultName;
   const avatar = playerProfile?.avatar || defaultAvatar;
@@ -253,6 +251,7 @@ function steamDevProxyPlugin(apiKey: string) {
               const candidateUrls = [
                 `https://steamcommunity.com/inventory/${targetSteamId}/730/2?l=english&count=100`,
                 `https://steamcommunity.com/inventory/${targetSteamId}/730/2?l=english&count=75`,
+                `https://steamcommunity.com/inventory/${targetSteamId}/730/2?l=english&count=50`,
                 `https://steamcommunity.com/inventory/${targetSteamId}/730/2?l=english`,
               ];
 
@@ -263,7 +262,10 @@ function steamDevProxyPlugin(apiKey: string) {
                       'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36',
                       'Accept': 'application/json, text/javascript, */*; q=0.01',
                       'Accept-Language': 'en-US,en;q=0.9',
-                      'Referer': `https://steamcommunity.com/profiles/${targetSteamId}/inventory`,
+                      'Referer': `https://steamcommunity.com/profiles/${targetSteamId}/inventory/`,
+                      'Sec-Fetch-Dest': 'empty',
+                      'Sec-Fetch-Mode': 'cors',
+                      'Sec-Fetch-Site': 'same-origin',
                     },
                   });
 
@@ -272,9 +274,10 @@ function steamDevProxyPlugin(apiKey: string) {
                     break;
                   }
 
-                  // If 429, wait briefly before next candidate
+                  // If 429, wait with backoff + jitter before next candidate
                   if (invRes.status === 429) {
-                    await new Promise(r => setTimeout(r, 500));
+                    const jitter = Math.floor(Math.random() * 800);
+                    await new Promise(r => setTimeout(r, 1200 + jitter));
                   }
                 } catch {
                   // try next

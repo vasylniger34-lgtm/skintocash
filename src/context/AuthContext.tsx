@@ -151,19 +151,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     if (parsedUser) {
-      if (parsedUser.steamId64 === '76561199165318169' && (parsedUser.personaname.startsWith('Player_') || !parsedUser.avatar || parsedUser.avatar.includes('fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb'))) {
-        parsedUser = {
-          ...parsedUser,
-          personaname: '@fpv.mir',
-          avatar: 'https://avatars.steamstatic.com/623456c285da40156eb692680c9f3939557b9ee5_full.jpg',
-          avatarmedium: 'https://avatars.steamstatic.com/623456c285da40156eb692680c9f3939557b9ee5_medium.jpg',
-          avatarfull: 'https://avatars.steamstatic.com/623456c285da40156eb692680c9f3939557b9ee5_full.jpg',
-        };
-        try {
-          localStorage.setItem(STORAGE_USER_KEY, JSON.stringify(parsedUser));
-        } catch {}
-      }
-
       setUser(parsedUser);
       // Background refresh user profile summary to keep data fresh
       fetchSteamProfile(parsedUser.steamId64).then((fresh) => {

@@ -98,15 +98,27 @@ export const SellPage: React.FC<SellPageProps> = ({ onNavigateHome, onOpenSteamM
         const initialSelected = new Set(res.items.slice(0, 3).map(i => i.id));
         setSelectedIds(initialSelected);
       } else if (res.status === 'private') {
+        setSkins([]);
+        setSelectedIds(new Set());
         setSyncMessage('Ваш інвентар у Steam встановлено як приватний. Змініть налаштування на публічні.');
+      } else if (res.status === 'rate_limited') {
+        setSkins([]);
+        setSelectedIds(new Set());
+        setCooldown(15);
+        setSyncMessage('Сервери Steam тимчасово обмежили запити (Rate Limit). Спробуйте знову через кілька секунд.');
       } else if (res.status === 'empty') {
+        setSkins([]);
+        setSelectedIds(new Set());
         setSyncMessage('У вашому CS2 інвентарі немає предметів, доступних для продажу.');
+      } else {
+        setSkins([]);
+        setSelectedIds(new Set());
       }
     } catch {
       setIsSyncing(false);
       setSyncStatus('error');
     }
-  }, [user]);
+  }, [user?.tradeUrl, user?.steamId64]);
 
   useEffect(() => {
     loadInventory();

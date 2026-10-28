@@ -44,10 +44,8 @@ export default async function handler(req: any, res: any) {
       }
     }
 
-    const defaultName = steamId64 === '76561199165318169' ? '@fpv.mir' : `Player_${steamId64.slice(-4)}`;
-    const defaultAvatar = steamId64 === '76561199165318169'
-      ? 'https://avatars.steamstatic.com/623456c285da40156eb692680c9f3939557b9ee5_full.jpg'
-      : 'https://avatars.steamstatic.com/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb.jpg';
+    const defaultName = `Player_${steamId64.slice(-4)}`;
+    const defaultAvatar = 'https://avatars.steamstatic.com/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb.jpg';
 
     const personaname = playerProfile?.personaname || defaultName;
     const avatar = playerProfile?.avatar || defaultAvatar;

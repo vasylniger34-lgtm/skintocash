@@ -1,10 +1,67 @@
 // Vercel Serverless Function for Steam CS2 Inventory Fetching & Valuation
 // Runs securely on the server with Steam API Key (no CORS issues in browser)
 
-// In-memory module cache & singleflight promise tracker across hot lambda instances
+// In-memory module cache & singleflight promise tracker across lambda instances
 const serverInventoryCache = new Map<string, { timestamp: number; payload: any }>();
 const serverPendingRequests = new Map<string, Promise<any>>();
 const CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutes cache
+
+async function fetchSteamCommunityInventory(steamId: string, retries = 2, baseDelay = 1200) {
+  const candidateParams = [
+    '?l=english&count=100',
+    '?l=english&count=75',
+    '?l=english&count=50',
+    '?l=english',
+  ];
+
+  const userAgents = [
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36',
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:127.0) Gecko/20100101 Firefox/127.0',
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36',
+  ];
+
+  let lastResponse: any = null;
+
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    const query = candidateParams[attempt % candidateParams.length];
+    const ua = userAgents[attempt % userAgents.length];
+    const url = `https://steamcommunity.com/inventory/${steamId}/730/2${query}`;
+
+    try {
+      const res = await fetch(url, {
+        headers: {
+          'User-Agent': ua,
+          'Accept': 'application/json, text/javascript, */*; q=0.01',
+          'Accept-Language': 'en-US,en;q=0.9',
+          'Referer': `https://steamcommunity.com/profiles/${steamId}/inventory/`,
+          'Sec-Fetch-Dest': 'empty',
+          'Sec-Fetch-Mode': 'cors',
+          'Sec-Fetch-Site': 'same-origin',
+        },
+      });
+
+      lastResponse = res;
+
+      // Definitive responses: 200 OK or 401/403 Private
+      if (res.ok || res.status === 401 || res.status === 403) {
+        return res;
+      }
+
+      // If Rate limited (429): exponential backoff with jitter before next attempt
+      if (res.status === 429 && attempt < retries) {
+        const jitter = Math.floor(Math.random() * 800);
+        const waitTime = baseDelay * Math.pow(1.5, attempt) + jitter;
+        await new Promise((resolve) => setTimeout(resolve, waitTime));
+        continue;
+      }
+    } catch (err) {
+      if (attempt === retries) throw err;
+      await new Promise((resolve) => setTimeout(resolve, 800));
+    }
+  }
+
+  return lastResponse;
+}
 
 export default async function handler(req: any, res: any) {
   // Set CORS and Edge Caching headers
@@ -15,8 +72,7 @@ export default async function handler(req: any, res: any) {
     'Access-Control-Allow-Headers',
     'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version'
   );
-  // Edge CDN cache for 5 minutes, serve stale up to 10 minutes
-  res.setHeader('Cache-Control', 's-maxage=300, stale-while-revalidate=600');
+  res.setHeader('Cache-Control', 's-maxage=180, stale-while-revalidate=360');
 
   if (req.method === 'OPTIONS') {
     res.status(200).end();
@@ -29,8 +85,8 @@ export default async function handler(req: any, res: any) {
 
   if (!targetSteamId && partner) {
     try {
-      const BASE_ID = 76561197960265728n;
-      targetSteamId = (BASE_ID + BigInt(partner)).toString();
+      const BASE_ID = BigInt("76561197960265728");
+      targetSteamId = (BigInt(partner) + BASE_ID).toString();
     } catch {
       targetSteamId = null;
     }
@@ -74,22 +130,10 @@ export default async function handler(req: any, res: any) {
       } : null;
 
       try {
-        // Fetch CS2 Public Inventory with realistic headers and count=100
-        const inventoryUrl = `https://steamcommunity.com/inventory/${targetSteamId}/730/2?l=english&count=100`;
-        const inventoryResponse = await fetch(inventoryUrl, {
-          headers: {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
-            'Accept': 'application/json, text/javascript, */*; q=0.01',
-            'Accept-Language': 'en-US,en;q=0.9',
-            'Referer': `https://steamcommunity.com/profiles/${targetSteamId}/inventory`,
-            'Sec-Fetch-Dest': 'empty',
-            'Sec-Fetch-Mode': 'cors',
-            'Sec-Fetch-Site': 'same-origin',
-          },
-        });
+        const inventoryResponse = await fetchSteamCommunityInventory(targetSteamId);
 
         // 401 or 403 on Steam community inventory = Private / Friends-Only inventory
-        if (inventoryResponse.status === 401 || inventoryResponse.status === 403) {
+        if (inventoryResponse && (inventoryResponse.status === 401 || inventoryResponse.status === 403)) {
           return {
             success: false,
             error: 'private_inventory',
@@ -100,7 +144,7 @@ export default async function handler(req: any, res: any) {
           };
         }
 
-        if (inventoryResponse.status === 429) {
+        if (inventoryResponse && inventoryResponse.status === 429) {
           if (cached) {
             return {
               ...cached.payload,
@@ -111,18 +155,18 @@ export default async function handler(req: any, res: any) {
             success: false,
             error: 'rate_limited',
             status: 429,
-            message: 'Steam Community API rate-limited temporary request. Fallback activated.',
+            message: 'Steam Community API rate-limited temporary request.',
             steamId64: targetSteamId,
             player: parsedPlayer,
           };
         }
 
-        if (!inventoryResponse.ok) {
+        if (!inventoryResponse || !inventoryResponse.ok) {
           return {
             success: false,
             error: 'steam_error',
-            status: inventoryResponse.status,
-            message: `Steam returned status ${inventoryResponse.status}`,
+            status: inventoryResponse ? inventoryResponse.status : 500,
+            message: `Steam returned status ${inventoryResponse ? inventoryResponse.status : 'offline'}`,
             steamId64: targetSteamId,
             player: parsedPlayer,
           };
@@ -138,7 +182,7 @@ export default async function handler(req: any, res: any) {
           steamId64: targetSteamId,
         };
 
-        // Cache the successful payload
+        // Cache the successful payload for 10 minutes
         serverInventoryCache.set(targetSteamId, {
           timestamp: Date.now(),
           payload: resultPayload,

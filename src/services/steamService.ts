@@ -1,6 +1,5 @@
 import type { CS2Skin, SkinCategory } from '../types';
 import { MOCK_CS2_INVENTORY } from '../data/skinsData';
-import { USER_REAL_INVENTORY } from '../data/userRealInventory';
 
 export interface SteamTradeUrlInfo {
   partnerId: string | null;
@@ -44,15 +43,13 @@ export function parseSteamTradeUrl(input: string): SteamTradeUrlInfo {
   const partnerId = partnerMatch ? partnerMatch[1] : null;
   const token = tokenMatch ? tokenMatch[1] : null;
 
-  // Direct SteamID64 check
-  const steamIdMatch = clean.match(/(7656119\d{10})/);
+  // Direct SteamID64 check (17 digits starting with 7656119)
+  const steamIdMatch = clean.match(/\b(7656119\d{10})\b/);
   let steamId64 = steamIdMatch ? steamIdMatch[1] : null;
-
-  const BASE_ID = 76561197960265728n;
 
   if (partnerId && !steamId64) {
     try {
-      steamId64 = (BASE_ID + BigInt(partnerId)).toString();
+      steamId64 = (BigInt(partnerId) + BigInt("76561197960265728")).toString();
     } catch {
       steamId64 = null;
     }
@@ -106,10 +103,9 @@ export function verifyUserTradeUrl(inputUrl: string, expectedSteamId64: string):
     };
   }
 
-  const BASE_ID = 76561197960265728n;
   let computedSteamId64: string | null = null;
   try {
-    computedSteamId64 = (BASE_ID + BigInt(partnerId)).toString();
+    computedSteamId64 = (BigInt(partnerId) + BigInt("76561197960265728")).toString();
   } catch {
     computedSteamId64 = null;
   }
@@ -519,20 +515,6 @@ export async function fetchSteamInventory(input: string, forceRefresh = false): 
       const response = await fetch(url);
 
       if (!response.ok) {
-        if (steamId64 === '76561199165318169' || partnerId === '1205052441') {
-          return {
-            success: true,
-            status: 'success',
-            items: USER_REAL_INVENTORY,
-            totalCount: USER_REAL_INVENTORY.length,
-            player: {
-              personaname: '@fpv.mir',
-              avatar: 'https://avatars.steamstatic.com/623456c285da40156eb692680c9f3939557b9ee5_full.jpg',
-            },
-            steamId64,
-            message: 'Синхронізовано інвентар CS2',
-          };
-        }
         return {
           success: false,
           status: 'error',
@@ -581,41 +563,16 @@ export async function fetchSteamInventory(input: string, forceRefresh = false): 
           // ignore
         }
 
-        // Return verified valuation fallback items so user is NEVER left with an empty or broken screen
-        const fallbackItems = (steamId64 === '76561199165318169' || partnerId === '1205052441')
-          ? USER_REAL_INVENTORY
-          : MOCK_CS2_INVENTORY;
-
-        const defaultPlayer = (steamId64 === '76561199165318169' || partnerId === '1205052441')
-          ? {
-              personaname: '@fpv.mir',
-              avatar: 'https://avatars.steamstatic.com/623456c285da40156eb692680c9f3939557b9ee5_full.jpg',
-            }
-          : {
-              personaname: 'Verified Trader',
-              avatar: 'https://avatars.steamstatic.com/b5bd56c1aa99e440b0b12e1a6ae410290fec5b12_full.jpg',
-            };
-
-        const res: SteamInventoryResult = {
-          success: true,
-          status: 'success',
-          items: fallbackItems,
-          totalCount: fallbackItems.length,
-          player: data.player || defaultPlayer,
+        // Return real rate_limited status for live UI handling
+        return {
+          success: false,
+          status: 'rate_limited',
+          items: [],
+          totalCount: 0,
+          player: data.player || null,
           steamId64,
-          message: 'Синхронізовано інвентар CS2',
+          message: data.message || 'Steam rate limit active. Please retry in a few moments.',
         };
-
-        clientInventoryCache.set(cacheKey, { timestamp: Date.now(), result: res });
-        try {
-          localStorage.setItem(`skintocash_cache_${cacheKey}`, JSON.stringify({
-            items: fallbackItems,
-            player: res.player,
-            timestamp: Date.now(),
-          }));
-        } catch {}
-
-        return res;
       }
 
       if (data.success && data.assets && data.descriptions) {
@@ -661,20 +618,6 @@ export async function fetchSteamInventory(input: string, forceRefresh = false): 
         steamId64,
       };
     } catch (err: any) {
-      if (steamId64 === '76561199165318169' || partnerId === '1205052441') {
-        return {
-          success: true,
-          status: 'success',
-          items: USER_REAL_INVENTORY,
-          totalCount: USER_REAL_INVENTORY.length,
-          player: {
-            personaname: '@fpv.mir',
-            avatar: 'https://avatars.steamstatic.com/623456c285da40156eb692680c9f3939557b9ee5_full.jpg',
-          },
-          steamId64,
-          message: 'Синхронізовано інвентар CS2',
-        };
-      }
       return {
         success: false,
         status: 'error',
