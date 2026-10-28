@@ -509,112 +509,287 @@ export async function fetchSteamInventory(input: string, forceRefresh = false): 
     return existingPromise;
   }
 
-  const fetchPromise = (async (): Promise<SteamInventoryResult> => {
-    try {
-      const url = `/api/steam-inventory?steamId64=${steamId64 || ''}&partner=${partnerId || ''}`;
-      const response = await fetch(url);
+interface RawSteamPayload {
+  assets: any[];
+  descriptions: any[];
+  total_inventory_count?: number;
+  error?: string;
+  status?: number;
+}
 
-      if (!response.ok) {
+/**
+ * Stage 1: Direct Client-Side Relay 1 (allorigins.win)
+ * Fetch directly from the user's browser:
+ * https://api.allorigins.win/get?url=${encodeURIComponent(`https://steamcommunity.com/inventory/${steamId64}/730/2?l=english&count=75`)}
+ */
+async function fetchViaAllOrigins(steamId64: string): Promise<RawSteamPayload | null> {
+  const targetUrl = `https://steamcommunity.com/inventory/${steamId64}/730/2?l=english&count=75`;
+  const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}`;
+
+  try {
+    const res = await fetch(proxyUrl, { signal: AbortSignal.timeout(3500) });
+    if (!res.ok) return null;
+    const json = await res.json();
+    if (!json || typeof json.contents !== 'string') return null;
+
+    const parsed = JSON.parse(json.contents);
+    if (parsed && (Array.isArray(parsed.assets) || Array.isArray(parsed.descriptions))) {
+      return {
+        assets: parsed.assets || [],
+        descriptions: parsed.descriptions || [],
+        total_inventory_count: parsed.total_inventory_count || parsed.assets?.length || 0,
+      };
+    }
+    if (parsed && (parsed.error === 'private_inventory' || parsed.status === 401 || parsed.status === 403)) {
+      return { assets: [], descriptions: [], error: 'private_inventory', status: 403 };
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Stage 2: Direct Client-Side Relay 2 (codetabs.com)
+ * If Stage 1 fails or times out after 3.5s, fetch from the browser:
+ * https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(`https://steamcommunity.com/inventory/${steamId64}/730/2?l=english&count=75`)}
+ */
+async function fetchViaCodeTabs(steamId64: string): Promise<RawSteamPayload | null> {
+  const targetUrl = `https://steamcommunity.com/inventory/${steamId64}/730/2?l=english&count=75`;
+  const proxyUrl = `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(targetUrl)}`;
+
+  try {
+    const res = await fetch(proxyUrl, { signal: AbortSignal.timeout(3500) });
+    if (!res.ok) return null;
+    const parsed = await res.json();
+    if (parsed && (Array.isArray(parsed.assets) || Array.isArray(parsed.descriptions))) {
+      return {
+        assets: parsed.assets || [],
+        descriptions: parsed.descriptions || [],
+        total_inventory_count: parsed.total_inventory_count || parsed.assets?.length || 0,
+      };
+    }
+    if (parsed && (parsed.error === 'private_inventory' || parsed.status === 401 || parsed.status === 403)) {
+      return { assets: [], descriptions: [], error: 'private_inventory', status: 403 };
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Stage 3: Direct Client-Side Relay 3 (corsproxy.io)
+ * If Stage 2 fails, fetch from the browser:
+ * https://corsproxy.io/?url=${encodeURIComponent(`https://steamcommunity.com/inventory/${steamId64}/730/2?l=english&count=75`)}
+ */
+async function fetchViaCorsProxy(steamId64: string): Promise<RawSteamPayload | null> {
+  const targetUrl = `https://steamcommunity.com/inventory/${steamId64}/730/2?l=english&count=75`;
+  const proxyUrl = `https://corsproxy.io/?url=${encodeURIComponent(targetUrl)}`;
+
+  try {
+    const res = await fetch(proxyUrl, { signal: AbortSignal.timeout(3500) });
+    if (!res.ok) return null;
+    const parsed = await res.json();
+    if (parsed && (Array.isArray(parsed.assets) || Array.isArray(parsed.descriptions))) {
+      return {
+        assets: parsed.assets || [],
+        descriptions: parsed.descriptions || [],
+        total_inventory_count: parsed.total_inventory_count || parsed.assets?.length || 0,
+      };
+    }
+    if (parsed && (parsed.error === 'private_inventory' || parsed.status === 401 || parsed.status === 403)) {
+      return { assets: [], descriptions: [], error: 'private_inventory', status: 403 };
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Helper to fetch live player profile (avatar, name) from backend via Steam Web API
+ */
+async function fetchLivePlayerProfile(steamId64: string): Promise<SteamInventoryResult['player']> {
+  try {
+    const res = await fetch(`/api/auth/steam/user?steamId64=${steamId64}`, { signal: AbortSignal.timeout(3000) });
+    if (res.ok) {
+      const data = await res.json();
+      if (data?.user) {
         return {
-          success: false,
-          status: 'error',
-          items: [],
-          totalCount: 0,
-          message: 'Could not connect to Steam servers. Please try again.',
-          steamId64,
+          personaname: data.user.personaname,
+          avatar: data.user.avatarfull || data.user.avatar,
+          profileurl: data.user.profileurl,
         };
       }
+    }
+  } catch {
+    // Ignore profile fetch failure
+  }
+  return null;
+}
 
-      const data = await response.json();
+  const fetchPromise = (async (): Promise<SteamInventoryResult> => {
+    try {
+      let rawData: RawSteamPayload | null = null;
+      let relaySource = '';
 
-      // Check for private inventory
-      if (data.error === 'private_inventory' || data.status === 401 || data.status === 403) {
+      // Stage 1: AllOrigins (Client-side relay 1)
+      if (steamId64) {
+        rawData = await fetchViaAllOrigins(steamId64);
+        if (rawData && rawData.assets) {
+          relaySource = 'allorigins';
+        }
+      }
+
+      // Stage 2: CodeTabs (Client-side relay 2, if Stage 1 failed/timed out)
+      if (!rawData && steamId64) {
+        rawData = await fetchViaCodeTabs(steamId64);
+        if (rawData && rawData.assets) {
+          relaySource = 'codetabs';
+        }
+      }
+
+      // Stage 3: CorsProxy.io (Client-side relay 3, if Stage 2 failed)
+      if (!rawData && steamId64) {
+        rawData = await fetchViaCorsProxy(steamId64);
+        if (rawData && rawData.assets) {
+          relaySource = 'corsproxy';
+        }
+      }
+
+      // Stage 4: Vercel Backend `/api/steam-inventory` (ONLY called if all 3 client-side relays fail)
+      if (!rawData) {
+        const url = `/api/steam-inventory?steamId64=${steamId64 || ''}&partner=${partnerId || ''}`;
+        const response = await fetch(url);
+        if (response.ok) {
+          const backendData = await response.json();
+
+          if (backendData.error === 'private_inventory' || backendData.status === 401 || backendData.status === 403) {
+            return {
+              success: false,
+              status: 'private',
+              items: [],
+              totalCount: 0,
+              message: 'This Steam Inventory is set to Private. Please open your Steam Profile -> Privacy Settings -> Set Inventory to Public.',
+              player: backendData.player || null,
+              steamId64,
+            };
+          }
+
+          if (backendData.error === 'rate_limited' || backendData.status === 429) {
+            // Check if we have cached skins from localStorage
+            try {
+              const stored = localStorage.getItem(`skintocash_cache_${cacheKey}`) || sessionStorage.getItem(`skintocash_cache_${cacheKey}`);
+              if (stored) {
+                const parsed = JSON.parse(stored);
+                if (parsed && Array.isArray(parsed.items) && parsed.items.length > 0) {
+                  return {
+                    success: true,
+                    status: 'success',
+                    items: parsed.items,
+                    totalCount: parsed.items.length,
+                    player: backendData.player || parsed.player,
+                    steamId64,
+                    message: 'Loaded from local cache (Steam rate limit active)',
+                  };
+                }
+              }
+            } catch {}
+
+            return {
+              success: false,
+              status: 'rate_limited',
+              items: [],
+              totalCount: 0,
+              player: backendData.player || null,
+              steamId64,
+              message: 'Steam rate limit active. Please retry in a few moments.',
+            };
+          }
+
+          if (backendData.success && backendData.assets && backendData.descriptions) {
+            rawData = {
+              assets: backendData.assets,
+              descriptions: backendData.descriptions,
+              total_inventory_count: backendData.total_inventory_count,
+            };
+            relaySource = 'backend';
+          }
+        }
+      }
+
+      // Check if private inventory was returned by any relay
+      if (rawData?.error === 'private_inventory') {
         return {
           success: false,
           status: 'private',
           items: [],
           totalCount: 0,
           message: 'This Steam Inventory is set to Private. Please open your Steam Profile -> Privacy Settings -> Set Inventory to Public.',
-          player: data.player || null,
           steamId64,
         };
       }
 
-      // Check for rate limited (Steam 429)
-      if (data.error === 'rate_limited' || data.status === 429) {
-        // If we have cached skins from localStorage or sessionStorage, serve them!
-        try {
-          const stored = localStorage.getItem(`skintocash_cache_${cacheKey}`) || sessionStorage.getItem(`skintocash_cache_${cacheKey}`);
-          if (stored) {
-            const parsed = JSON.parse(stored);
-            if (parsed && Array.isArray(parsed.items) && parsed.items.length > 0) {
-              return {
-                success: true,
-                status: 'success',
-                items: parsed.items,
-                totalCount: parsed.items.length,
-                player: data.player || parsed.player,
-                steamId64,
-                message: 'Loaded from local cache (Steam rate limit active)',
-              };
-            }
-          }
-        } catch {
-          // ignore
-        }
+      // If we got items from ANY of the 4 stages:
+      if (rawData && rawData.assets && rawData.descriptions) {
+        const skins = mapSteamItemsToCS2Skins(rawData.assets, rawData.descriptions);
+        const player = steamId64 ? await fetchLivePlayerProfile(steamId64) : null;
 
-        // Return real rate_limited status for live UI handling
-        return {
-          success: false,
-          status: 'rate_limited',
-          items: [],
-          totalCount: 0,
-          player: data.player || null,
-          steamId64,
-          message: data.message || 'Steam rate limit active. Please retry in a few moments.',
-        };
-      }
-
-      if (data.success && data.assets && data.descriptions) {
-        const skins = mapSteamItemsToCS2Skins(data.assets, data.descriptions);
         const result: SteamInventoryResult = {
           success: true,
           status: skins.length > 0 ? 'success' : 'empty',
           items: skins,
           totalCount: skins.length,
-          player: data.player,
+          player,
           steamId64,
-          message: skins.length > 0 
-            ? `Successfully synchronized ${skins.length} CS2 items` 
+          message: skins.length > 0
+            ? `Successfully synchronized ${skins.length} CS2 items via ${relaySource}`
             : 'Your CS2 inventory has no tradable skins.',
         };
 
-        // Cache in memory, localStorage, and sessionStorage
+        // Cache in memory and local storage
         if (skins.length > 0) {
           clientInventoryCache.set(cacheKey, { timestamp: Date.now(), result });
           try {
             const payloadStr = JSON.stringify({
               items: skins,
-              player: data.player,
+              player,
               timestamp: Date.now(),
             });
             localStorage.setItem(`skintocash_cache_${cacheKey}`, payloadStr);
             sessionStorage.setItem(`skintocash_cache_${cacheKey}`, payloadStr);
-          } catch {
-            // ignore
-          }
+          } catch {}
         }
 
         return result;
       }
 
+      // If all 4 stages failed: check local storage cache before giving rate limited
+      try {
+        const stored = localStorage.getItem(`skintocash_cache_${cacheKey}`) || sessionStorage.getItem(`skintocash_cache_${cacheKey}`);
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (parsed && Array.isArray(parsed.items) && parsed.items.length > 0) {
+            return {
+              success: true,
+              status: 'success',
+              items: parsed.items,
+              totalCount: parsed.items.length,
+              player: parsed.player,
+              steamId64,
+              message: 'Loaded from local cache',
+            };
+          }
+        }
+      } catch {}
+
       return {
         success: false,
-        status: 'error',
+        status: 'rate_limited',
         items: [],
         totalCount: 0,
-        message: data.message || 'Unable to load Steam inventory.',
-        player: data.player || null,
+        message: 'Could not synchronize inventory with Steam. Please retry in a few moments.',
         steamId64,
       };
     } catch (err: any) {

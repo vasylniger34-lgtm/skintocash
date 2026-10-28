@@ -1,66 +1,31 @@
 // Vercel Serverless Function for Steam CS2 Inventory Fetching & Valuation
-// Runs securely on the server with Steam API Key (no CORS issues in browser)
+// Runs on the server with Steam API Key for Player Summaries and Direct Inventory Fallback
 
-// In-memory module cache & singleflight promise tracker across lambda instances
 const serverInventoryCache = new Map<string, { timestamp: number; payload: any }>();
 const serverPendingRequests = new Map<string, Promise<any>>();
 const CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutes cache
 
-async function fetchSteamCommunityInventory(steamId: string, retries = 2, baseDelay = 1200) {
-  const candidateParams = [
-    '?l=english&count=100',
-    '?l=english&count=75',
-    '?l=english&count=50',
-    '?l=english',
-  ];
+async function fetchSteamCommunityInventory(steamId: string) {
+  const url = `https://steamcommunity.com/inventory/${steamId}/730/2?l=english&count=75`;
 
-  const userAgents = [
-    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36',
-    'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:127.0) Gecko/20100101 Firefox/127.0',
-    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36',
-  ];
+  try {
+    const res = await fetch(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36',
+        'Accept': 'application/json, text/javascript, */*; q=0.01',
+        'Accept-Language': 'en-US,en;q=0.9',
+        'Referer': `https://steamcommunity.com/profiles/${steamId}/inventory/`,
+        'Sec-Fetch-Dest': 'empty',
+        'Sec-Fetch-Mode': 'cors',
+        'Sec-Fetch-Site': 'same-origin',
+      },
+      signal: AbortSignal.timeout(4000),
+    });
 
-  let lastResponse: any = null;
-
-  for (let attempt = 0; attempt <= retries; attempt++) {
-    const query = candidateParams[attempt % candidateParams.length];
-    const ua = userAgents[attempt % userAgents.length];
-    const url = `https://steamcommunity.com/inventory/${steamId}/730/2${query}`;
-
-    try {
-      const res = await fetch(url, {
-        headers: {
-          'User-Agent': ua,
-          'Accept': 'application/json, text/javascript, */*; q=0.01',
-          'Accept-Language': 'en-US,en;q=0.9',
-          'Referer': `https://steamcommunity.com/profiles/${steamId}/inventory/`,
-          'Sec-Fetch-Dest': 'empty',
-          'Sec-Fetch-Mode': 'cors',
-          'Sec-Fetch-Site': 'same-origin',
-        },
-      });
-
-      lastResponse = res;
-
-      // Definitive responses: 200 OK or 401/403 Private
-      if (res.ok || res.status === 401 || res.status === 403) {
-        return res;
-      }
-
-      // If Rate limited (429): exponential backoff with jitter before next attempt
-      if (res.status === 429 && attempt < retries) {
-        const jitter = Math.floor(Math.random() * 800);
-        const waitTime = baseDelay * Math.pow(1.5, attempt) + jitter;
-        await new Promise((resolve) => setTimeout(resolve, waitTime));
-        continue;
-      }
-    } catch (err) {
-      if (attempt === retries) throw err;
-      await new Promise((resolve) => setTimeout(resolve, 800));
-    }
+    return res;
+  } catch (err: any) {
+    return null;
   }
-
-  return lastResponse;
 }
 
 export default async function handler(req: any, res: any) {
@@ -113,7 +78,7 @@ export default async function handler(req: any, res: any) {
       if (apiKey) {
         try {
           const userUrl = `https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key=${apiKey}&steamids=${targetSteamId}`;
-          const userRes = await fetch(userUrl);
+          const userRes = await fetch(userUrl, { signal: AbortSignal.timeout(3000) });
           if (userRes.ok) {
             const userData: any = await userRes.json();
             playerProfile = userData?.response?.players?.[0] || null;

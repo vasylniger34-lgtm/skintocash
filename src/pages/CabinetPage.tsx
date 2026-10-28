@@ -1018,7 +1018,7 @@ export const CabinetPage: React.FC<CabinetPageProps> = ({
                 <p className="text-xs text-slate-300 max-w-lg mx-auto leading-relaxed">
                   {tc('sandbox.privateDesc')}
                 </p>
-                <div className="pt-2">
+                <div className="flex items-center justify-center gap-3 pt-2 flex-wrap">
                   <a
                     href="https://steamcommunity.com/id/me/edit/settings"
                     target="_blank"
@@ -1028,6 +1028,13 @@ export const CabinetPage: React.FC<CabinetPageProps> = ({
                     <span>{tc('sandbox.openPrivacyBtn')}</span>
                     <ExternalLink className="w-3.5 h-3.5" />
                   </a>
+                  <button
+                    onClick={() => loadUserInventory('demo')}
+                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white/[0.06] hover:bg-white/[0.12] text-white font-bold text-xs font-['Space_Grotesk'] cursor-pointer transition-all border border-white/10"
+                  >
+                    <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                    <span>Спробувати демо-інвентар ($15,000+)</span>
+                  </button>
                 </div>
               </div>
             ) : inventoryStatus === 'rate_limited' ? (
@@ -1038,9 +1045,9 @@ export const CabinetPage: React.FC<CabinetPageProps> = ({
                   Steam API Rate Limit
                 </h3>
                 <p className="text-xs text-slate-300 max-w-lg mx-auto leading-relaxed">
-                  Сервери Steam тимчасово обмежили запити до інвентарю. Спробуйте оновити ще раз через кілька секунд.
+                  Сервери Steam тимчасово обмежили запити до інвентарю. Спробуйте оновити ще раз через кілька секунд або протестуйте платформу в демо-режимі.
                 </p>
-                <div className="pt-2">
+                <div className="flex items-center justify-center gap-3 pt-2 flex-wrap">
                   <button
                     onClick={() => {
                       const target = user?.tradeUrl || user?.steamId64;
@@ -1051,6 +1058,13 @@ export const CabinetPage: React.FC<CabinetPageProps> = ({
                   >
                     <RefreshCw className={`w-3.5 h-3.5 ${isLoadingInventory ? 'animate-spin' : ''}`} />
                     <span>{isLoadingInventory ? 'Завантаження...' : 'Повторити спробу'}</span>
+                  </button>
+                  <button
+                    onClick={() => loadUserInventory('demo')}
+                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white/[0.06] hover:bg-white/[0.12] text-white font-bold text-xs font-['Space_Grotesk'] cursor-pointer transition-all border border-white/10"
+                  >
+                    <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                    <span>Спробувати демо-інвентар ($15,000+)</span>
                   </button>
                 </div>
               </div>
@@ -1064,7 +1078,7 @@ export const CabinetPage: React.FC<CabinetPageProps> = ({
                 <p className="text-xs text-slate-400 max-w-md mx-auto leading-relaxed font-['Space_Grotesk']">
                   У вашому CS2 інвентарі наразі немає скінів або вони знаходяться на 7-денному трейд-холді Steam.
                 </p>
-                <div className="flex items-center justify-center gap-3 pt-2">
+                <div className="flex items-center justify-center gap-3 pt-2 flex-wrap">
                   <button
                     onClick={() => {
                       const target = user?.tradeUrl || user?.steamId64;
@@ -1074,6 +1088,13 @@ export const CabinetPage: React.FC<CabinetPageProps> = ({
                   >
                     <RefreshCw className="w-3.5 h-3.5" />
                     <span>Повторити сканування</span>
+                  </button>
+                  <button
+                    onClick={() => loadUserInventory('demo')}
+                    className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 text-xs font-bold text-emerald-300 border border-emerald-500/30 transition-colors cursor-pointer"
+                  >
+                    <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
+                    <span>Спробувати демо-інвентар ($15,000+)</span>
                   </button>
                   <a
                     href={user?.profileurl ? `${user.profileurl}/inventory/#730` : `https://steamcommunity.com/profiles/${user?.steamId64}/inventory/#730`}
