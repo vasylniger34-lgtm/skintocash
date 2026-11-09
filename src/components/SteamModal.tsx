@@ -14,7 +14,7 @@ export const SteamModal: React.FC<SteamModalProps> = ({ isOpen, onClose, onSucce
   const [tradeUrl, setTradeUrl] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const { t, language } = useLanguage();
+  const { t } = useLanguage();
   const { loginWithSteam, loginWithSteamId } = useAuth();
 
   if (!isOpen) return null;

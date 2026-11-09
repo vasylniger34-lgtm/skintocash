@@ -13,6 +13,7 @@ import {
   MessageSquare
 } from 'lucide-react';
 import { LogoIcon } from './LogoIcon';
+import { LanguageSelector } from './LanguageSelector';
 import { useCurrency } from '../context/CurrencyContext';
 import { useLanguage, LANGUAGES } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
@@ -33,12 +34,11 @@ export const Navbar: React.FC<NavbarProps> = ({
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [currencyDropdownOpen, setCurrencyDropdownOpen] = useState(false);
-  const [langDropdownOpen, setLangDropdownOpen] = useState(false);
   
   const navRef = useRef<HTMLElement>(null);
 
   const { currency, setCurrency, formatPrice } = useCurrency();
-  const { language, setLanguage, t, currentOption } = useLanguage();
+  const { language, setLanguage, t } = useLanguage();
   const { user, openCabinet, loginWithSteam } = useAuth();
   const { phase } = useIntro();
 
@@ -55,14 +55,12 @@ export const Navbar: React.FC<NavbarProps> = ({
     const handleClickOutside = (e: MouseEvent) => {
       if (navRef.current && !navRef.current.contains(e.target as Node)) {
         setCurrencyDropdownOpen(false);
-        setLangDropdownOpen(false);
       }
     };
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         setCurrencyDropdownOpen(false);
-        setLangDropdownOpen(false);
         setMobileMenuOpen(false);
       }
     };
@@ -224,68 +222,14 @@ export const Navbar: React.FC<NavbarProps> = ({
             className="flex items-center gap-2 sm:gap-2.5 shrink-0"
           >
             
-            {/* Language Switcher */}
-            <div className="relative hidden md:block">
-              <button
-                onClick={() => {
-                  setLangDropdownOpen(!langDropdownOpen);
-                  setCurrencyDropdownOpen(false);
-                }}
-                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border transition-all cursor-pointer text-xs font-['JetBrains_Mono'] ${
-                  langDropdownOpen
-                    ? 'bg-slate-800 text-white border-emerald-500/50'
-                    : 'bg-slate-900/80 border-white/10 hover:border-emerald-500/40 text-slate-200'
-                }`}
-                title={t('nav.selectLanguage')}
-              >
-                <span>{currentOption.flag}</span>
-                <span className="font-semibold">{language}</span>
-                <ChevronDown 
-                  className="w-3 h-3 text-slate-400 transition-transform duration-200" 
-                  style={{ transform: langDropdownOpen ? 'rotate(180deg)' : 'rotate(0)' }} 
-                />
-              </button>
-
-              <AnimatePresence>
-                {langDropdownOpen && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 6, scale: 0.95 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: 6, scale: 0.95 }}
-                    transition={{ duration: 0.15 }}
-                    className="absolute right-0 mt-2 w-44 rounded-2xl bg-[#0B1017] border border-white/10 shadow-[0_10px_35px_rgba(0,0,0,0.95)] p-1.5 z-50 backdrop-blur-2xl"
-                  >
-                    {LANGUAGES.map((l) => (
-                      <button
-                        key={l.code}
-                        onClick={() => {
-                          setLanguage(l.code);
-                          setLangDropdownOpen(false);
-                        }}
-                        className={`w-full flex items-center justify-between px-3 py-2 text-xs font-['JetBrains_Mono'] rounded-xl transition-colors cursor-pointer ${
-                          language === l.code 
-                            ? 'bg-emerald-500/20 text-emerald-300 font-bold' 
-                            : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
-                        }`}
-                      >
-                        <span className="flex items-center gap-2">
-                          <span>{l.flag}</span>
-                          <span>{l.nativeName}</span>
-                        </span>
-                        <span className="text-slate-500 text-[10px]">{l.code}</span>
-                      </button>
-                    ))}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
+            {/* Language Switcher - Unified component, visible across desktop & mobile */}
+            <LanguageSelector />
 
             {/* Currency Selector */}
             <div className="relative hidden md:block">
               <button
                 onClick={() => {
                   setCurrencyDropdownOpen(!currencyDropdownOpen);
-                  setLangDropdownOpen(false);
                 }}
                 className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border transition-all cursor-pointer text-xs font-['JetBrains_Mono'] ${
                   currencyDropdownOpen
@@ -432,13 +376,13 @@ export const Navbar: React.FC<NavbarProps> = ({
                         {user.personaname}
                       </div>
                       <div className="text-xs text-emerald-400 font-['JetBrains_Mono'] font-bold mt-0.5">
-                        Баланс: {formatPrice(user.balance || 0)}
+                        {t('nav.balance') || 'Balance'}: {formatPrice(user.balance || 0)}
                       </div>
                     </div>
                   </div>
 
                   <span className="text-xs text-slate-950 font-bold font-['Space_Grotesk'] bg-emerald-400 hover:bg-emerald-300 px-3 py-1.5 rounded-xl shadow-md transition-all">
-                    Кабінет →
+                    {t('nav.cabinet') || 'Cabinet'} →
                   </span>
                 </div>
               ) : (
@@ -462,7 +406,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 <div>
                   <div className="text-[10px] font-['Space_Grotesk'] uppercase tracking-wider text-slate-400 font-bold mb-1.5 flex items-center gap-1.5">
                     <Globe className="w-3 h-3 text-emerald-400" />
-                    <span>Валюта сайту</span>
+                    <span>{t('nav.selectCurrency') || 'Currency'}</span>
                   </div>
                   <div className="grid grid-cols-5 gap-1">
                     {currencies.map(c => (
@@ -481,24 +425,24 @@ export const Navbar: React.FC<NavbarProps> = ({
                   </div>
                 </div>
 
-                {/* Language selector chips */}
+                {/* Language selector chips - all 7 languages */}
                 <div className="pt-2 border-t border-white/[0.06]">
                   <div className="text-[10px] font-['Space_Grotesk'] uppercase tracking-wider text-slate-400 font-bold mb-1.5">
-                    Мова інтерфейсу
+                    {t('nav.selectLanguage') || 'Language'}
                   </div>
-                  <div className="grid grid-cols-5 gap-1">
+                  <div className="grid grid-cols-7 gap-1">
                     {LANGUAGES.map(l => (
                       <button
                         key={l.code}
                         onClick={() => setLanguage(l.code)}
-                        className={`py-1.5 px-1 rounded-xl text-center text-xs font-['JetBrains_Mono'] transition-all flex flex-col items-center gap-0.5 ${
+                        className={`py-1.5 px-0.5 rounded-xl text-center text-xs font-['JetBrains_Mono'] transition-all flex flex-col items-center gap-0.5 ${
                           language === l.code
                             ? 'bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/40'
                             : 'bg-white/[0.03] text-slate-300 hover:text-white'
                         }`}
                       >
                         <span className="text-sm">{l.flag}</span>
-                        <span className="text-[10px]">{l.code}</span>
+                        <span className="text-[9px]">{l.code}</span>
                       </button>
                     ))}
                   </div>
@@ -517,7 +461,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                     <span>{t('nav.instantSell')}</span>
                   </span>
                   <span className="text-[10px] font-['JetBrains_Mono'] bg-emerald-500/25 px-2 py-0.5 rounded-lg text-emerald-300">
-                    Миттєво
+                    {t('nav.instantBadge') || 'Instant'}
                   </span>
                 </button>
 

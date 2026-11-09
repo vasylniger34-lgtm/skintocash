@@ -21,6 +21,11 @@ export const LANGUAGES: LanguageOption[] = [
 
 export const TRANSLATIONS: Record<Language, Record<string, string>> = {
   EN: {
+    'nav.valuation': 'Valuation',
+    'nav.balance': 'Balance',
+    'nav.instantBadge': 'Instant',
+    'feed.steamUser': 'Steam User',
+    'feed.openProfile': 'Open Steam Profile',
     // Nav
     'nav.instantSell': 'Instant Sell',
     'nav.buySkins': 'Buy Skins',
@@ -282,8 +287,6 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     'nav.p2pMarket': 'P2P Market',
     'nav.info': 'Info',
     'nav.reviews': 'Reviews',
-    'nav.selectLanguage': 'Select language',
-    'nav.selectCurrency': 'Select currency',
     'nav.openCabinet': 'Open Cabinet',
     'nav.signInCompact': 'Sign In',
     'nav.steamReviews': 'Steam Reviews',
@@ -294,6 +297,11 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
   },
 
   UA: {
+    'nav.valuation': 'Оцінка',
+    'nav.balance': 'Баланс',
+    'nav.instantBadge': 'Миттєво',
+    'feed.steamUser': 'Користувач Steam',
+    'feed.openProfile': 'Відкрити профіль Steam',
     // Nav
     'nav.instantSell': 'Миттєвий продаж',
     'nav.buySkins': 'Купити скіни',
@@ -555,8 +563,6 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     'nav.p2pMarket': 'P2P Ринок',
     'nav.info': 'Інфо',
     'nav.reviews': 'Відгуки',
-    'nav.selectLanguage': 'Оберіть мову',
-    'nav.selectCurrency': 'Оберіть валюту',
     'nav.openCabinet': 'Відкрити Особистий кабінет',
     'nav.signInCompact': 'Увійти',
     'nav.steamReviews': 'Відгуки Steam',
@@ -567,6 +573,11 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
   },
 
   RU: {
+    'nav.valuation': 'Оценка',
+    'nav.balance': 'Баланс',
+    'nav.instantBadge': 'Мгновенно',
+    'feed.steamUser': 'Пользователь Steam',
+    'feed.openProfile': 'Открыть профиль Steam',
     // Nav
     'nav.instantSell': 'Моментальная продажа',
     'nav.buySkins': 'Купить скины',
@@ -828,8 +839,6 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     'nav.p2pMarket': 'P2P Рынок',
     'nav.info': 'Инфо',
     'nav.reviews': 'Отзывы',
-    'nav.selectLanguage': 'Выберите язык',
-    'nav.selectCurrency': 'Выберите валюту',
     'nav.openCabinet': 'Открыть Личный кабинет',
     'nav.signInCompact': 'Войти',
     'nav.steamReviews': 'Отзывы Steam',
@@ -840,6 +849,11 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
   },
 
   PL: {
+    'nav.valuation': 'Wycena',
+    'nav.balance': 'Saldo',
+    'nav.instantBadge': 'Natychmiast',
+    'feed.steamUser': 'Użytkownik Steam',
+    'feed.openProfile': 'Otwórz profil Steam',
     'nav.instantSell': 'Błyskawiczna sprzedaż',
     'nav.buySkins': 'Kup skiny',
     'nav.liveDeals': 'Transakcje na żywo',
@@ -1087,8 +1101,6 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     'nav.p2pMarket': 'Rynek P2P',
     'nav.info': 'Informacje',
     'nav.reviews': 'Opinie',
-    'nav.selectLanguage': 'Wybierz język',
-    'nav.selectCurrency': 'Wybierz walutę',
     'nav.openCabinet': 'Otwórz panel użytkownika',
     'nav.signInCompact': 'Zaloguj',
     'nav.steamReviews': 'Opinie Steam',
@@ -1099,6 +1111,11 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
   },
 
   ES: {
+    'nav.valuation': 'Valoración',
+    'nav.balance': 'Saldo',
+    'nav.instantBadge': 'Instantáneo',
+    'feed.steamUser': 'Usuario de Steam',
+    'feed.openProfile': 'Abrir perfil de Steam',
     'nav.instantSell': 'Venta Instantánea',
     'nav.buySkins': 'Comprar Skins',
     'nav.liveDeals': 'Ofertas en Vivo',
@@ -1346,8 +1363,6 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     'nav.p2pMarket': 'Mercado P2P',
     'nav.info': 'Información',
     'nav.reviews': 'Reseñas',
-    'nav.selectLanguage': 'Seleccionar idioma',
-    'nav.selectCurrency': 'Seleccionar moneda',
     'nav.openCabinet': 'Abrir panel de usuario',
     'nav.signInCompact': 'Iniciar sesión',
     'nav.steamReviews': 'Reseñas de Steam',
@@ -1358,6 +1373,11 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
   },
 
   DE: {
+    'nav.valuation': 'Bewertung',
+    'nav.balance': 'Guthaben',
+    'nav.instantBadge': 'Sofort',
+    'feed.steamUser': 'Steam-Benutzer',
+    'feed.openProfile': 'Steam-Profil öffnen',
     'nav.instantSell': 'Sofortverkauf',
     'nav.buySkins': 'Skins kaufen',
     'nav.liveDeals': 'Live-Deals',
@@ -1605,8 +1625,6 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     'nav.p2pMarket': 'P2P-Markt',
     'nav.info': 'Info',
     'nav.reviews': 'Bewertungen',
-    'nav.selectLanguage': 'Sprache wählen',
-    'nav.selectCurrency': 'Währung wählen',
     'nav.openCabinet': 'Benutzerkonto öffnen',
     'nav.signInCompact': 'Anmelden',
     'nav.steamReviews': 'Steam-Bewertungen',
@@ -1617,6 +1635,11 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
   },
 
   ZH: {
+    'nav.valuation': '饰品估值',
+    'nav.balance': '账户余额',
+    'nav.instantBadge': '极速',
+    'feed.steamUser': 'Steam 玩家',
+    'feed.openProfile': '查看 Steam 个人资料',
     'nav.instantSell': '即时出售',
     'nav.buySkins': '购买饰品',
     'nav.liveDeals': '实时交易',
@@ -1851,8 +1874,6 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     'nav.p2pMarket': 'P2P 交易',
     'nav.info': '更多信息',
     'nav.reviews': '玩家评价',
-    'nav.selectLanguage': '选择语言',
-    'nav.selectCurrency': '选择结算货币',
     'nav.openCabinet': '进入个人中心',
     'nav.signInCompact': '登录',
     'nav.steamReviews': 'Steam 评价',

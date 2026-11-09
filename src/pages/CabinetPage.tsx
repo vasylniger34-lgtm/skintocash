@@ -34,6 +34,7 @@ import confetti from 'canvas-confetti';
 import { useAuth } from '../context/AuthContext';
 import { useCurrency } from '../context/CurrencyContext';
 import { useLanguage, LANGUAGES } from '../context/LanguageContext';
+import { LanguageSelector } from '../components/LanguageSelector';
 import { LogoIcon } from '../components/LogoIcon';
 import { SkinImage } from '../components/SkinImage';
 import { PaymentMethodIcon } from '../components/PaymentMethodIcon';
@@ -58,7 +59,7 @@ export const CabinetPage: React.FC<CabinetPageProps> = ({
 }) => {
   const { user, loginWithSteam, logout, updateTradeUrl, syncUserWithTradeUrl, updateBalance, transactions, addTransaction } = useAuth();
   const { currency, setCurrency, formatPrice } = useCurrency();
-  const { language, setLanguage, currentOption } = useLanguage();
+  const { language } = useLanguage();
   const tc = (key: string, params?: Record<string, string | number>) => getCabinetText(language, key, params);
 
   // The FIRST page in profile is automatically the user's CS2 inventory!
@@ -89,7 +90,6 @@ export const CabinetPage: React.FC<CabinetPageProps> = ({
 
   // Header Dropdowns
   const [currencyDropdownOpen, setCurrencyDropdownOpen] = useState(false);
-  const [langDropdownOpen, setLangDropdownOpen] = useState(false);
 
   // Cashout / Withdraw state inside cabinet
   const [isWithdrawing, setIsWithdrawing] = useState(false);
@@ -174,7 +174,7 @@ export const CabinetPage: React.FC<CabinetPageProps> = ({
 
     const parsed = parseSteamTradeUrl(trimmed);
     if (!parsed.isValid || !parsed.steamId64) {
-      setTradeUrlError('Некоректний формат Trade URL. Посилання має містити partner=... та token=...');
+      setTradeUrlError(tc('cabinet.errTradeUrlFormat') || 'Invalid Trade URL');
       return;
     }
 
@@ -191,7 +191,7 @@ export const CabinetPage: React.FC<CabinetPageProps> = ({
       await loadUserInventory(trimmed, true);
     } catch (err: any) {
       console.warn('Error saving trade url:', err);
-      setTradeUrlError(err?.message || 'Помилка оновлення Trade URL');
+      setTradeUrlError(err?.message || tc('cabinet.errTradeUrlSave'));
       setIsLoadingInventory(false);
     }
 
@@ -287,6 +287,17 @@ export const CabinetPage: React.FC<CabinetPageProps> = ({
       tradeOfferId: tradeSession.txId,
     });
 
+    if (user?.steamId64) {
+      fetch('/api/trade/complete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          steamId64: user.steamId64,
+          tradeSession,
+        }),
+      }).catch(() => {});
+    }
+
     setSkins(prev => prev.filter(s => !selectedSkinIds.has(s.id)));
     setSelectedSkinIds(new Set());
     setIsTradeModalOpen(false);
@@ -327,6 +338,19 @@ export const CabinetPage: React.FC<CabinetPageProps> = ({
           itemsCount: 1,
           txHash: txId,
         });
+
+        if (user?.steamId64) {
+          fetch('/api/withdraw', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              steamId64: user.steamId64,
+              amount: withdrawAmount,
+              method: activeMethodName,
+              destinationMasked: withdrawDestination,
+            }),
+          }).catch(() => {});
+        }
       }
 
       setIsProcessingWithdraw(false);
@@ -349,26 +373,30 @@ export const CabinetPage: React.FC<CabinetPageProps> = ({
   if (!user) {
     return (
       <div className="min-h-screen bg-[#070A0E] text-white flex flex-col justify-between">
-        <header className="border-b border-white/[0.06] bg-[#070A0E]/80 backdrop-blur-xl py-4 px-6">
-          <div className="max-w-7xl mx-auto flex items-center justify-between">
+        <header className="border-b border-white/[0.06] bg-[#070A0E]/80 backdrop-blur-xl py-3.5 px-4 sm:px-6">
+          <div className="max-w-7xl mx-auto flex items-center justify-between gap-3">
             <div 
               onClick={onNavigateHome}
-              className="flex items-center gap-2.5 cursor-pointer select-none group"
+              className="flex items-center gap-2 sm:gap-2.5 cursor-pointer select-none group"
             >
               <LogoIcon size={32} />
-              <div className="font-['Space_Grotesk'] font-bold text-xl text-white">
+              <div className="font-['Space_Grotesk'] font-bold text-lg sm:text-xl text-white">
                 <span>SkinTo</span>
                 <span className="text-emerald-400">Cash</span>
               </div>
             </div>
 
-            <button
-              onClick={onNavigateHome}
-              className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-xs font-['Space_Grotesk'] text-slate-300 hover:text-white transition-colors cursor-pointer"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              <span>{ct('cabinet.home')}</span>
-            </button>
+            <div className="flex items-center gap-2 sm:gap-3">
+              <LanguageSelector />
+
+              <button
+                onClick={onNavigateHome}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-xs font-['Space_Grotesk'] text-slate-300 hover:text-white transition-colors cursor-pointer"
+              >
+                <ArrowLeft className="w-4 h-4 text-emerald-400" />
+                <span className="hidden sm:inline">{ct('cabinet.home')}</span>
+              </button>
+            </div>
           </div>
         </header>
 
@@ -467,54 +495,14 @@ export const CabinetPage: React.FC<CabinetPageProps> = ({
 
           {/* Right Action Tools: Language + Currency + Logout */}
           <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-            {/* Language Switcher */}
-            <div className="relative hidden sm:block">
-              <button
-                onClick={() => {
-                  setLangDropdownOpen(!langDropdownOpen);
-                  setCurrencyDropdownOpen(false);
-                }}
-                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-slate-900/80 border border-white/10 text-xs font-['JetBrains_Mono'] text-slate-200 transition-all cursor-pointer"
-              >
-                <span>{currentOption.flag}</span>
-                <span className="font-semibold">{language}</span>
-                <ChevronDown className="w-3 h-3 text-slate-400" />
-              </button>
-
-              <AnimatePresence>
-                {langDropdownOpen && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 6 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: 6 }}
-                    className="absolute right-0 mt-2 w-36 rounded-xl bg-[#0B1017] border border-white/10 shadow-2xl p-1 z-50"
-                  >
-                    {LANGUAGES.map((l) => (
-                      <button
-                        key={l.code}
-                        onClick={() => {
-                          setLanguage(l.code);
-                          setLangDropdownOpen(false);
-                        }}
-                        className={`w-full flex items-center justify-between px-3 py-2 text-xs font-['JetBrains_Mono'] rounded-lg transition-colors cursor-pointer ${
-                          language === l.code ? 'bg-emerald-500/20 text-emerald-300 font-bold' : 'text-slate-300 hover:bg-slate-800'
-                        }`}
-                      >
-                        <span>{l.nativeName}</span>
-                        <span className="text-slate-500 text-[10px]">{l.code}</span>
-                      </button>
-                    ))}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
+            {/* Language Switcher - Responsive on mobile & desktop */}
+            <LanguageSelector />
 
             {/* Currency Selector */}
             <div className="relative">
               <button
                 onClick={() => {
                   setCurrencyDropdownOpen(!currencyDropdownOpen);
-                  setLangDropdownOpen(false);
                 }}
                 className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-slate-900/80 border border-white/10 text-xs font-['JetBrains_Mono'] text-slate-200 transition-all cursor-pointer"
               >
@@ -1046,7 +1034,7 @@ export const CabinetPage: React.FC<CabinetPageProps> = ({
                     className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 disabled:opacity-50 text-slate-950 font-bold text-xs font-['Space_Grotesk'] cursor-pointer transition-all shadow-[0_0_20px_rgba(6,182,212,0.3)]"
                   >
                     <RefreshCw className={`w-3.5 h-3.5 ${isLoadingInventory ? 'animate-spin' : ''}`} />
-                    <span>{isLoadingInventory ? 'Завантаження...' : 'Повторити спробу'}</span>
+                    <span>{isLoadingInventory ? tc('cabinet.loading') : tc('cabinet.retry')}</span>
                   </button>
                 </div>
               </div>
@@ -1058,7 +1046,7 @@ export const CabinetPage: React.FC<CabinetPageProps> = ({
                   {tc('inv.empty')}
                 </h3>
                 <p className="text-xs text-slate-400 max-w-md mx-auto leading-relaxed font-['Space_Grotesk']">
-                  У вашому CS2 інвентарі наразі немає скінів або вони знаходяться на 7-денному трейд-холді Steam.
+                  {tc('cabinet.emptyColdDown')}
                 </p>
                 <div className="flex items-center justify-center gap-3 pt-2 flex-wrap">
                   <button
@@ -1069,7 +1057,7 @@ export const CabinetPage: React.FC<CabinetPageProps> = ({
                     className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-xs font-semibold text-emerald-400 border border-white/10 transition-colors cursor-pointer"
                   >
                     <RefreshCw className="w-3.5 h-3.5" />
-                    <span>Повторити сканування</span>
+                    <span>{tc('cabinet.rescan')}</span>
                   </button>
                   <a
                     href={user?.profileurl ? `${user.profileurl}/inventory/#730` : `https://steamcommunity.com/profiles/${user?.steamId64}/inventory/#730`}
@@ -1077,7 +1065,7 @@ export const CabinetPage: React.FC<CabinetPageProps> = ({
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-xs text-slate-300 border border-white/10 transition-colors"
                   >
-                    <span>Відкрити інвентар у Steam</span>
+                    <span>{tc('cabinet.openInventorySteam')}</span>
                     <ExternalLink className="w-3.5 h-3.5" />
                   </a>
                 </div>
@@ -1338,7 +1326,7 @@ export const CabinetPage: React.FC<CabinetPageProps> = ({
                   <TrendingUp className="w-4 h-4 text-emerald-400" />
                 </div>
                 <div className="text-2xl sm:text-3xl font-extrabold font-['JetBrains_Mono'] text-white">
-                  {formatPrice(user.totalWithdrawn || 420.00)}
+                  {formatPrice(user.totalWithdrawn || 0)}
                 </div>
                 <div className="text-xs text-emerald-400/80 mt-1 font-['JetBrains_Mono']">
                   {ct("metrics.totalSuccess")}
@@ -1351,7 +1339,7 @@ export const CabinetPage: React.FC<CabinetPageProps> = ({
                   <Sparkles className="w-4 h-4 text-cyan-400" />
                 </div>
                 <div className="text-2xl sm:text-3xl font-extrabold font-['JetBrains_Mono'] text-white">
-                  {user.totalSales || 7} {tc('p2p.tradesCount')}
+                  {user.totalSales || 0} {tc('p2p.tradesCount') || 'trades'}
                 </div>
                 <div className="text-xs text-slate-400 mt-1 font-['JetBrains_Mono']">
                   {ct("metrics.avgSpeed")}

@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Star, CheckCircle2, ShieldCheck, ArrowRight, ExternalLink, MessageSquare } from 'lucide-react';
+import { Star, CheckCircle2, ArrowRight, ExternalLink, MessageSquare } from 'lucide-react';
 import { STEAM_REVIEWS_DATA, type SteamReview } from '../data/steamReviewsData';
 import { useLanguage } from '../context/LanguageContext';
 
@@ -96,7 +96,7 @@ const TRUSTPILOT_I18N: Record<string, Record<string, string>> = {
 };
 
 export const TrustpilotReviews: React.FC<TrustpilotReviewsProps> = ({ onNavigateReviews }) => {
-  const { t, language } = useLanguage();
+  const { language } = useLanguage();
   const tt = TRUSTPILOT_I18N[language] || TRUSTPILOT_I18N['EN'];
 
   // Pick top authentic diverse reviews from real Steam players

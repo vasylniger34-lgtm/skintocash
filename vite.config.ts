@@ -1,6 +1,33 @@
 import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
+// @ts-ignore
+import {
+  getOrCreateUser,
+  getUser,
+  updateUserTradeUrl,
+  updateUserBalance,
+  recordSaleTransaction,
+  recordPayoutTransaction,
+  getUserTransactions,
+  getReviews,
+  addUserReview,
+  clearDatabase
+} from './server/db.js';
+
+function parseJsonBody(req: any): Promise<any> {
+  return new Promise((resolve) => {
+    let body = '';
+    req.on('data', (chunk: any) => { body += chunk; });
+    req.on('end', () => {
+      try {
+        resolve(body ? JSON.parse(body) : {});
+      } catch {
+        resolve({});
+      }
+    });
+  });
+}
 
 // In-memory server cache & singleflight queue to prevent duplicate Steam API hits
 const serverInventoryCache = new Map<string, { timestamp: number; payload: any }>();
@@ -55,7 +82,7 @@ async function fetchSteamUserDetails(apiKey: string, steamId64: string) {
 
   const joinedYear = new Date(timecreated * 1000).getFullYear();
 
-  return {
+  const rawDetails = {
     steamId64,
     personaname,
     avatar,
@@ -67,11 +94,10 @@ async function fetchSteamUserDetails(apiKey: string, steamId64: string) {
     timecreated,
     steamLevel,
     tradeBanned,
-    balance: 145.50,
-    totalWithdrawn: 420.00,
-    totalSales: 7,
     joinedAt: joinedYear.toString(),
   };
+
+  return getOrCreateUser(steamId64, rawDetails);
 }
 
 // Custom Vite dev middleware for Steam Inventory API & Steam OpenID Auth
@@ -162,7 +188,7 @@ function steamDevProxyPlugin(apiKey: string) {
         }
 
         // 3. User details API endpoint (fetch by SteamID64 or Trade URL)
-        if (pathname === '/api/auth/steam/user' || pathname === '/api/auth/steam-user') {
+        if (pathname === '/api/auth/steam/user' || pathname === '/api/auth/steam-user' || pathname === '/api/user') {
           try {
             const urlObj = new URL(req.url, 'http://localhost');
             const targetId = urlObj.searchParams.get('steamId64') || '';
@@ -176,6 +202,189 @@ function steamDevProxyPlugin(apiKey: string) {
             res.statusCode = 200;
             res.setHeader('Content-Type', 'application/json');
             res.end(JSON.stringify({ success: true, user }));
+            return;
+          } catch (err: any) {
+            res.statusCode = 500;
+            res.setHeader('Content-Type', 'application/json');
+            res.end(JSON.stringify({ success: false, error: err?.message }));
+            return;
+          }
+        }
+
+        // 3a. Save Trade URL
+        if (pathname === '/api/user/trade-url' && req.method === 'POST') {
+          try {
+            const body = await parseJsonBody(req);
+            const { steamId64, tradeUrl } = body;
+            if (!steamId64) {
+              res.statusCode = 400;
+              res.setHeader('Content-Type', 'application/json');
+              res.end(JSON.stringify({ error: 'Missing steamId64' }));
+              return;
+            }
+            const updated = updateUserTradeUrl(steamId64, tradeUrl || '');
+            res.statusCode = 200;
+            res.setHeader('Content-Type', 'application/json');
+            res.end(JSON.stringify({ success: true, user: updated }));
+            return;
+          } catch (err: any) {
+            res.statusCode = 500;
+            res.setHeader('Content-Type', 'application/json');
+            res.end(JSON.stringify({ success: false, error: err?.message }));
+            return;
+          }
+        }
+
+        // 3b. Update User Balance
+        if (pathname === '/api/user/balance' && req.method === 'POST') {
+          try {
+            const body = await parseJsonBody(req);
+            const { steamId64, delta } = body;
+            if (!steamId64 || typeof delta !== 'number') {
+              res.statusCode = 400;
+              res.setHeader('Content-Type', 'application/json');
+              res.end(JSON.stringify({ error: 'Invalid parameters' }));
+              return;
+            }
+            const updated = updateUserBalance(steamId64, delta);
+            res.statusCode = 200;
+            res.setHeader('Content-Type', 'application/json');
+            res.end(JSON.stringify({ success: true, user: updated }));
+            return;
+          } catch (err: any) {
+            res.statusCode = 500;
+            res.setHeader('Content-Type', 'application/json');
+            res.end(JSON.stringify({ success: false, error: err?.message }));
+            return;
+          }
+        }
+
+        // 3c. Transactions API
+        if (pathname === '/api/transactions') {
+          try {
+            const urlObj = new URL(req.url, 'http://localhost');
+            const targetId = urlObj.searchParams.get('steamId64') || '';
+            if (req.method === 'POST') {
+              const body = await parseJsonBody(req);
+              const tx = body.tx || body;
+              const recorded = recordSaleTransaction(body.steamId64 || targetId, tx);
+              res.statusCode = 200;
+              res.setHeader('Content-Type', 'application/json');
+              res.end(JSON.stringify({ success: true, transaction: recorded }));
+              return;
+            }
+            const txs = getUserTransactions(targetId);
+            res.statusCode = 200;
+            res.setHeader('Content-Type', 'application/json');
+            res.end(JSON.stringify({ success: true, transactions: txs }));
+            return;
+          } catch (err: any) {
+            res.statusCode = 500;
+            res.setHeader('Content-Type', 'application/json');
+            res.end(JSON.stringify({ success: false, error: err?.message }));
+            return;
+          }
+        }
+
+        // 3d. Complete Deposit Trade (Instant Sale to Bot)
+        if (pathname === '/api/trade/complete' && req.method === 'POST') {
+          try {
+            const body = await parseJsonBody(req);
+            const { steamId64, tradeSession } = body;
+            if (!steamId64 || !tradeSession) {
+              res.statusCode = 400;
+              res.setHeader('Content-Type', 'application/json');
+              res.end(JSON.stringify({ error: 'Missing steamId64 or tradeSession' }));
+              return;
+            }
+            const tx = {
+              id: tradeSession.txId,
+              title: `Депозит ${tradeSession.skins?.length || 1} скінів (Бот: ${tradeSession.bot?.personaName || 'Bot'})`,
+              amount: tradeSession.totalValue || 0,
+              status: 'completed',
+              method: 'Steam Escrow Bot',
+              destinationMasked: `Код: ${tradeSession.securityCode || '0000'}`,
+              itemsCount: tradeSession.skins?.length || 1,
+              itemsSummary: tradeSession.skins?.map((s: any) => s.name).join(', ') || '',
+              txHash: tradeSession.txId,
+              tradeOfferId: tradeSession.txId,
+            };
+            const recorded = recordSaleTransaction(steamId64, tx);
+            const user = getUser(steamId64);
+            res.statusCode = 200;
+            res.setHeader('Content-Type', 'application/json');
+            res.end(JSON.stringify({ success: true, transaction: recorded, user }));
+            return;
+          } catch (err: any) {
+            res.statusCode = 500;
+            res.setHeader('Content-Type', 'application/json');
+            res.end(JSON.stringify({ success: false, error: err?.message }));
+            return;
+          }
+        }
+
+        // 3e. Execute Withdrawal / Payout
+        if (pathname === '/api/withdraw' && req.method === 'POST') {
+          try {
+            const body = await parseJsonBody(req);
+            const { steamId64, amount, method, destinationMasked } = body;
+            if (!steamId64 || !amount || amount <= 0) {
+              res.statusCode = 400;
+              res.setHeader('Content-Type', 'application/json');
+              res.end(JSON.stringify({ error: 'Invalid withdrawal parameters' }));
+              return;
+            }
+            const payout = {
+              amount,
+              method: method || 'Visa / Mastercard',
+              destinationMasked: destinationMasked || '•••• 0000',
+              status: 'completed',
+            };
+            const recorded = recordPayoutTransaction(steamId64, payout);
+            const user = getUser(steamId64);
+            res.statusCode = 200;
+            res.setHeader('Content-Type', 'application/json');
+            res.end(JSON.stringify({ success: true, transaction: recorded, user }));
+            return;
+          } catch (err: any) {
+            res.statusCode = 500;
+            res.setHeader('Content-Type', 'application/json');
+            res.end(JSON.stringify({ success: false, error: err?.message }));
+            return;
+          }
+        }
+
+        // 3f. User Reviews API
+        if (pathname === '/api/reviews') {
+          try {
+            if (req.method === 'POST') {
+              const body = await parseJsonBody(req);
+              const created = addUserReview(body);
+              res.statusCode = 200;
+              res.setHeader('Content-Type', 'application/json');
+              res.end(JSON.stringify({ success: true, review: created }));
+              return;
+            }
+            const reviews = getReviews(100);
+            res.statusCode = 200;
+            res.setHeader('Content-Type', 'application/json');
+            res.end(JSON.stringify({ success: true, reviews }));
+            return;
+          } catch (err: any) {
+            res.statusCode = 500;
+            res.setHeader('Content-Type', 'application/json');
+            res.end(JSON.stringify({ success: false, error: err?.message }));
+            return;
+          }
+        }
+
+        // 3g. Clear / Reset Database
+        if ((pathname === '/api/db/clear' || pathname === '/api/admin/clear-db') && req.method === 'POST') {
+          try {
+            const result = clearDatabase();
+            res.statusCode = 200;
+            res.setHeader('Content-Type', 'application/json');
+            res.end(JSON.stringify(result));
             return;
           } catch (err: any) {
             res.statusCode = 500;

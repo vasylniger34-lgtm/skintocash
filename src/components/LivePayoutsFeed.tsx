@@ -150,7 +150,7 @@ export const LivePayoutsFeed: React.FC = () => {
                     target="_blank"
                     rel="noopener noreferrer"
                     onClick={(e) => e.stopPropagation()}
-                    title={`${item.traderName || 'Користувач Steam'} • ${formatTimeAgo(item.timestamp)} • Відкрити профіль Steam`}
+                    title={`${item.traderName || t('feed.steamUser') || 'Steam User'} • ${formatTimeAgo(item.timestamp)} • ${t('feed.openProfile') || 'Steam Profile'}`}
                     className="flex items-center gap-1.5 pl-1 pr-2 py-0.5 rounded-full bg-slate-800/90 hover:bg-slate-700 text-slate-300 hover:text-white border border-white/[0.07] hover:border-emerald-500/50 transition-all duration-150 group/trader shadow-sm"
                   >
                     <div className="relative w-5 h-5 shrink-0">

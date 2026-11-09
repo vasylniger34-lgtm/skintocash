@@ -1,0 +1,10 @@
+export function getOrCreateUser(steamId64: string, freshSteamDetails?: any): any;
+export function getUser(steamId64: string): any;
+export function updateUserTradeUrl(steamId64: string, tradeUrl: string): any;
+export function updateUserBalance(steamId64: string, delta: number): any;
+export function recordSaleTransaction(steamId64: string, tx: any): any;
+export function recordPayoutTransaction(steamId64: string, payout: any): any;
+export function getUserTransactions(steamId64: string): any[];
+export function getReviews(limit?: number): any[];
+export function addUserReview(review: any): any;
+export function clearDatabase(): any;

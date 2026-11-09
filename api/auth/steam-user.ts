@@ -69,9 +69,9 @@ export default async function handler(req: any, res: any) {
       timecreated,
       steamLevel,
       tradeBanned,
-      balance: 145.50,
-      totalWithdrawn: 420.00,
-      totalSales: 7,
+      balance: 0.00,
+      totalWithdrawn: 0.00,
+      totalSales: 0,
       joinedAt: joinedYear.toString(),
     };
 

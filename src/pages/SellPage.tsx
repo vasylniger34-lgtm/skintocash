@@ -24,6 +24,7 @@ import {
 import { useAuth } from '../context/AuthContext';
 import { useCurrency } from '../context/CurrencyContext';
 import { useLanguage } from '../context/LanguageContext';
+import { LanguageSelector } from '../components/LanguageSelector';
 import { SkinImage } from '../components/SkinImage';
 import { SkinInspectModal } from '../components/SkinInspectModal';
 import { TradeOfferModal } from '../components/TradeOfferModal';
@@ -32,7 +33,7 @@ import { FIAT_PAYMENT_METHODS, CRYPTO_PAYMENT_METHODS } from '../data/paymentMet
 import { fetchSteamInventory, parseSteamTradeUrl } from '../services/steamService';
 import type { CS2Skin, PaymentOption } from '../types';
 import type { DepositTradeSession } from '../data/steamBot';
-import { getCabinetText } from '../data/pagesTranslations';
+import { getCabinetText, getSellText } from '../data/pagesTranslations';
 
 interface SellPageProps {
   onNavigateHome: () => void;
@@ -43,6 +44,7 @@ export const SellPage: React.FC<SellPageProps> = ({ onNavigateHome, onOpenSteamM
   const { user, loginWithSteam, openCabinet, updateBalance, addTransaction } = useAuth();
   const { formatPrice, currency, setCurrency } = useCurrency();
   const { t, language } = useLanguage();
+  const ts = (key: string, params?: Record<string, string | number>) => getSellText(language, key, params);
 
   // User skins loaded from Steam inventory
   const [skins, setSkins] = useState<CS2Skin[]>([]);
@@ -107,16 +109,16 @@ export const SellPage: React.FC<SellPageProps> = ({ onNavigateHome, onOpenSteamM
       } else if (res.status === 'private') {
         setSkins([]);
         setSelectedIds(new Set());
-        setSyncMessage('Ваш інвентар у Steam встановлено як приватний. Змініть налаштування на публічні.');
+        setSyncMessage(ts('sell.errPrivate'));
       } else if (res.status === 'rate_limited') {
         setSkins([]);
         setSelectedIds(new Set());
         setCooldown(15);
-        setSyncMessage('Сервери Steam тимчасово обмежили запити (Rate Limit). Спробуйте знову через кілька секунд.');
+        setSyncMessage(ts('sell.errRateLimit'));
       } else if (res.status === 'empty') {
         setSkins([]);
         setSelectedIds(new Set());
-        setSyncMessage('У вашому CS2 інвентарі немає предметів, доступних для продажу.');
+        setSyncMessage(ts('sell.errEmpty'));
       } else {
         setSkins([]);
         setSelectedIds(new Set());
@@ -125,7 +127,7 @@ export const SellPage: React.FC<SellPageProps> = ({ onNavigateHome, onOpenSteamM
       setIsSyncing(false);
       setSyncStatus('error');
     }
-  }, [user?.tradeUrl, user?.steamId64]);
+  }, [user?.tradeUrl, user?.steamId64, ts]);
 
   useEffect(() => {
     loadInventory();
@@ -140,11 +142,11 @@ export const SellPage: React.FC<SellPageProps> = ({ onNavigateHome, onOpenSteamM
     if (clean === 'NOVICHOK' || clean === 'НОВИЧОК' || clean === 'CASH' || clean === 'START' || clean === 'VIP') {
       setIsPromoApplied(true);
       setPromoBonusPercent(8);
-      setPromoMessage('Промокод успішно застосовано! +8% додано до кожної виплати.');
+      setPromoMessage(ts('sell.promoSuccess8'));
     } else {
       setIsPromoApplied(true);
       setPromoBonusPercent(5);
-      setPromoMessage(`Промокод ${clean} активовано (+5% до виплати).`);
+      setPromoMessage(ts('sell.promoSuccess5', { code: clean }));
     }
 
     setTimeout(() => setPromoMessage(null), 4000);
@@ -234,11 +236,23 @@ export const SellPage: React.FC<SellPageProps> = ({ onNavigateHome, onOpenSteamM
         amount: tradeSession.totalValue,
         status: 'completed',
         method: selectedPaymentMethod.name,
-        destinationMasked: destinationInput || 'Карта / Гаманець',
+        destinationMasked: destinationInput || (selectedPaymentMethod.category === 'crypto' ? 'USDT Wallet' : 'Bank Card'),
         itemsCount: tradeSession.skins.length,
+        itemsSummary: tradeSession.skins.map(s => s.name).join(', '),
         txHash: tradeSession.txId,
         tradeOfferId: tradeSession.txId,
       });
+
+      if (user?.steamId64) {
+        fetch('/api/trade/complete', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            steamId64: user.steamId64,
+            tradeSession,
+          }),
+        }).catch(() => {});
+      }
     }
   };
 
@@ -246,18 +260,18 @@ export const SellPage: React.FC<SellPageProps> = ({ onNavigateHome, onOpenSteamM
     <div className="min-h-screen bg-[#070A0E] text-slate-100 flex flex-col">
       
       {/* 1. TOP HEADER / APP BAR */}
-      <header className="sticky top-0 z-40 bg-[#070A0E]/90 backdrop-blur-xl border-b border-white/[0.08] px-4 sm:px-8 py-3.5">
-        <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
+      <header className="sticky top-0 z-40 bg-[#070A0E]/90 backdrop-blur-xl border-b border-white/[0.08] px-3 sm:px-8 py-3 sm:py-3.5">
+        <div className="max-w-7xl mx-auto flex items-center justify-between gap-2 sm:gap-4 flex-nowrap w-full">
           
           {/* Left: Brand Logo & Back Button */}
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 sm:gap-4 shrink-0">
             <button
               onClick={onNavigateHome}
               className="px-2.5 py-1.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-slate-400 hover:text-white border border-white/[0.06] text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer"
-              title="Повернутися на головну"
+              title={ts('sell.home')}
             >
-              <ArrowLeft className="w-4 h-4" />
-              <span className="hidden sm:inline">Головна</span>
+              <ArrowLeft className="w-4 h-4 text-emerald-400" />
+              <span className="hidden sm:inline font-['Space_Grotesk']">{ts('sell.home')}</span>
             </button>
 
             <button
@@ -274,22 +288,25 @@ export const SellPage: React.FC<SellPageProps> = ({ onNavigateHome, onOpenSteamM
                   SkinTo<span className="text-emerald-400">Cash</span>
                 </span>
                 <span className="hidden md:block text-[10px] font-['JetBrains_Mono'] uppercase tracking-wider text-emerald-400 font-bold">
-                  Instant Sell Hub
+                  {ts('sell.instantHub')}
                 </span>
               </div>
             </button>
           </div>
 
-          {/* Right: User Profile & Currency Controls */}
-          <div className="flex items-center gap-3">
+          {/* Right: Language, Currency & User Controls */}
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
             
+            {/* Language Selector - Always visible on mobile & desktop */}
+            <LanguageSelector />
+
             {/* Currency Pill */}
             <div className="relative">
               <select
                 value={currency}
                 onChange={(e) => setCurrency(e.target.value as any)}
-                aria-label="Вибір валюти"
-                className="appearance-none pl-3 pr-7 py-1.5 rounded-xl bg-slate-900/90 border border-white/[0.08] text-xs font-['JetBrains_Mono'] font-bold text-emerald-400 focus:outline-none focus:border-emerald-400 cursor-pointer"
+                aria-label={ts('sell.selectCurrency')}
+                className="appearance-none pl-2.5 sm:pl-3 pr-6 sm:pr-7 py-1.5 rounded-xl bg-slate-900/90 border border-white/[0.08] text-xs font-['JetBrains_Mono'] font-bold text-emerald-400 focus:outline-none focus:border-emerald-400 cursor-pointer"
               >
                 <option value="USD" className="bg-[#0B1017] text-white">USD ($)</option>
                 <option value="EUR" className="bg-[#0B1017] text-white">EUR (€)</option>
@@ -304,7 +321,7 @@ export const SellPage: React.FC<SellPageProps> = ({ onNavigateHome, onOpenSteamM
             {user ? (
               <button
                 onClick={openCabinet}
-                className="flex items-center gap-2 pl-2 pr-3 py-1 rounded-2xl bg-slate-900/80 hover:bg-slate-800 border border-emerald-500/30 hover:border-emerald-400/60 shadow-[0_0_15px_rgba(16,185,129,0.15)] transition-all cursor-pointer"
+                className="flex items-center gap-2 pl-2 pr-2.5 sm:pr-3 py-1 rounded-2xl bg-slate-900/80 hover:bg-slate-800 border border-emerald-500/30 hover:border-emerald-400/60 shadow-[0_0_15px_rgba(16,185,129,0.15)] transition-all cursor-pointer"
               >
                 <div className="relative">
                   <img
@@ -332,10 +349,11 @@ export const SellPage: React.FC<SellPageProps> = ({ onNavigateHome, onOpenSteamM
                     loginWithSteam();
                   }
                 }}
-                className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-400 text-slate-950 font-['Space_Grotesk'] font-bold text-xs flex items-center gap-1.5 shadow-[0_0_20px_rgba(16,185,129,0.4)] hover:shadow-[0_0_25px_rgba(16,185,129,0.6)] transition-all cursor-pointer"
+                className="px-3 sm:px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-400 text-slate-950 font-['Space_Grotesk'] font-bold text-xs flex items-center gap-1.5 shadow-[0_0_20px_rgba(16,185,129,0.4)] hover:shadow-[0_0_25px_rgba(16,185,129,0.6)] transition-all cursor-pointer"
               >
                 <Zap className="w-3.5 h-3.5 fill-slate-950" />
-                <span>Увійти через Steam</span>
+                <span className="hidden sm:inline">{ts('sell.signInSteam')}</span>
+                <span className="sm:hidden">Steam</span>
               </button>
             )}
 
@@ -370,14 +388,14 @@ export const SellPage: React.FC<SellPageProps> = ({ onNavigateHome, onOpenSteamM
               <div>
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="text-sm sm:text-base font-bold font-['Space_Grotesk'] text-white">
-                    Вітальний бонус +8% до вартості викупу
+                    {ts('sell.promoTitle')}
                   </span>
                   <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-[10px] font-black font-['JetBrains_Mono'] uppercase tracking-wider">
-                    {isPromoApplied ? '+8% АКТИВОВАНО' : 'ПРОМОКОД'}
+                    {isPromoApplied ? ts('sell.promoActive') : ts('sell.promoInactive')}
                   </span>
                 </div>
                 <p className="text-xs text-slate-300 font-['Space_Grotesk'] mt-0.5">
-                  Промокод <span className="font-bold text-emerald-400">NOVICHOK</span> збільшує фінальну виплату за всі скіни на <span className="text-emerald-300 font-bold">+8%</span>.
+                  {ts('sell.promoDesc')}
                 </p>
               </div>
             </div>
@@ -389,7 +407,7 @@ export const SellPage: React.FC<SellPageProps> = ({ onNavigateHome, onOpenSteamM
                   type="text"
                   value={promoCodeInput}
                   onChange={(e) => setPromoCodeInput(e.target.value)}
-                  placeholder="Введіть промокод..."
+                  placeholder={ts('sell.promoPlaceholder')}
                   className="w-full pl-3 pr-8 py-2 rounded-xl bg-slate-950/80 border border-emerald-500/40 text-xs text-white font-['JetBrains_Mono'] font-bold uppercase tracking-wider focus:outline-none focus:border-emerald-400 shadow-inner"
                 />
                 {isPromoApplied && (
@@ -400,7 +418,7 @@ export const SellPage: React.FC<SellPageProps> = ({ onNavigateHome, onOpenSteamM
                 type="submit"
                 className="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-bold font-['Space_Grotesk'] tracking-wide shadow-[0_0_15px_rgba(16,185,129,0.35)] transition-all shrink-0 cursor-pointer"
               >
-                {isPromoApplied ? 'Застосовано' : 'Активувати'}
+                {isPromoApplied ? ts('sell.promoApplied') : ts('sell.promoApply')}
               </button>
             </form>
 
@@ -428,14 +446,14 @@ export const SellPage: React.FC<SellPageProps> = ({ onNavigateHome, onOpenSteamM
               <div className="flex items-center gap-3">
                 <h2 className="text-base font-bold font-['Space_Grotesk'] text-white flex items-center gap-2">
                   <Layers className="w-4 h-4 text-emerald-400" />
-                  <span>Ваш інвентар CS2</span>
+                  <span>{ts('sell.myInventory')}</span>
                 </h2>
                 <span className="px-2 py-0.5 rounded-md bg-white/[0.05] border border-white/[0.08] text-[11px] font-['JetBrains_Mono'] text-slate-300">
-                  {skins.length} предметів
+                  {skins.length} {ts('sell.items')}
                 </span>
                 {selectedSkinsList.length > 0 && (
                   <span className="px-2 py-0.5 rounded-md bg-emerald-500/20 border border-emerald-500/40 text-[11px] font-['JetBrains_Mono'] text-emerald-400 font-bold">
-                    Обрано: {selectedSkinsList.length} ({formatPrice(baseGrossValue)})
+                    {ts('sell.selectedCount', { count: selectedSkinsList.length, amount: formatPrice(baseGrossValue) })}
                   </span>
                 )}
               </div>
@@ -444,21 +462,21 @@ export const SellPage: React.FC<SellPageProps> = ({ onNavigateHome, onOpenSteamM
               <div className="flex items-center gap-2 text-xs">
                 <button
                   onClick={handleSelectAll}
-                  className="px-2.5 py-1 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-slate-300 hover:text-white border border-white/[0.06] font-medium transition-all cursor-pointer"
+                  className="px-2.5 py-1 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-slate-300 hover:text-white border border-white/[0.06] font-medium transition-all cursor-pointer font-['Space_Grotesk']"
                 >
-                  Вибрати все
+                  {ts('sell.selectAll')}
                 </button>
                 <button
                   onClick={handleDeselectAll}
-                  className="px-2.5 py-1 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-slate-400 hover:text-white border border-white/[0.06] font-medium transition-all cursor-pointer"
+                  className="px-2.5 py-1 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-slate-400 hover:text-white border border-white/[0.06] font-medium transition-all cursor-pointer font-['Space_Grotesk']"
                 >
-                  Очистити
+                  {ts('sell.deselectAll')}
                 </button>
                 <button
                   onClick={() => loadInventory(true)}
                   disabled={isSyncing || cooldown > 0}
                   className="p-1.5 rounded-lg bg-white/[0.04] hover:bg-emerald-500/20 text-slate-300 hover:text-emerald-400 border border-white/[0.06] transition-all cursor-pointer disabled:opacity-50"
-                  title="Оновити інвентар Steam"
+                  title={ts('sell.refreshInventory')}
                 >
                   <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin text-emerald-400' : ''}`} />
                 </button>
@@ -472,12 +490,11 @@ export const SellPage: React.FC<SellPageProps> = ({ onNavigateHome, onOpenSteamM
               {/* Category Pills */}
               <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
                 {[
-                  { id: 'all', label: 'Всі скіни' },
-                  { id: 'knives-gloves', label: 'Ножі & Рукавиці' },
-                  { id: 'rifles', label: 'Гвинтівки & AWP' },
-                  { id: 'pistols', label: 'Пістолети' },
-                  { id: 'stattrak', label: 'StatTrak™' },
-                  { id: 'cases', label: 'Кейси' },
+                  { id: 'all', label: ts('sell.catAll') },
+                  { id: 'knives-gloves', label: ts('sell.catKnivesGloves') },
+                  { id: 'rifles', label: ts('sell.catRiflesAwp') },
+                  { id: 'pistols', label: ts('sell.catPistols') },
+                  { id: 'cases', label: ts('sell.catCases') },
                 ].map(cat => (
                   <button
                     key={cat.id}
@@ -501,7 +518,7 @@ export const SellPage: React.FC<SellPageProps> = ({ onNavigateHome, onOpenSteamM
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Пошук скіна..."
+                    placeholder={ts('sell.searchPlaceholder')}
                     className="w-full pl-8 pr-3 py-1.5 rounded-xl bg-white/[0.03] border border-white/[0.08] text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-400 font-['JetBrains_Mono']"
                   />
                 </div>
@@ -510,12 +527,12 @@ export const SellPage: React.FC<SellPageProps> = ({ onNavigateHome, onOpenSteamM
                   <select
                     value={sortBy}
                     onChange={(e: any) => setSortBy(e.target.value)}
-                    aria-label="Сортування скінів"
+                    aria-label={ts('sell.searchPlaceholder')}
                     className="appearance-none pl-7 pr-7 py-1.5 rounded-xl bg-white/[0.03] border border-white/[0.08] text-xs text-slate-300 font-['Space_Grotesk'] font-medium focus:outline-none focus:border-emerald-400 cursor-pointer"
                   >
-                    <option value="price-desc" className="bg-[#0B1017]">Найдорожчі</option>
-                    <option value="price-asc" className="bg-[#0B1017]">Найдешевші</option>
-                    <option value="float-asc" className="bg-[#0B1017]">За флоатом</option>
+                    <option value="price-desc" className="bg-[#0B1017]">{ts('sell.sortPriceDesc')}</option>
+                    <option value="price-asc" className="bg-[#0B1017]">{ts('sell.sortPriceAsc')}</option>
+                    <option value="float-asc" className="bg-[#0B1017]">{ts('sell.sortFloatAsc')}</option>
                   </select>
                   <ArrowUpDown className="w-3.5 h-3.5 text-slate-400 absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none" />
                 </div>
@@ -535,12 +552,12 @@ export const SellPage: React.FC<SellPageProps> = ({ onNavigateHome, onOpenSteamM
             {filteredSkins.length === 0 ? (
               <div className="p-12 text-center rounded-3xl bg-slate-900/40 border border-white/[0.06] text-slate-400">
                 <Search className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                <p className="text-sm font-['Space_Grotesk'] font-semibold">Скінів за вибраними фільтрами не знайдено</p>
+                <p className="text-sm font-['Space_Grotesk'] font-semibold">{ts('sell.errEmpty')}</p>
                 <button
                   onClick={() => { setSearchQuery(''); setActiveCategory('all'); }}
                   className="mt-3 px-3 py-1.5 rounded-xl bg-white/[0.05] hover:bg-white/[0.1] text-xs text-emerald-400 border border-white/[0.08] cursor-pointer"
                 >
-                  Скинути фільтри
+                  {ts('sell.deselectAll')}
                 </button>
               </div>
             ) : (
@@ -580,7 +597,7 @@ export const SellPage: React.FC<SellPageProps> = ({ onNavigateHome, onOpenSteamM
                               setInspectingSkin(skin);
                             }}
                             className="p-1 rounded bg-white/[0.04] hover:bg-white/[0.1] text-slate-400 hover:text-white transition-colors"
-                            title="Оглянути скін 3D"
+                            title={ts('sell.inspect')}
                           >
                             <Eye className="w-3 h-3" />
                           </button>
@@ -614,7 +631,7 @@ export const SellPage: React.FC<SellPageProps> = ({ onNavigateHome, onOpenSteamM
                             </span>
                             {isPromoApplied && (
                               <span className="block text-[9px] text-emerald-500/80 font-['JetBrains_Mono']">
-                                +{formatPrice(bonusPerSkin)} бонус
+                                +{formatPrice(bonusPerSkin)}
                               </span>
                             )}
                           </div>
@@ -649,14 +666,14 @@ export const SellPage: React.FC<SellPageProps> = ({ onNavigateHome, onOpenSteamM
               <div className="flex items-center justify-between pb-3 border-b border-white/[0.08]">
                 <div>
                   <h3 className="text-sm font-bold font-['Space_Grotesk'] text-white">
-                    Розрахунок виплати
+                    {ts('sell.payoutMethodTitle')}
                   </h3>
                   <p className="text-[11px] text-slate-400 font-['Space_Grotesk']">
-                    Миттєвий переказ на ваші реквізити
+                    {ts('sell.instantPayoutBadge')}
                   </p>
                 </div>
                 <span className="px-2.5 py-1 rounded-xl bg-slate-800 text-xs font-bold font-['JetBrains_Mono'] text-emerald-400 border border-white/[0.06]">
-                  {selectedSkinsList.length} скінів
+                  {selectedSkinsList.length} {ts('sell.items')}
                 </span>
               </div>
 
@@ -683,15 +700,15 @@ export const SellPage: React.FC<SellPageProps> = ({ onNavigateHome, onOpenSteamM
                   ))}
                 </div>
               ) : (
-                <div className="py-4 text-center text-xs text-slate-500 border border-dashed border-white/[0.08] rounded-2xl">
-                  Виберіть скіни зліва для продажу
+                <div className="py-4 text-center text-xs text-slate-500 border border-dashed border-white/[0.08] rounded-2xl font-['Space_Grotesk']">
+                  {ts('sell.selectAtLeastOne')}
                 </div>
               )}
 
               {/* Payment Method Selector */}
               <div>
                 <label className="text-[11px] font-bold font-['Space_Grotesk'] uppercase text-slate-300 block mb-2">
-                  Куди вивести кошти:
+                  {ts('sell.payoutMethodTitle')}:
                 </label>
 
                 {/* Method Category Switcher */}
@@ -702,7 +719,7 @@ export const SellPage: React.FC<SellPageProps> = ({ onNavigateHome, onOpenSteamM
                       paymentTab === 'all' ? 'bg-emerald-500 text-slate-950' : 'text-slate-400 hover:text-white'
                     }`}
                   >
-                    Всі
+                    {ts('sell.tabAllMethods')}
                   </button>
                   <button
                     onClick={() => setPaymentTab('cards')}
@@ -710,7 +727,7 @@ export const SellPage: React.FC<SellPageProps> = ({ onNavigateHome, onOpenSteamM
                       paymentTab === 'cards' ? 'bg-emerald-500 text-slate-950' : 'text-slate-400 hover:text-white'
                     }`}
                   >
-                    Картки
+                    {ts('sell.tabCards')}
                   </button>
                   <button
                     onClick={() => setPaymentTab('crypto')}
@@ -718,7 +735,7 @@ export const SellPage: React.FC<SellPageProps> = ({ onNavigateHome, onOpenSteamM
                       paymentTab === 'crypto' ? 'bg-emerald-500 text-slate-950' : 'text-slate-400 hover:text-white'
                     }`}
                   >
-                    Крипта
+                    {ts('sell.tabCrypto')}
                   </button>
                 </div>
 
@@ -751,7 +768,7 @@ export const SellPage: React.FC<SellPageProps> = ({ onNavigateHome, onOpenSteamM
               {/* Destination Input (Card Number / Crypto Address) */}
               <div>
                 <label className="text-[11px] font-bold font-['Space_Grotesk'] uppercase text-slate-300 block mb-1.5">
-                  {selectedPaymentMethod.category === 'crypto' ? 'Адреса гаманця:' : 'Номер картки або рахунок:'}
+                  {ts('sell.destinationLabel')}
                 </label>
                 <div className="relative">
                   <input
@@ -760,10 +777,10 @@ export const SellPage: React.FC<SellPageProps> = ({ onNavigateHome, onOpenSteamM
                     onChange={(e) => setDestinationInput(e.target.value)}
                     placeholder={
                       selectedPaymentMethod.category === 'crypto'
-                        ? 'Введіть TRC-20 / BEP-20 / TON адресу'
+                        ? ts('sell.destCryptoPlaceholder')
                         : selectedPaymentMethod.id === 'sbp'
-                        ? '+380... або +7... (номер телефону)'
-                        : '16 цифр картки або IBAN'
+                        ? ts('sell.destSbpPlaceholder')
+                        : ts('sell.destCardPlaceholder')
                     }
                     className="w-full pl-3 pr-8 py-2 rounded-xl bg-white/[0.03] border border-white/10 text-white font-['JetBrains_Mono'] text-xs focus:outline-none focus:border-emerald-400"
                   />
@@ -774,24 +791,24 @@ export const SellPage: React.FC<SellPageProps> = ({ onNavigateHome, onOpenSteamM
               {/* Price Calculation Summary */}
               <div className="space-y-1.5 py-3 border-y border-white/[0.08] text-xs font-['JetBrains_Mono']">
                 <div className="flex justify-between text-slate-400">
-                  <span>Сума скінів:</span>
+                  <span>{ts('sell.baseValueLabel')}</span>
                   <span className="text-slate-200">{formatPrice(baseGrossValue)}</span>
                 </div>
 
                 {isPromoApplied && (
                   <div className="flex justify-between text-emerald-400 font-bold">
-                    <span>+8% Бонус NOVICHOK:</span>
+                    <span>{ts('sell.bonusLabel', { percent: promoBonusPercent })}</span>
                     <span>+{formatPrice(promoBonusAmount)}</span>
                   </div>
                 )}
 
                 <div className="flex justify-between text-slate-400">
-                  <span>Комісія сервісу:</span>
-                  <span className="text-emerald-400 font-bold">0.00% (Без комісії)</span>
+                  <span>{t('metrics.fee') || 'Fee:'}</span>
+                  <span className="text-emerald-400 font-bold">0.00%</span>
                 </div>
 
                 <div className="flex justify-between items-center text-white font-bold pt-2 border-t border-white/[0.08]">
-                  <span className="font-['Space_Grotesk'] text-sm">Разом до виплати:</span>
+                  <span className="font-['Space_Grotesk'] text-sm">{ts('sell.totalPayoutLabel')}</span>
                   <span className="text-emerald-400 text-lg font-['JetBrains_Mono'] font-extrabold">
                     {formatPrice(totalCashoutValue)}
                   </span>
@@ -814,15 +831,15 @@ export const SellPage: React.FC<SellPageProps> = ({ onNavigateHome, onOpenSteamM
                   <Zap className="w-4 h-4 fill-slate-950" />
                   <span>
                     {selectedSkinsList.length > 0
-                      ? `Отримати виплату ${formatPrice(totalCashoutValue)}`
-                      : 'Оберіть скіни для продажу'}
+                      ? `${ts('sell.getCashoutBtn')} (${formatPrice(totalCashoutValue)})`
+                      : ts('sell.selectAtLeastOne')}
                   </span>
                   <ArrowRight className="w-4 h-4" />
                 </motion.button>
 
                 <div className="mt-2.5 flex items-center justify-center gap-2 text-[11px] text-slate-400 font-['Space_Grotesk']">
                   <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-                  <span>Миттєва відправка трейду офіційним ботом SkinToCash</span>
+                  <span>{ts('sell.securityGuarantee')}</span>
                 </div>
               </div>
 
@@ -852,7 +869,7 @@ export const SellPage: React.FC<SellPageProps> = ({ onNavigateHome, onOpenSteamM
         selectedSkins={selectedSkinsList}
         totalPayout={totalCashoutValue}
         paymentMethod={selectedPaymentMethod}
-        destinationAddress={destinationInput || 'Картка користувача'}
+        destinationAddress={destinationInput || (selectedPaymentMethod.category === 'crypto' ? 'USDT Wallet' : 'Bank Card')}
         userTradeUrl={user?.tradeUrl || undefined}
         onTradeCompleted={handleTradeCompleted}
       />

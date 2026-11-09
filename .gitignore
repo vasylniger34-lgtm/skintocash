@@ -35,3 +35,6 @@ mafile/
 *.maFile
 secrets/
 
+# SQLite local databases
+db/*.sqlite*
+

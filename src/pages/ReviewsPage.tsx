@@ -28,6 +28,7 @@ import {
 import confetti from 'canvas-confetti';
 import { useCurrency } from '../context/CurrencyContext';
 import { useLanguage, LANGUAGES } from '../context/LanguageContext';
+import { LanguageSelector } from '../components/LanguageSelector';
 import { useAuth } from '../context/AuthContext';
 import { LogoIcon } from '../components/LogoIcon';
 import { STEAM_REVIEWS_DATA, type SteamReview } from '../data/steamReviewsData';
@@ -320,52 +321,8 @@ export const ReviewsPage: React.FC<ReviewsPageProps> = ({ onNavigateHome, onOpen
               </AnimatePresence>
             </div>
 
-            {/* Language Switcher */}
-            <div className="relative hidden sm:block">
-              <button
-                onClick={() => {
-                  setLangDropdownOpen(!langDropdownOpen);
-                  setCurrencyDropdownOpen(false);
-                }}
-                className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] text-xs font-['JetBrains_Mono'] text-white transition-all cursor-pointer"
-              >
-                <Globe className="w-3.5 h-3.5 text-slate-400" />
-                <span>{currentOption.flag}</span>
-                <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
-              </button>
-
-              <AnimatePresence>
-                {langDropdownOpen && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 8, scale: 0.95 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: 8, scale: 0.95 }}
-                    className="absolute right-0 mt-2 w-44 bg-[#0B1017] border border-white/10 rounded-2xl p-1.5 shadow-2xl z-50 backdrop-blur-xl"
-                  >
-                    {LANGUAGES.map(lang => (
-                      <button
-                        key={lang.code}
-                        onClick={() => {
-                          setLanguage(lang.code);
-                          setLangDropdownOpen(false);
-                        }}
-                        className={`w-full text-left px-3 py-2 rounded-xl text-xs font-['Space_Grotesk'] flex items-center justify-between transition-colors cursor-pointer ${
-                          language === lang.code
-                            ? 'bg-emerald-500/20 text-emerald-300 font-bold'
-                            : 'text-slate-300 hover:bg-white/[0.05] hover:text-white'
-                        }`}
-                      >
-                        <span className="flex items-center gap-2">
-                          <span>{lang.flag}</span>
-                          <span>{lang.nativeName}</span>
-                        </span>
-                        {language === lang.code && <Check className="w-3.5 h-3.5 text-emerald-400" />}
-                      </button>
-                    ))}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
+            {/* Language Switcher - Responsive on mobile & desktop */}
+            <LanguageSelector />
 
             {/* "Залишити відгук" Header CTA */}
             <button
@@ -910,10 +867,10 @@ export const ReviewsPage: React.FC<ReviewsPageProps> = ({ onNavigateHome, onOpen
                   <div className="p-3.5 rounded-2xl bg-white/[0.03] border border-white/[0.07] space-y-2 text-left">
                     <div className="flex items-center gap-2 text-xs font-bold text-white font-['Space_Grotesk']">
                       <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
-                      <span>Анти-фрод захист відгуків</span>
+                      <span>{tr('reviews.antiSpamBadge') || 'Anti-Spam Verification'}</span>
                     </div>
                     <p className="text-[11px] text-slate-400 leading-normal">
-                      Ми публікуємо тільки відгуки реальних продавців після підтверджених виплат. Довільний ввід чужих або вигаданих скінів заблоковано.
+                      {tr('reviews.antiSpamDesc') || 'We only publish authentic reviews from verified sellers after confirmed payout.'}
                     </p>
                   </div>
 
@@ -948,7 +905,7 @@ export const ReviewsPage: React.FC<ReviewsPageProps> = ({ onNavigateHome, onOpen
                         className="w-5 h-5 rounded-full object-cover"
                       />
                       <span className="text-xs font-bold text-white font-['Space_Grotesk']">{user.personaname}</span>
-                      <span className="text-[10px] text-amber-400 font-['JetBrains_Mono']">0 угод</span>
+                      <span className="text-[10px] text-amber-400 font-['JetBrains_Mono']">0 {tr('reviews.trades') || 'trades'}</span>
                     </div>
 
                     <h3 className="text-xl font-black font-['Space_Grotesk'] text-white">
@@ -1018,7 +975,7 @@ export const ReviewsPage: React.FC<ReviewsPageProps> = ({ onNavigateHome, onOpen
                         <span>{tr('reviews.selectOrderLabel')}</span>
                       </span>
                       <span className="text-[10px] font-['JetBrains_Mono'] text-emerald-400">
-                        {completedSales.length} {completedSales.length === 1 ? 'угода' : 'угод'}
+                        {completedSales.length} {tr('reviews.trades') || 'trades'}
                       </span>
                     </label>
 

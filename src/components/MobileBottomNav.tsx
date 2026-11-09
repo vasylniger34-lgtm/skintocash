@@ -58,7 +58,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
           )}
           <Layers className="w-5 h-5 mb-0.5 fill-current" />
           <span className="text-[10px] font-['Space_Grotesk'] tracking-tight">
-            Оцінка
+            {t('nav.valuation') || 'Evaluation'}
           </span>
         </button>
 
